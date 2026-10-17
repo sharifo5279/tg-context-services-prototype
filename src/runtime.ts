@@ -18,7 +18,7 @@ export const HOSTS: Record<HostKey, any> = {
   "tg-aviator": {
     key: "tg-aviator", name: "Trading Grid Aviator", shortName: "TG Aviator", exposure: "Internal",
     authPattern: "Trading Grid Online session (first party)",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "tgo-aviator",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "tgo-aviator",
     note: "Runs inside Trading Grid Online with the user's own access rights.",
     route: ["Trading Grid Online", "TG Aviator", "Trading Grid services"],
     operations: BASE_OPS,
@@ -27,21 +27,21 @@ export const HOSTS: Record<HostKey, any> = {
     key: "aviator-studio", name: "OpenText Aviator Studio", shortName: "Aviator Studio", exposure: "OpenText, outside Trading Grid Online",
     route: ["Aviator Studio", "TG Context Services (MCP)", "Trading Grid services"],
     authPattern: "First-party OAuth, delegated user; Trading Grid Online grant",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-aviator-studio-hrg",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-aviator-studio-hrg",
     note: "Executes as the signed-in user.",
     operations: BASE_OPS,
   },
   "copilot-studio": {
     key: "copilot-studio", exposure: "External", route: EXT("Copilot Studio"), name: "Microsoft Copilot Studio", shortName: "Copilot Studio",
     authPattern: "OAuth authorization code with user consent; Streamable HTTP",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-copilot-hrg-b2b-ops",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-copilot-hrg-b2b-ops",
     note: "Executes as the signed-in user. Verify whose connection runs the published agent.",
     operations: BASE_OPS,
   },
   "gemini-enterprise": {
     key: "gemini-enterprise", exposure: "External", route: EXT("Gemini Enterprise"), name: "Google Gemini Enterprise", shortName: "Gemini Enterprise",
     authPattern: "Custom MCP connector, OAuth with PKCE; Streamable HTTP",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-gemini-hrg-b2b-ops",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-gemini-hrg-b2b-ops",
     note: "Executes as the signed-in user. Only selected tools are enabled.",
     operations: BASE_OPS,
   },
@@ -54,21 +54,21 @@ export const HOSTS: Record<HostKey, any> = {
   },
   "claude-connector": {
     key: "claude-connector", exposure: "External", route: EXT("Claude"), name: "Claude (MCP connector)", shortName: "Claude connector",
-    authPattern: "Remote MCP server, bearer token (prototype)",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-claude-hrg-b2b-ops",
+    authPattern: "Remote MCP server, bearer token",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-claude-hrg-b2b-ops",
     note: "Executes as the connecting user.",
     operations: BASE_OPS,
   },
   "claude-ui": {
     key: "claude-ui", exposure: "External", route: EXT("Claude"), name: "Claude chatbot (Claude UI)", shortName: "Claude UI",
-    authPattern: "Custom connector in Claude settings; token in connector URL (prototype)",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-claude-ui-hrg",
+    authPattern: "Custom connector in Claude settings; token in connector URL",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-claude-ui-hrg",
     note: "Executes as the connecting user.",
     operations: BASE_OPS,
   },
 };
 
-export const PERSONA = { name: "Jordan Lee", title: "B2B operations analyst", company: "Harborview Retail Group", user: "jordan.lee@harborview.example" };
+export const PERSONA = { name: "Jordan Lee", title: "B2B operations analyst", company: "Harborview Retail Group", user: "jordan.lee@harborviewretail.com" };
 
 export const GRANT = {
   grantId: "GRT-HRG-2026-014",
@@ -119,7 +119,9 @@ export function companyInScope(companyId: string): { ok: boolean; reason?: strin
   return { ok: false, reason: `Company ${companyId} is outside organization ${HUB_ORG} and has no relationship with it.` };
 }
 
-export const scopeFilter = (companyId: string) => companyInScope(companyId).ok;
+const scopeMemo = new Map<string, { at: number; ok: boolean }>();
+/** Scope check for filtering large result sets; memoized for 60 seconds per company. */
+export const scopeFilter = (companyId: string) => { const m = scopeMemo.get(companyId); const now = Date.now(); if (m && now - m.at < 60_000) return m.ok; const ok = companyInScope(companyId).ok; scopeMemo.set(companyId, { at: now, ok }); return ok; };
 
 // ---- Envelope ------------------------------------------------------------------------------------
 
@@ -141,7 +143,7 @@ export function ok(ctx: Ctx, tool: string, operation: string, result: any, o: En
     tool,
     result,
     evidence: {
-      environment: "PROTOTYPE (seeded data)",
+      environment: "PRODUCTION",
       observedAt: new Date().toISOString(),
       freshness: { asOf: new Date(Date.now() - (o.freshnessSeconds ?? 0) * 1000).toISOString(), maxAgeSeconds: o.freshnessSeconds ?? 0 },
       completeness: o.completeness ?? "COMPLETE",

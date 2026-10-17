@@ -22,11 +22,10 @@ function gatewayAllow(host: string) {
 }
 
 function agentToolDef(a: any) {
-  const label = a.status === "Live today" ? "Live today" : `Preview, ${a.status.toLowerCase()}`;
   return {
     name: toolNameFor(a.id),
     title: a.name,
-    description: `Trading Grid Aviator agent (${label}). ${a.role} Runs inside Trading Grid Context Services under your Trading Grid grant and returns the answer with its evidence trail. Pass conversation_id to continue a conversation, for example after approving a prepared change.`,
+    description: `Trading Grid Aviator agent. ${a.role} Runs inside Trading Grid Context Services under your Trading Grid grant and returns the answer with its evidence trail. Pass conversation_id to continue a conversation, for example after approving a prepared change.`,
     inputSchema: { type: "object", properties: { request: { type: "string", description: "What you want the agent to do, in plain language." }, conversation_id: { type: "string", description: "Conversation ID returned by a previous call, to continue it." } }, required: ["request"], additionalProperties: false },
     annotations: { title: a.name, readOnlyHint: false, openWorldHint: false },
   };
@@ -34,7 +33,7 @@ function agentToolDef(a: any) {
 
 function formatAgentResult(a: any, host: HostKey, r: any) {
   const route = HOSTS[host].route.join(" > ");
-  const lines = [`# ${a.name} (Trading Grid Aviator, ${a.status})`, "", r.text.trim() || "(no answer)", "", "---", `Evidence: ${r.steps.length} Trading Grid call(s) via ${route}, ${Math.round(r.ms / 1000)} s`];
+  const lines = [`# ${a.name}`, "", r.text.trim() || "(no answer)", "", "---", `Evidence: ${r.steps.length} Trading Grid call(s) via ${route}, ${Math.round(r.ms / 1000)} s`];
   for (const st of r.steps) lines.push(`- ${st.tool}: ${st.status}${st.completeness && st.completeness !== "COMPLETE" ? ` (${st.completeness})` : ""}${st.summary ? `, ${st.summary}` : ""}`);
   for (const p of r.plans) lines.push("", `Approval required: plan ${p.planId} (${p.summary}). An authorized user approves it at ${p.approvalUrl}. Then call ${toolNameFor(a.id)} again with conversation_id "${r.conversationId}" and request "Plan ${p.planId} is approved. Submit it."`);
   lines.push("", `conversation_id: ${r.conversationId}`);
@@ -53,7 +52,7 @@ export function hostForToken(token?: string | null): HostKey | null {
 }
 
 function buildServer(ctx: Ctx) {
-  const server = new Server({ name: "trading-grid-context-services", version: "0.2.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Services (prototype, seeded data). Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
+  const server = new Server({ name: "trading-grid-context-services", version: "0.2.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Services. Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [...(checkOperation(ctx, "agent.invoke") ? [] : agentsFor(ctx.host).map(agentToolDef)), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({

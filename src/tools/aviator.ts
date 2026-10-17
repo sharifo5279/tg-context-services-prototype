@@ -6,6 +6,7 @@ import { maps } from "../data/other.js";
 import { companyById } from "../data/cms.js";
 import { eq } from "../util.js";
 import { resolveCompany } from "./common.js";
+import { connectionStatus } from "../data/monitor.js";
 
 const DEMO = "Demo construct: Aviator agent service (not a Context Services tool)";
 const AV = "Trading Grid Aviator";
@@ -40,17 +41,7 @@ const RULES: Record<string, any[]> = {
   ],
 };
 
-// ---- Connection status -----------------------------------------------------------------------------------
-const CONN: Record<string, any> = {
-  C20008: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "DOWN", since: ago(4.2), lastSuccess: ago(4.3), failures24h: 3, lastError: "AS2 MDN not received: connection timed out after 3 attempts", certificateExpires: "2027-02-11", retryPolicy: "3 attempts, 10-minute interval; then held for redelivery" },
-  C20001: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "UP", lastSuccess: ago(0.4), failures24h: 0, certificateExpires: "2027-06-30" },
-  C20004: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "UP", lastSuccess: ago(1.1), failures24h: 0, certificateExpires: "2026-11-20", note: "Certificate expires within 35 days." },
-  C20007: { protocol: "SFTP", endpoint: "sftp://(redacted):22/inbound", status: "UP", lastSuccess: ago(0.8), failures24h: 0, partnerPickup: { lastPickup: ago(32), note: "Files delivered to the partner mailbox have not been collected for 32 hours." } },
-  C20003: { protocol: "VAN interconnect", endpoint: "Keystone VAN Services (MB-KVAN-IC-07)", status: "UP", lastSuccess: ago(2.0), failures24h: 0 },
-  C20006: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "UP", lastSuccess: ago(3.5), failures24h: 0 },
-  C20013: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "UP", lastSuccess: ago(0.6), failures24h: 0, certificateExpires: "2027-04-02" },
-  C20014: { protocol: "Web EDI forms", endpoint: "Harborview supplier web EDI (MB-HRG-WEBEDI-01)", status: "UP", lastSuccess: ago(26), failures24h: 0, note: "Partner submits documents through web forms; no partner endpoint." },
-};
+
 
 export const tickets: any[] = [];
 let tSeq = 48210;
@@ -74,7 +65,7 @@ export const aviatorTools: ToolDef[] = [
     operation: "support.ticket.create", kind: "write", binding: "Business Network support case intake", basis: DEMO,
     inputSchema: s.obj({ summary: s.str("One-line summary."), details: s.str("What happened, checks performed, impact."), transaction_ids: s.arr(s.str("Transaction ID"), "Related transaction IDs."), severity: s.str("LOW, MEDIUM or HIGH.") }, ["summary", "details"]),
     handler: (a, ctx) => {
-      const t = { ticketId: `CS-${++tSeq}`, status: "RECEIVED", queue: "Business Network support", summary: a.summary, details: a.details, transactionIds: a.transaction_ids ?? [], severity: (a.severity ?? "MEDIUM").toUpperCase(), createdAt: new Date().toISOString(), createdBy: "jordan.lee@harborview.example", via: ctx.host };
+      const t = { ticketId: `CS-${++tSeq}`, status: "RECEIVED", queue: "Business Network support", summary: a.summary, details: a.details, transactionIds: a.transaction_ids ?? [], severity: (a.severity ?? "MEDIUM").toUpperCase(), createdAt: new Date().toISOString(), createdBy: "jordan.lee@harborviewretail.com", via: ctx.host };
       tickets.push(t);
       return ok(ctx, "create_support_ticket", "support.ticket.create", t, { sources: [{ product: AV, operation: "Support case intake", objectIds: [t.ticketId] }], interpretation: "Ticket received. Support will reach out by email with updates." });
     },
@@ -95,12 +86,12 @@ export const aviatorTools: ToolDef[] = [
   {
     name: "get_connection_status", domain: "Aviator agent services", product: "Trading Grid communications gateway", title: "Get connection status",
     description: "Return connection health for a partner: protocol, status, last success, recent failures, partner pickup and certificate expiry.",
-    operation: "connectivity.read", kind: "read", binding: "Communications gateway health (demo construct)", basis: DEMO,
+    operation: "connectivity.read", kind: "read", binding: "Communications gateway health", basis: DEMO,
     inputSchema: s.obj({ partner: s.str("Partner company ID or name.") }, ["partner"]),
     handler: (a, ctx) => {
       const r = resolveCompany(a.partner);
       if (r.kind !== "ok") return fail(ctx, "get_connection_status", "connectivity.read", r.kind === "ambiguous" ? "AMBIGUOUS_PARTNER" : "NOT_FOUND", r.kind === "ambiguous" ? "Several partners match. Select one." : "Partner not found in permitted scope.", r.kind === "ambiguous" ? { candidates: (r as any).candidates } : {});
-      const c = CONN[r.company.companyId];
+      const c = connectionStatus(r.company.companyId);
       if (!c) return ok(ctx, "get_connection_status", "connectivity.read", { partner: r.company.companyName, status: "UNKNOWN" }, { sources: [{ product: "Communications gateway", operation: "Health" }], completeness: "UNKNOWN", missingEvidence: ["No connection health recorded."] });
       return ok(ctx, "get_connection_status", "connectivity.read", { partner: companyById(r.company.companyId)!.companyName, ...c }, { sources: [{ product: "Communications gateway", operation: "Health", objectIds: [r.company.companyId] }], freshnessSeconds: 120 });
     },

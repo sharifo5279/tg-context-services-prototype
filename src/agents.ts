@@ -19,7 +19,7 @@ export type AgentDef = {
   /** fast = Haiku for short, lookup-style agents; default = configured model. */
   model?: "fast" | "default";
   /** Status as published in the Trading Grid Aviator portfolio (Innovation Guide H2 2026). */
-  status: "Live today" | "On the roadmap" | "Incubating" | "Prototype";
+  status: "Live today" | "On the roadmap" | "Incubating" | "Custom";
   subtitle?: string;
 };
 
@@ -86,7 +86,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "asn-exception",
-    status: "Prototype",
+    status: "Custom",
     name: "ASN Exception Agent",
     persona: "EDI support analyst",
     role: "Identify rejected, failed or missing advance ship notices, explain the cause, and prepare the fix and supplier follow-up.",
@@ -183,7 +183,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "context-assistant",
-    status: "Prototype",
+    status: "Custom",
     name: "Context Services Assistant",
     persona: "Any Trading Grid user",
     role: "Answer questions about Harborview's community, connectivity, transactions, maps, requests and data products with every authorized tool.",
@@ -283,7 +283,7 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Map", "Target field"], knowledge: ["Contivo rules"],
     outputs: [{ name: "Rule explanation", type: "Text" }],
     tools: ["get_map_rule", "get_map_metadata", "get_cross_reference_entry"],
-    starters: ["How does BWHG_856_4010_IN set the ship-to GLN, and why would store 0412 fail?", "How does NFF_810_4010_IN read the unit price?"],
+    starters: ["How does BWHG_856_4010_IN set the ship-to GLN, and why would a newly opened store fail?", "How does NFF_810_4010_IN read the unit price?"],
   },
   // ---- On the roadmap ----
   {
@@ -306,7 +306,7 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Transaction"], knowledge: ["Implementation guides"],
     outputs: [{ name: "Element findings", type: "Table" }],
     tools: ["get_transaction", "get_transaction_payload", "get_map_specification", "get_map_specification_file", "search_transactions"],
-    starters: ["Check invoice INV-NF-88401 against our 810 implementation guide and list every element that breaks it."],
+    starters: ["Check the most recent failed invoice against our 810 implementation guide and list every element that breaks it."],
   },
   // ---- Incubating ----
   {
@@ -340,7 +340,7 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Partner"], knowledge: ["Communications gateway"],
     outputs: [{ name: "Connection health", type: "Text" }],
     tools: ["get_connection_status", "search_transactions", "get_transaction", "get_delivery_methods", "get_trading_address", "tgi_redeliver_transactions", "tgi_list_redelivery_rules"],
-    starters: ["Why are deliveries to Atlas Toy failing, and is the endpoint back?", "Summit Beverage has no 997s since yesterday. Is the connection healthy?"],
+    starters: ["Which partner endpoints are down or degraded right now, and since when?", "Which partners stopped returning 997s, and are their connections healthy?"],
   },
   {
     id: "remediation-advisor", status: "Incubating", name: "Remediation Advisor Agent", persona: "EDI manager",
@@ -365,7 +365,7 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Rule", "Partner"], knowledge: ["Harborview supplier guides"],
     outputs: [{ name: "Findings", type: "Table" }, { name: "Chain of reasoning", type: "Text" }],
     tools: ["ccpm_list_monitor_agents", "ccpm_list_rules", "ccpm_get_rule", "ccpm_test_rule", "ccpm_create_rule", "ccpm_list_findings", "ccpm_get_finding", "ccpm_update_finding", "get_transaction", "get_cross_reference_entity"],
-    starters: ["Which shipments failed conformance this week, and why?", "Explain the chain of reasoning for the newest ASN ship-to finding."],
+    starters: ["Which shipments failed conformance this week, and why?", "Explain the chain of reasoning for the newest conformance finding."],
   },
   {
     id: "ccpm-lex", status: "Incubating", name: "Lex, Timing and SLA Agent", persona: "Buying desk lead",
@@ -406,7 +406,7 @@ export const AGENTS: AgentDef[] = [
 
   // ---- TG Insights: Aviator-powered application features ----
   {
-    id: "tgi-redelivery", status: "Prototype", model: "fast", name: "Redelivery Agent", persona: "B2B support analyst",
+    id: "tgi-redelivery", status: "Custom", model: "fast", name: "Redelivery Agent", persona: "B2B support analyst",
     subtitle: "Trading Grid Insights",
     role: "Find failed deliveries, check whether the partner endpoint has recovered, and prepare redelivery or reprocess for approval.",
     inspiredBy: [{ name: "Automated redelivery (powered by Aviator)", where: "TG Insights" }],
@@ -415,10 +415,10 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Partner", "Time window"], knowledge: ["Automated redelivery rules"],
     outputs: [{ name: "Redelivery plan", type: "Table" }],
     tools: ["tgi_get_facets", "tgi_list_redelivery_rules", "tgi_redeliver_transactions", "tgi_reprocess_transaction", "tgi_get_processing_flow", "search_transactions", "get_transaction", "get_connection_status"],
-    starters: ["Which failed deliveries can be redelivered now?", "Reprocess ASN SH-77155 if its cause has been fixed."],
+    starters: ["Which failed deliveries can be redelivered now?", "Reprocess ASNs that failed on a missing store cross-reference whose entry now exists."],
   },
   {
-    id: "tgi-alerts", status: "Prototype", model: "fast", name: "Alerts and Reports Agent", persona: "EDI operations analyst",
+    id: "tgi-alerts", status: "Custom", model: "fast", name: "Alerts and Reports Agent", persona: "EDI operations analyst",
     subtitle: "Trading Grid Insights",
     role: "Show the dashboard, saved filters, alerts and scheduled reports, and turn a saved filter into an alert.",
     inspiredBy: [{ name: "Self-service alerts and reports", where: "TG Insights" }],
@@ -427,7 +427,7 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Saved filter"], knowledge: ["TG Insights alerts and reports"],
     outputs: [{ name: "Alerts and reports", type: "Table" }],
     tools: ["tgi_get_dashboard", "tgi_list_saved_filters", "tgi_list_alert_rules", "tgi_create_alert_rule", "tgi_list_report_rules", "tgi_get_facets"],
-    starters: ["What alerts and reports are set up, and when did each last run?", "Create an immediate alert for failed invoices this week to ap.team@harborview.example."],
+    starters: ["What alerts and reports are set up, and when did each last run?", "Create an immediate alert for failed invoices this week to ap.team@harborviewretail.com."],
   },
 ];
 
@@ -441,9 +441,9 @@ export const USE_CASES: UseCase[] = [
   U(3, "Connectivity", "context-assistant", "Partner addresses and delivery method", "Show Coastline Apparel's trading addresses and delivery method."),
   U(4, "Community", "context-assistant", "Pending and rejected relationships", "Which trading relationships are pending or rejected, and since when?"),
   U(5, "Connectivity", "community-insights", "VAN interconnect check", "Does Coastline Apparel route through a VAN interconnect? Which provider?"),
-  U(6, "Transactions", "asn-exception", "ASN not visible", "Brightwell says ASN SH-77155 was sent yesterday. Why isn't it visible, and what should happen next?"),
+  U(6, "Transactions", "asn-exception", "ASN not visible", "A supplier says an ASN was sent yesterday but it is not visible. Find failed ASNs from the last 2 days, explain why, and say what should happen next."),
   U(7, "Transactions", "error-resolution", "Failed invoices for a supplier", "Find failed 810 invoices from Northfield Foods in the last 7 days and explain each error."),
-  U(8, "Transactions", "fa-reconciliation", "POs without a 997", "Which POs to Summit Beverage have no 997?"),
+  U(8, "Transactions", "fa-reconciliation", "POs without a 997", "Which outbound POs have no 997 after 24 hours, by supplier?"),
   U(9, "Community", "community-insights", "Configured but unused", "Which configured relationships and document types had no traffic in the last 30 days?"),
   U(10, "Connectivity", "community-insights", "Autoforward rules", "Which document types are autoforwarded, from which partners, and to whom?"),
   U(11, "Connectivity", "context-assistant", "Mailbox status", "Check our production mailbox: status, trading address count and subscriptions."),
@@ -452,22 +452,22 @@ export const USE_CASES: UseCase[] = [
   U(14, "Services", "context-assistant", "Technical contact", "Who is Brightwell Home Goods' technical contact for 856?"),
   U(15, "Maps", "asn-exception", "Map for a partner flow", "Which map handles Brightwell's 856, what changed recently, and what is its status?"),
   U(16, "Maps", "context-assistant", "Cross-reference lookup", "Look up the GLN for store 0388 in the store cross-reference."),
-  U(17, "Maps", "asn-exception", "Correct a cross-reference (approval)", "Add the missing STORE_TO_GLN entry for DC 0412 Greensboro, GLN 0614141000418, location type DC, active Y."),
-  U(18, "Requests", "partner-onboarding", "Request an AS2 connection (approval)", "Request a new AS2 connection for Hollanda Trading BV in production: AS2 ID HOLLANDA-AS2, endpoint https://as2.hollanda.example/receive, certificate hollanda_2026.cer. Then track it."),
+  U(17, "Maps", "asn-exception", "Correct a cross-reference (approval)", "Find ASNs that failed on a missing STORE_TO_GLN entry and prepare the missing entry for approval."),
+  U(18, "Requests", "partner-onboarding", "Request an AS2 connection (approval)", "Request a new AS2 connection for Hollanda Trading BV in production: AS2 ID HOLLANDA-AS2, endpoint https://as2.hollandatrading.nl/receive, certificate hollanda_2026.cer. Then track it."),
   U(19, "Onboarding", "partner-onboarding", "Provision a supplier (approval)", "Provision Willow Creek Candle Co from the HRG_SUPPLIER_STD template with address ZZ:WILLOWCREEK over AS2, then track it."),
   U(20, "Data products", "community-insights", "Weekly volume and export", "Show weekly 856 volume by partner for the last 4 weeks from the data product, then export it."),
-  U(21, "Transactions", "context-assistant", "Trace a PO lifecycle", "Trace PO 4500018832 from order to invoice."),
+  U(21, "Transactions", "context-assistant", "Trace a PO lifecycle", "Trace the most recent invoiced PO to Northfield Foods from order to invoice."),
   U(22, "Transactions", "fa-reconciliation", "Overdue 997s", "Which POs sent in the last 2 days have no 997 after 24 hours?"),
   U(23, "Transactions", "fa-reconciliation", "Rejected 997s by supplier", "Which suppliers rejected our 850s this week, and why?"),
-  U(24, "Transactions", "asn-exception", "Duplicate ASN check", "Did Brightwell send ASN SH-77120 twice?"),
-  U(25, "Transactions", "error-resolution", "Find a document by reference", "A supplier quotes invoice INV-99812. Find it and show its status."),
+  U(24, "Transactions", "asn-exception", "Duplicate ASN check", "Which ASNs were received twice in the last 14 days?"),
+  U(25, "Transactions", "error-resolution", "Find a document by reference", "Find the latest invoice from Coastline Apparel and show its status and acknowledgment."),
   U(26, "Transactions", "morning-triage", "Stuck in processing", "What has been in process for more than 6 hours?"),
   U(27, "Transactions", "error-resolution", "Error breakdown", "Top error types for Northfield Foods in the last 30 days."),
   U(28, "Transactions", "community-insights", "Volume versus prior period", "Compare Coastline Apparel's volume for the last 30 days with the prior 30 days by document type."),
   U(29, "Transactions", "morning-triage", "Silent partners", "Which suppliers sent nothing in the last 7 days but normally send daily?"),
   U(30, "Onboarding", "partner-onboarding", "First live transaction", "Has Pinegate Home sent its first 810 in production?"),
-  U(31, "Transactions", "error-resolution", "ASN payload for a dispute", "Show the ASN payload for shipment SH-77120 and summarize it."),
-  U(32, "Transactions", "asn-exception", "Control numbers for a ticket", "Give me ISA13 and GS06 for the failed ASN SH-77155."),
+  U(31, "Transactions", "error-resolution", "ASN payload for a dispute", "Show the payload of the latest ASN from Brightwell Home Goods and summarize it."),
+  U(32, "Transactions", "asn-exception", "Control numbers for a ticket", "Give me ISA13 and GS06 for the most recent failed ASN."),
   U(33, "Transactions", "fa-reconciliation", "POs without an 855", "Which POs older than 48 hours have no 855?"),
   U(34, "Transactions", "context-assistant", "Invoice before ASN", "Which 810s arrived before their 856 in the last 7 days?"),
   U(35, "Transactions", "fa-reconciliation", "EDIFACT CONTRL check", "Did Hollanda Trading return CONTRL for our ORDERS this week?"),

@@ -1,9 +1,11 @@
 // Application endpoints: Command Center Integration Monitor, TG Insights application features and
 // Command Center Performance Monitor (incubation). Modeled on the Innovation Guide H2 2026; these are demo
 // constructs, not product API contracts. Values are computed from the seeded transaction data.
-import { transactions, txById, Tx } from "../data/insights.js";
+import { transactions, txById, Tx, ackOf, docsByPo } from "../data/insights.js";
 import { companies, companyById, messagingTuples, addresses, tprs, HUB_ID } from "../data/cms.js";
-import { ccimEvents, xrefEntities } from "../data/other.js";
+import { xrefEntities } from "../data/other.js";
+import { anomalies, partnersDown } from "../data/monitor.js";
+import { incidentAt } from "../data/insights.js";
 import { ok, fail, createPlan, approvalRequired, consumePlan, scopeFilter, Ctx } from "../runtime.js";
 import { ToolDef, s } from "./types.js";
 import { resolveCompany, parseTime } from "./common.js";
@@ -18,25 +20,13 @@ const H = 3600_000, D = 86400_000;
 
 // ---------------------------------------------------------------- shared helpers
 const prod = () => transactions.filter((t) => t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId));
-const within = (ms: number) => { const from = Date.now() - ms; return prod().filter((t) => t._t >= from); };
+const within = (ms: number) => { const from = Date.now() - ms; const out: Tx[] = []; for (const t of transactions) { if (t._t < from) break; if (t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId)) out.push(t); } return out; };
 const partnerName = (id: string) => companyById(id)?.companyName ?? id;
 const isAck = (t: Tx) => t.documentType === "997" || t.documentType === "CONTRL";
-// Lookup indexes over the transaction store, rebuilt when the store size changes.
-let IX = { n: -1, ack: new Map<string, Tx>(), docPo: new Map<string, Tx[]>() };
-function ix() {
-  if (IX.n === transactions.length) return IX;
-  const ack = new Map<string, Tx>(), docPo = new Map<string, Tx[]>();
-  for (const t of transactions) {
-    if (t.refs.ackForTransactionId && !ack.has(t.refs.ackForTransactionId)) ack.set(t.refs.ackForTransactionId, t);
-    if (t.refs.poNumber) { const k = `${t.documentType}|${t.refs.poNumber}`; (docPo.get(k) ?? docPo.set(k, []).get(k)!).push(t); }
-  }
-  IX = { n: transactions.length, ack, docPo };
-  return IX;
-}
-const ackOf = (t: Tx) => ix().ack.get(t.transactionId);
-/** Latest transaction of a document type for a PO (store order is newest first). */
-const docFor = (type: string, po?: string) => (po ? ix().docPo.get(`${type}|${po}`)?.[0] : undefined);
-const docsFor = (type: string, po?: string) => (po ? ix().docPo.get(`${type}|${po}`) ?? [] : []);
+const ackOfT = (t: Tx) => ackOf(t.transactionId);
+/** Latest transaction of a document type for a PO. */
+const docFor = (type: string, po?: string) => { if (!po) return undefined; const a = docsByPo(po); for (let i = a.length - 1; i >= 0; i--) if (a[i].documentType === type) return a[i]; return undefined; };
+const docsFor = (type: string, po?: string) => (po ? docsByPo(po).filter((x) => x.documentType === type) : []);
 const round = (n: number, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
 const count = <T>(list: T[], key: (x: T) => string) => list.reduce((m: Record<string, number>, x) => ((m[key(x)] = (m[key(x)] ?? 0) + 1), m), {});
 const top = (m: Record<string, number>, n = 10) => Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n);
@@ -67,20 +57,28 @@ function daily(w: any, days: number) {
 }
 function stats(a: number[]) { const m = a.reduce((x, y) => x + y, 0) / (a.length || 1); const sd = Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / (a.length || 1)); return { mean: m, sd }; }
 
-const ANOMALIES = () => [
-  { anomalyId: "AN-3101", watchlistId: "WL-01", type: "FAILED", detectedAt: new Date(Date.now() - 20 * H).toISOString(), partner: "Brightwell Home Goods", documentType: "856", observed: 1, expectedRange: "0 to 0", detail: "Failed 856 outside the projected range after map BWHG_856_4010_IN v7 promotion." },
-  { anomalyId: "AN-3102", watchlistId: "WL-02", type: "DROP", detectedAt: new Date(Date.now() - 26 * H).toISOString(), partner: "Summit Beverage Co", documentType: "997", observed: 0, expectedRange: "1 to 3 per day", detail: "No 997 received for outbound 850s since 32 hours ago." },
-  { anomalyId: "AN-3103", watchlistId: "WL-04", type: "DROP", detectedAt: new Date(Date.now() - 200 * H).toISOString(), partner: "Atlas Toy Company", documentType: "All inbound", observed: 0, expectedRange: "3 to 7 per day", detail: "Inbound volume dropped to zero." },
-  { anomalyId: "AN-3104", watchlistId: "WL-03", type: "FAILED", detectedAt: new Date(Date.now() - 30 * H).toISOString(), partner: "Northfield Foods Inc", documentType: "810", observed: 3, expectedRange: "0 to 1 per week", detail: "Invoice failures above range: IT104 unit price format, BIG04 PO reference, duplicate invoice." },
-  { anomalyId: "AN-3105", watchlistId: "WL-01", type: "SPIKE", detectedAt: new Date(Date.now() - 5 * D).toISOString(), partner: "Coastline Apparel Co", documentType: "856", observed: 4, expectedRange: "1 to 3 per day", detail: "ASN volume above range for three consecutive days." },
-  { anomalyId: "AN-3106", watchlistId: "WL-03", type: "FAILED", detectedAt: new Date(Date.now() - 22 * H).toISOString(), partner: "Brightwell Home Goods", documentType: "856", observed: 1, expectedRange: "0", detail: "Same date as AN-3101; related to the same map change." },
-];
+const ANOMALIES = () => anomalies();
 
-function partnerMetrics(id: string, days = 30) {
-  const list = within(days * D).filter((t) => t.partnerCompanyId === id && !isAck(t));
-  const failed = list.filter((t) => t.sourceStatus === "FAIL").length;
-  const last = prod().filter((t) => t.partnerCompanyId === id && !isAck(t)).sort((a, b) => b._t - a._t)[0];
-  return { volume: list.length, failed, failureRate: list.length ? round((failed / list.length) * 100) : 0, lastActivity: last?.receivedAt ?? null };
+type PStat = { volume30: number; failed30: number; delivery30: number; last: number; months: Set<string> };
+let PSTAT: { key: string; m: Map<string, PStat> } = { key: "", m: new Map() };
+/** One pass over observed traffic: 30-day volume and failures, last activity and active months per partner. */
+function partnerStats() {
+  const key = `${transactions.length}|${Math.floor(Date.now() / 60_000)}`;
+  if (PSTAT.key === key) return PSTAT.m;
+  const m = new Map<string, PStat>(); const from = Date.now() - 30 * D;
+  for (const t of transactions) {
+    if (t.environment !== "PRODUCTION" || isAck(t)) continue;
+    let p = m.get(t.partnerCompanyId); if (!p) { p = { volume30: 0, failed30: 0, delivery30: 0, last: t._t, months: new Set() }; m.set(t.partnerCompanyId, p); }
+    p.months.add(new Date(t._t).toISOString().slice(0, 7));
+    if (t._t >= from) { p.volume30++; if (t.sourceStatus === "FAIL") { p.failed30++; if (t.errors[0]?.category === "DELIVERY") p.delivery30++; } }
+  }
+  PSTAT = { key, m };
+  return m;
+}
+function partnerMetrics(id: string, _days = 30) {
+  const p = partnerStats().get(id);
+  const volume = p?.volume30 ?? 0, failed = p?.failed30 ?? 0;
+  return { volume, failed, failureRate: volume ? round((failed / volume) * 100) : 0, lastActivity: p ? new Date(p.last).toISOString() : null };
 }
 const tradingPartners = () => companies.filter((c) => c.companyId !== HUB_ID && scopeFilter(c.companyId) && c.companyParticipationType === "SPOKE");
 
@@ -92,20 +90,31 @@ const SAVED_FILTERS = [
   { filterId: "SF-04", name: "Delivery failures", criteria: { status: "FAILED", errorCategory: "DELIVERY", lastHours: 168 } },
 ];
 export const alertRules: any[] = [
-  { alertId: "AL-01", name: "Failed ASN", filterId: "SF-01", recipients: ["edi.team@harborview.example"], frequency: "IMMEDIATE", status: "ACTIVE", lastTriggered: new Date(Date.now() - 22 * H).toISOString() },
-  { alertId: "AL-02", name: "Missing PO acknowledgments", filterId: "SF-02", recipients: ["buying.desk@harborview.example"], frequency: "HOURLY", status: "ACTIVE", lastTriggered: new Date(Date.now() - 2 * H).toISOString() },
+  { alertId: "AL-01", name: "Failed ASN", filterId: "SF-01", recipients: ["edi.team@harborviewretail.com"], frequency: "IMMEDIATE", status: "ACTIVE", lastTriggered: new Date(Date.now() - 22 * H).toISOString() },
+  { alertId: "AL-02", name: "Missing PO acknowledgments", filterId: "SF-02", recipients: ["buying.desk@harborviewretail.com"], frequency: "HOURLY", status: "ACTIVE", lastTriggered: new Date(Date.now() - 2 * H).toISOString() },
 ];
 const REPORT_RULES = [
-  { reportId: "RP-01", name: "Weekly invoice status", filterId: "SF-03", schedule: "Mondays 07:00", format: "XLSX", recipients: ["ap.team@harborview.example"], lastRun: new Date(Date.now() - 4 * D).toISOString() },
-  { reportId: "RP-02", name: "Daily shipment status", filterId: "SF-01", schedule: "Daily 06:00", format: "CSV", recipients: ["dc.receiving@harborview.example"], lastRun: new Date(Date.now() - 10 * H).toISOString() },
-  { reportId: "RP-03", name: "Failed purchase orders", filterId: "SF-04", schedule: "Daily 06:00", format: "PDF", recipients: ["edi.team@harborview.example"], lastRun: new Date(Date.now() - 10 * H).toISOString() },
+  { reportId: "RP-01", name: "Weekly invoice status", filterId: "SF-03", schedule: "Mondays 07:00", format: "XLSX", recipients: ["ap.team@harborviewretail.com"], lastRun: new Date(Date.now() - 4 * D).toISOString() },
+  { reportId: "RP-02", name: "Daily shipment status", filterId: "SF-01", schedule: "Daily 06:00", format: "CSV", recipients: ["dc.receiving@harborviewretail.com"], lastRun: new Date(Date.now() - 10 * H).toISOString() },
+  { reportId: "RP-03", name: "Failed purchase orders", filterId: "SF-04", schedule: "Daily 06:00", format: "PDF", recipients: ["edi.team@harborviewretail.com"], lastRun: new Date(Date.now() - 10 * H).toISOString() },
 ];
 const REDELIVERY_RULES = [
   { ruleId: "ARD-01", name: "AS2 MDN timeout", match: "Error AS2-MDN-504 on outbound delivery", action: "Redeliver after the partner endpoint reports healthy; at most 3 attempts in 24 hours", poweredBy: "Aviator", status: "ACTIVE", lastApplied: null },
   { ruleId: "ARD-02", name: "SFTP partner pickup stalled", match: "Partner mailbox not collected for 12 hours", action: "Notify partner support contact; no redelivery", poweredBy: "Aviator", status: "ACTIVE", lastApplied: new Date(Date.now() - 20 * H).toISOString() },
 ];
-const mutated = new Map<string, string>();
-const snapshotTx = (t: Tx) => { if (!mutated.has(t.transactionId)) mutated.set(t.transactionId, JSON.stringify(t)); };
+/** Changes made to observed transactions (redelivery, reprocessing). Persisted and re-applied after restart. */
+export const txOverrides: Record<string, { refs?: any; o?: any; redelivered?: boolean }> = {};
+function override(t: Tx, rec: { refs?: any; o?: any; redelivered?: boolean }) {
+  const cur = (txOverrides[t.transactionId] ??= {});
+  if (rec.refs) { cur.refs = { ...(cur.refs ?? {}), ...rec.refs }; Object.assign(t.refs, rec.refs); }
+  if (rec.o) { cur.o = { ...(cur.o ?? {}), ...rec.o }; t._o = { ...(t._o ?? {}), ...rec.o }; }
+  if (rec.redelivered) { cur.redelivered = true; (t as any).redelivered = true; }
+}
+/** Re-applies persisted overrides to regenerated transactions. */
+export function applyTxOverrides(recs: Record<string, any>) {
+  for (const [id, rec] of Object.entries(recs ?? {})) { const t = txById(id); if (t) override(t, rec); else txOverrides[id] = rec; }
+}
+const delivered = (at = Date.now()) => ({ sourceStatus: "DLVD", errors: [], payloadVariants: ["ORIGINAL", "TRANSLATED"], lastModified: new Date(at + 80_000).toISOString(), statusHistory: ["Receive", "Check", "Transform", "Route", "Deliver"].map((step, i) => ({ step, status: "COMPLETED", at: new Date(at + i * 20_000).toISOString() })) });
 
 // ---------------------------------------------------------------- CCPM data
 const MONITOR_AGENTS = [
@@ -122,7 +131,7 @@ export const ccpmRules: any[] = [
   { ruleId: "R-LIZ-01", agent: "liz", name: "Ship notice before invoice", type: "SEQUENCE", params: { first: "856", then: "810" }, scope: "Suppliers with ASN required", expectedBehavior: "The 856 for a PO arrives before its 810.", referenceData: ["Supplier profile: ASN required"], budget: { monthlyUsd: 20, spentUsd: 6.5 }, status: "ACTIVE" },
   { ruleId: "R-REESE-01", agent: "reese", name: "Invoice references a sent PO", type: "REFERENCE", params: { documentType: "810", references: "850" }, scope: "Inbound 810", expectedBehavior: "Each invoice PO number matches an outbound 850.", referenceData: ["Purchase order history"], budget: { monthlyUsd: 20, spentUsd: 7.7 }, status: "ACTIVE" },
 ];
-const findingState: Record<string, any> = {};
+export const findingState: Record<string, any> = {};
 
 function evaluateRule(rule: any, windowMs = 7 * D) {
   const list = within(windowMs);
@@ -131,7 +140,7 @@ function evaluateRule(rule: any, windowMs = 7 * D) {
   if (rule.type === "ACK_WITHIN_HOURS") {
     for (const t of list.filter((x) => x.documentType === rule.params.documentType && x.direction === "OUTBOUND")) {
       const hours = rule.params.gracePartners?.[t.partnerCompanyId] != null ? rule.params.hours + rule.params.gracePartners[t.partnerCompanyId] : rule.params.hours;
-      const resp = rule.params.ackType === "997" ? ackOf(t) : docFor(rule.params.ackType, t.refs.poNumber);
+      const resp = rule.params.ackType === "997" ? ackOfT(t) : docFor(rule.params.ackType, t.refs.poNumber);
       const late = resp ? (resp._t - t._t) / H > hours : (now - t._t) / H > hours;
       if (late) out.push({ t, evidence: resp ? `${rule.params.ackType} received after ${round((resp._t - t._t) / H)} hours (limit ${hours})` : `No ${rule.params.ackType} after ${round((now - t._t) / H)} hours (limit ${hours})`, refData: rule.params.gracePartners?.[t.partnerCompanyId] ? `Grace period ${rule.params.gracePartners[t.partnerCompanyId]} hours applied` : "No grace period for this partner" });
     }
@@ -183,8 +192,8 @@ function findings() {
 function scorecard(id: string) {
   const list = within(30 * D).filter((t) => t.partnerCompanyId === id);
   const pos = list.filter((t) => t.direction === "OUTBOUND" && (t.documentType === "850" || t.documentType === "ORDERS"));
-  const ackHours = pos.map((p) => { const a = ackOf(p); return a ? (a._t - p._t) / H : null; }).filter((x) => x != null) as number[];
-  const missingAck = pos.filter((p) => !ackOf(p) && Date.now() - p._t > 24 * H).length;
+  const ackHours = pos.map((p) => { const a = ackOfT(p); return a ? (a._t - p._t) / H : null; }).filter((x) => x != null) as number[];
+  const missingAck = pos.filter((p) => !ackOfT(p) && Date.now() - p._t > 24 * H).length;
   const respHours = pos.map((p) => { const r = docFor("855", p.refs.poNumber); return r ? (r._t - p._t) / H : null; }).filter((x) => x != null) as number[];
   const inbound = list.filter((t) => t.direction === "INBOUND" && !isAck(t));
   const errRate = inbound.length ? inbound.filter((t) => t.sourceStatus === "FAIL").length / inbound.length : 0;
@@ -241,7 +250,7 @@ export const ccimTools: ToolDef[] = [
     } },
   { name: "ccim_list_anomalies", domain: "Command Center Integration Monitor", product: CCIM, title: "List anomalies", description: "Volume spikes, drops and failed-transaction anomalies detected against projected ranges.", operation: "ccim.read", kind: "read", binding: "CCIM anomaly detection and failed-transaction anomalies", basis: BASIS_GA,
     inputSchema: s.obj({ type: s.str("SPIKE, DROP or FAILED."), ...WIN }),
-    handler: (a, ctx) => { const from = Date.now() - (a.days ?? 30) * D; return ok(ctx, "ccim_list_anomalies", "ccim.read", { anomalies: ANOMALIES().filter((x) => Date.parse(x.detectedAt) >= from && (!a.type || eq(x.type, a.type))), legacyEvents: ccimEvents }, { sources: r(CCIM, "Anomaly detection") }); } },
+    handler: (a, ctx) => { const from = Date.now() - (a.days ?? 30) * D; return ok(ctx, "ccim_list_anomalies", "ccim.read", { anomalies: ANOMALIES().filter((x) => Date.parse(x.detectedAt) >= from && (!a.type || eq(x.type, a.type))) }, { sources: r(CCIM, "Anomaly detection") }); } },
   { name: "ccim_get_transaction_volume", domain: "Command Center Integration Monitor", product: CCIM, title: "Get transaction volume", description: "Break volume down by document type, partner, EDI address, status or direction.", operation: "ccim.read", kind: "read", binding: "CCIM transaction volume analysis", basis: BASIS_GA,
     inputSchema: s.obj({ group_by: s.str("document_type, partner, edi_address, status or direction."), partner: s.str("Partner name or ID."), ...WIN }),
     handler: (a, ctx) => {
@@ -258,33 +267,35 @@ export const ccimTools: ToolDef[] = [
     handler: (a, ctx) => {
       const p = partnerArg(ctx, "ccim_get_partner_details", "ccim.read", a.partner); if (p.early) return p.early;
       const id = p.id!; const m = partnerMetrics(id);
-      const weeks = Array.from({ length: 8 }, (_, i) => { const end = Date.now() - i * 7 * D; return { weekEnding: new Date(end).toISOString().slice(0, 10), volume: prod().filter((t) => t.partnerCompanyId === id && !isAck(t) && t._t < end && t._t >= end - 7 * D).length }; }).reverse();
+      const recent8 = within(56 * D).filter((t) => t.partnerCompanyId === id && !isAck(t)); const weeks = Array.from({ length: 8 }, (_, i) => { const end = Date.now() - i * 7 * D; return { weekEnding: new Date(end).toISOString().slice(0, 10), volume: recent8.filter((t) => t._t < end && t._t >= end - 7 * D).length }; }).reverse();
       return ok(ctx, "ccim_get_partner_details", "ccim.read", {
         partner: partnerName(id), ...m,
         addresses: addresses.filter((x) => x.companyId === id).map((x) => ({ address: `${x.qualifier}:${x.address}`, protocol: x.deliveryMethod })),
         documentRelationships: messagingTuples.filter((t: any) => t._partnerCompanyId === id).map((t: any) => ({ documentType: t.docType, direction: t.direction === "SENDER" ? "Outbound" : "Inbound", relationshipStatus: t._status })),
         weeklyVolume: weeks,
-        recentErrors: prod().filter((t) => t.partnerCompanyId === id && t.sourceStatus === "FAIL").slice(0, 5).map((t) => ({ transactionId: t.transactionId, receivedAt: t.receivedAt, documentType: t.documentType, error: `${t.errors[0]?.code}: ${t.errors[0]?.message}` })),
+        recentErrors: within(60 * D).filter((t) => t.partnerCompanyId === id && t.sourceStatus === "FAIL").slice(0, 5).map((t) => ({ transactionId: t.transactionId, receivedAt: t.receivedAt, documentType: t.documentType, error: `${t.errors[0]?.code}: ${t.errors[0]?.message}` })),
       }, { sources: r(CCIM, "Partner details", [id]) });
     } },
   { name: "ccim_get_partner_stats", domain: "Command Center Integration Monitor", product: CCIM, title: "Get trading partner stats", description: "Community growth and the share of inactive partners by month.", operation: "ccim.read", kind: "read", binding: "CCIM trading partner stats", basis: BASIS_GA,
     inputSchema: s.obj({ months: s.int("Months (default 8, maximum 9).") }),
-    handler: (a, ctx) => { const months = Math.min(a.months ?? 8, 9); const rows = Array.from({ length: months }, (_, i) => { const end = Date.now() - (months - 1 - i) * 30 * D; const members = tradingPartners().filter((c) => Date.parse(c.activityLog.createTimeStamp) <= end); const active = members.filter((c) => prod().some((t) => t.partnerCompanyId === c.companyId && t._t <= end && t._t > end - 30 * D)); return { month: new Date(end).toISOString().slice(0, 7), partners: members.length, active: active.length, inactive: members.length - active.length }; }); return ok(ctx, "ccim_get_partner_stats", "ccim.read", { series: rows }, { sources: r(CCIM, "Trading partner stats") }); } },
+    handler: (a, ctx) => { const months = Math.min(a.months ?? 8, 9); const rows = Array.from({ length: months }, (_, i) => { const end = Date.now() - (months - 1 - i) * 30 * D; const members = tradingPartners().filter((c) => Date.parse(c.activityLog.createTimeStamp) <= end); const mk = new Date(end).toISOString().slice(0, 7); const active = members.filter((c) => partnerStats().get(c.companyId)?.months.has(mk)); return { month: new Date(end).toISOString().slice(0, 7), partners: members.length, active: active.length, inactive: members.length - active.length }; }); return ok(ctx, "ccim_get_partner_stats", "ccim.read", { series: rows }, { sources: r(CCIM, "Trading partner stats") }); } },
   { name: "ccim_get_document_type_analysis", domain: "Command Center Integration Monitor", product: CCIM, title: "Get document type analysis", description: "Which partners are configured for which documents and directions, when each last exchanged, and which are dormant beyond 180 days.", operation: "ccim.read", kind: "read", binding: "CCIM document type analysis", basis: BASIS_GA,
     inputSchema: s.obj({ partner: s.str("Partner name or ID."), dormant_days: s.int("Dormant threshold in days (default 180).") }),
     handler: (a, ctx) => {
       const p = partnerArg(ctx, "ccim_get_document_type_analysis", "ccim.read", a.partner); if (p.early) return p.early;
       const th = (a.dormant_days ?? 180) * D;
+      const latest = new Map<string, Tx>();
+      for (const x of prod()) { const k = `${x.partnerCompanyId}|${x.documentType}|${x.direction}`; if (!latest.has(k)) latest.set(k, x); }
       const rows = messagingTuples.filter((t: any) => !p.id || t._partnerCompanyId === p.id).map((t: any) => {
         const dir = t.direction === "SENDER" ? "OUTBOUND" : "INBOUND";
-        const last = prod().filter((x) => x.partnerCompanyId === t._partnerCompanyId && x.documentType === t.docType && x.direction === dir).sort((x, y) => y._t - x._t)[0];
+        const last = latest.get(`${t._partnerCompanyId}|${t.docType}|${dir}`);
         return { partner: partnerName(t._partnerCompanyId), documentType: t.docType, direction: dir, configured: t._status, lastExchanged: last?.receivedAt ?? null, dormant: !last || Date.now() - last._t > th };
       });
       return ok(ctx, "ccim_get_document_type_analysis", "ccim.read", { dormantThresholdDays: a.dormant_days ?? 180, rows, dormantCount: rows.filter((x) => x.dormant).length }, { sources: r(CCIM, "Document type analysis"), interpretation: "Configured relationships are not proof of traffic. Search history covers 6 months." });
     } },
   { name: "ccim_get_partner_integration_analysis", domain: "Command Center Integration Monitor", product: CCIM, title: "Get partner integration analysis", description: "Partners grouped by communication protocol, with volume, failure rate and delivery failures.", operation: "ccim.read", kind: "read", binding: "CCIM partner integration analysis", basis: BASIS_GA,
     inputSchema: s.obj({ ...WIN }),
-    handler: (a, ctx) => { const days = a.days ?? 30; const groups: Record<string, any> = {}; for (const c of tradingPartners()) { const addr = addresses.find((x) => x.companyId === c.companyId); const proto = addr?.deliveryMethod ?? "NONE"; const m = partnerMetrics(c.companyId, days); const del = within(days * D).filter((t) => t.partnerCompanyId === c.companyId && t.errors[0]?.category === "DELIVERY").length; (groups[proto] ??= { protocol: proto, partners: [] }).partners.push({ partner: c.companyName, volume: m.volume, failureRatePct: m.failureRate, deliveryFailures: del }); } return ok(ctx, "ccim_get_partner_integration_analysis", "ccim.read", { days, groups: Object.values(groups) }, { sources: r(CCIM, "Partner integration analysis") }); } },
+    handler: (a, ctx) => { const days = a.days ?? 30; const groups: Record<string, any> = {}; for (const c of tradingPartners()) { const addr = addresses.find((x) => x.companyId === c.companyId); const proto = addr?.deliveryMethod ?? "NONE"; const m = partnerMetrics(c.companyId, days); const del = partnerStats().get(c.companyId)?.delivery30 ?? 0; (groups[proto] ??= { protocol: proto, partners: [] }).partners.push({ partner: c.companyName, volume: m.volume, failureRatePct: m.failureRate, deliveryFailures: del }); } return ok(ctx, "ccim_get_partner_integration_analysis", "ccim.read", { days, groups: Object.values(groups) }, { sources: r(CCIM, "Partner integration analysis") }); } },
   { name: "ccim_get_network_graph", domain: "Command Center Integration Monitor", product: CCIM, title: "Get network graph", description: "Trading community grouped into 30-day volume bands for drill-down.", operation: "ccim.read", kind: "read", binding: "CCIM network graph", basis: BASIS_GA,
     inputSchema: s.obj({}),
     handler: (_a, ctx) => { const bands = [["No traffic", 0, 0], ["1 to 30", 1, 30], ["31 to 60", 31, 60], ["Over 60", 61, 1e9]] as const; const ps = tradingPartners().map((c) => ({ partner: c.companyName, volume30d: partnerMetrics(c.companyId).volume })); return ok(ctx, "ccim_get_network_graph", "ccim.read", { bands: bands.map(([label, lo, hi]) => ({ band: label, partners: ps.filter((x) => x.volume30d >= lo && x.volume30d <= hi) })) }, { sources: r(CCIM, "Network graph") }); } },
@@ -305,7 +316,7 @@ export const tgiAppTools: ToolDef[] = [
     inputSchema: s.obj({}), handler: (_a, ctx) => ok(ctx, "tgi_list_report_rules", "tgi.read", { reportRules: REPORT_RULES }, { sources: r(TGI, "Report rules") }) },
   { name: "tgi_get_facets", domain: "TG Insights application", product: TGI, title: "Get facets", description: "Narrow-by counts: delivery status, acknowledgment status, redelivered status and error type.", operation: "tgi.read", kind: "read", binding: "TG Insights transaction search facets", basis: BASIS_GA,
     inputSchema: s.obj({ ...WIN }),
-    handler: (a, ctx) => { const list = within((a.days ?? 7) * D).filter((t) => !isAck(t)); const fa = (t: Tx) => { const k = ackOf(t); return k ? k.ack?.status ?? "ACCEPTED" : Date.now() - t._t > 24 * H ? "MISSING_OVERDUE" : "PENDING"; }; return ok(ctx, "tgi_get_facets", "tgi.read", { days: a.days ?? 7, deliveryStatus: count(list, (t) => t.sourceStatus), acknowledgmentStatus: count(list, fa), redelivered: count(list, (t) => ((t as any).redelivered ? "REDELIVERED" : "NOT_REDELIVERED")), errorType: count(list.filter((t) => t.errors.length), (t) => t.errors[0].category) }, { sources: r(TGI, "Facets") }); } },
+    handler: (a, ctx) => { const list = within((a.days ?? 7) * D).filter((t) => !isAck(t)); const fa = (t: Tx) => { const k = ackOfT(t); return k ? k.ack?.status ?? "ACCEPTED" : Date.now() - t._t > 24 * H ? "MISSING_OVERDUE" : "PENDING"; }; return ok(ctx, "tgi_get_facets", "tgi.read", { days: a.days ?? 7, deliveryStatus: count(list, (t) => t.sourceStatus), acknowledgmentStatus: count(list, fa), redelivered: count(list, (t) => ((t as any).redelivered ? "REDELIVERED" : "NOT_REDELIVERED")), errorType: count(list.filter((t) => t.errors.length), (t) => t.errors[0].category) }, { sources: r(TGI, "Facets") }); } },
   { name: "tgi_get_processing_flow", domain: "TG Insights application", product: TGI, title: "Get processing flow", description: "Each processing step between sender and receiver for one transaction, with the service that ran it.", operation: "tgi.read", kind: "read", binding: "TG Insights processing flow", basis: BASIS_GA,
     inputSchema: s.obj({ transaction_id: s.str("Transaction ID.") }, ["transaction_id"]),
     handler: (a, ctx) => { const t = txById(a.transaction_id); if (!t || !scopeFilter(t.partnerCompanyId)) return fail(ctx, "tgi_get_processing_flow", "tgi.read", "NOT_FOUND", "Transaction not found."); const svc: Record<string, string> = { Receive: `Communications gateway (${t.direction === "INBOUND" ? "partner" : "ERP"} inbound)`, Check: "EDI validation", Transform: t.mapId ? `Translation, map ${t.mapId}` : "Translation", Route: "Orchestration engine", Deliver: `Delivery to ${t.receiver.companyName}` }; return ok(ctx, "tgi_get_processing_flow", "tgi.read", { transactionId: t.transactionId, steps: t.statusHistory.map((h) => ({ ...h, service: svc[h.step], error: h.status === "FAILED" ? t.errors[0] : undefined })) }, { sources: r(TGI, "Processing flow", [t.transactionId]) }); } },
@@ -325,7 +336,8 @@ export const tgiAppTools: ToolDef[] = [
         return approvalRequired(ctx, "tgi_redeliver_transactions", "tgi.redeliver", p, r(TGI, "Bulk redelivery validation"));
       }
       const c = consumePlan(ctx, a.plan_id, "tgi_redeliver_transactions"); if (c.problem) return fail(ctx, "tgi_redeliver_transactions", "tgi.redeliver", "PLAN_INVALID", c.problem);
-      const results = c.plan!.parameters.transactionIds.map((id: string) => { const t = txById(id)!; snapshotTx(t); (t as any).redelivered = true; const down = t.partnerCompanyId === "C20008"; return { transactionId: id, result: down ? "QUEUED" : "REDELIVERED", detail: down ? "Partner endpoint still reports DOWN; redelivery queued until it recovers." : "Redelivered." }; });
+      const downNow = partnersDown();
+      const results = c.plan!.parameters.transactionIds.map((id: string) => { const t = txById(id)!; const down = downNow.includes(t.partnerCompanyId); override(t, down ? { redelivered: true } : { redelivered: true, o: delivered() }); return { transactionId: id, result: down ? "QUEUED" : "REDELIVERED", detail: down ? "Partner endpoint still reports DOWN; redelivery queued until it recovers." : "Redelivered and delivered to the partner." }; });
       c.plan!.status = "EXECUTED";
       return ok(ctx, "tgi_redeliver_transactions", "tgi.redeliver", { planId: c.plan!.planId, results }, { sources: r(TGI, "Bulk redelivery") });
     } },
@@ -340,15 +352,15 @@ export const tgiAppTools: ToolDef[] = [
       }
       const c = consumePlan(ctx, a.plan_id, "tgi_reprocess_transaction"); if (c.problem) return fail(ctx, "tgi_reprocess_transaction", "tgi.redeliver", "PLAN_INVALID", c.problem);
       const t = txById(c.plan!.parameters.transactionId)!; c.plan!.status = "EXECUTED";
-      const fixed = t.errors[0]?.code === "XREF-404" && t.refs.storeNumber && (xrefEntities as any).STORE_TO_GLN.entries[t.refs.storeNumber];
-      if (!fixed) return ok(ctx, "tgi_reprocess_transaction", "tgi.redeliver", { transactionId: t.transactionId, result: "FAILED_AGAIN", error: t.errors[0] }, { sources: r(TGI, "Reprocess", [t.transactionId]), interpretation: "The cause is still present. Fix it, then reprocess again." });
-      snapshotTx(t);
-      t.refs.shipToGLN = (xrefEntities as any).STORE_TO_GLN.entries[t.refs.storeNumber!].gln;
-      t.keys.tertiary = { name: "Ship-to GLN (N104, N103=UL)", value: t.refs.shipToGLN! };
-      t.sourceStatus = "DLVD"; t.errors = []; t.payloadVariants = ["ORIGINAL", "TRANSLATED"]; t.lastModified = new Date().toISOString();
-      t.statusHistory = ["Receive", "Check", "Transform", "Route", "Deliver"].map((step, i) => ({ step, status: "COMPLETED", at: new Date(Date.now() + i * 20_000).toISOString() }));
-      (t as any).reprocessed = true;
-      return ok(ctx, "tgi_reprocess_transaction", "tgi.redeliver", { transactionId: t.transactionId, result: "DELIVERED", detail: `Ship-to store ${t.refs.storeNumber} resolved to GLN ${t.refs.shipToGLN}; delivered to Harborview.` }, { sources: r(TGI, "Reprocess", [t.transactionId]) });
+      const e = t.errors[0];
+      const xr = (xrefEntities as any);
+      let fix: { refs?: any; detail: string } | null = null;
+      if (e?.code === "XREF-404" && t.refs.storeNumber && xr.STORE_TO_GLN.entries[t.refs.storeNumber]) fix = { refs: { shipToGLN: xr.STORE_TO_GLN.entries[t.refs.storeNumber].gln }, detail: `Ship-to store ${t.refs.storeNumber} resolved to GLN ${xr.STORE_TO_GLN.entries[t.refs.storeNumber].gln}; delivered to Harborview.` };
+      else if (e?.code === "XREF-404" && t.refs.statusCode && xr.CARRIER_STATUS_CODE?.entries[t.refs.statusCode]) fix = { detail: `Status code ${t.refs.statusCode} resolved; delivered to Harborview.` };
+      else if (e?.code === "MAP-TRN-207" && !incidentAt(t.partnerCompanyId, "MAP_REGRESSION", Date.now())) fix = { detail: "Map version corrected; translation completed and delivered." };
+      if (!fix) return ok(ctx, "tgi_reprocess_transaction", "tgi.redeliver", { transactionId: t.transactionId, result: "FAILED_AGAIN", error: e }, { sources: r(TGI, "Reprocess", [t.transactionId]), interpretation: e?.category === "VALIDATION" ? "The document itself is invalid. The partner must correct and resend it." : "The cause is still present. Fix it, then reprocess again." });
+      override(t, { refs: fix.refs, o: { ...delivered(), reprocessed: true } });
+      return ok(ctx, "tgi_reprocess_transaction", "tgi.redeliver", { transactionId: t.transactionId, result: "DELIVERED", detail: fix.detail }, { sources: r(TGI, "Reprocess", [t.transactionId]) });
     } },
 ];
 
@@ -384,10 +396,10 @@ export const ccpmTools: ToolDef[] = [
     handler: (a, ctx) => { const f = ccpmFinding(a.finding_id); return f ? ok(ctx, "ccpm_get_finding", "ccpm.read", f, { sources: r(CCPM, "Finding", [f.findingId]) }) : fail(ctx, "ccpm_get_finding", "ccpm.read", "NOT_FOUND", "Finding not found."); } },
   { name: "ccpm_update_finding", domain: "Command Center Performance Monitor", product: CCPM, title: "Update finding", description: "Assign a finding to a colleague or disposition it (RESOLVED, DISMISSED or ACCEPTED_RISK) with a note.", operation: "ccpm.triage", kind: "write", binding: "CCPM finding triage", basis: BASIS_INC,
     inputSchema: s.obj({ finding_id: s.str("Finding ID."), assignee: s.str("Assignee email."), disposition: s.str("RESOLVED, DISMISSED or ACCEPTED_RISK."), note: s.str("Note.") }, ["finding_id"]),
-    handler: (a, ctx) => { const f = ccpmFinding(a.finding_id); if (!f) return fail(ctx, "ccpm_update_finding", "ccpm.triage", "NOT_FOUND", "Finding not found."); const st = (findingState[f.findingId] ??= { history: [] }); if (a.assignee) { st.assignee = a.assignee; st.status = "ASSIGNED"; } if (a.disposition) st.status = String(a.disposition).toUpperCase() === "ACCEPTED_RISK" ? "DISMISSED" : String(a.disposition).toUpperCase(); st.history.push({ at: new Date().toISOString(), by: "jordan.lee@harborview.example", assignee: a.assignee, disposition: a.disposition, note: a.note }); return ok(ctx, "ccpm_update_finding", "ccpm.triage", ccpmFinding(f.findingId), { sources: r(CCPM, "Finding triage", [f.findingId]), interpretation: "Dispositions feed agentic learning: agents adjust monitoring frequency and conditions." }); } },
+    handler: (a, ctx) => { const f = ccpmFinding(a.finding_id); if (!f) return fail(ctx, "ccpm_update_finding", "ccpm.triage", "NOT_FOUND", "Finding not found."); const st = (findingState[f.findingId] ??= { history: [] }); if (a.assignee) { st.assignee = a.assignee; st.status = "ASSIGNED"; } if (a.disposition) st.status = String(a.disposition).toUpperCase() === "ACCEPTED_RISK" ? "DISMISSED" : String(a.disposition).toUpperCase(); st.history.push({ at: new Date().toISOString(), by: "jordan.lee@harborviewretail.com", assignee: a.assignee, disposition: a.disposition, note: a.note }); return ok(ctx, "ccpm_update_finding", "ccpm.triage", ccpmFinding(f.findingId), { sources: r(CCPM, "Finding triage", [f.findingId]), interpretation: "Dispositions feed agentic learning: agents adjust monitoring frequency and conditions." }); } },
   { name: "ccpm_get_dashboard", domain: "Command Center Performance Monitor", product: CCPM, title: "Get dashboard", description: "Top rules by findings, open actions, and agent metrics for inspections, findings, resolutions and running cost.", operation: "ccpm.read", kind: "read", binding: "CCPM dashboard", basis: BASIS_INC,
     inputSchema: s.obj({}),
-    handler: (_a, ctx) => { const fs = findings(); return ok(ctx, "ccpm_get_dashboard", "ccpm.read", { topRules: top(count(fs, (f) => `${f.ruleId} ${f.rule}`), 10).map(([rule, n]) => ({ rule, findings: n })), openActions: fs.filter((f) => f.status === "ASSIGNED" || f.status === "NEW").length, assignedToMe: fs.filter((f) => f.assignee === "jordan.lee@harborview.example" && f.status === "ASSIGNED").length, metrics: { inspections30d: ccpmRules.length * 412, findings14d: fs.length, resolved: fs.filter((f) => f.status === "RESOLVED").length, runningCostUsd: round(ccpmRules.reduce((x, y) => x + y.budget.spentUsd, 0), 2) } }, { sources: r(CCPM, "Dashboard") }); } },
+    handler: (_a, ctx) => { const fs = findings(); return ok(ctx, "ccpm_get_dashboard", "ccpm.read", { topRules: top(count(fs, (f) => `${f.ruleId} ${f.rule}`), 10).map(([rule, n]) => ({ rule, findings: n })), openActions: fs.filter((f) => f.status === "ASSIGNED" || f.status === "NEW").length, assignedToMe: fs.filter((f) => f.assignee === "jordan.lee@harborviewretail.com" && f.status === "ASSIGNED").length, metrics: { inspections30d: ccpmRules.length * 412, findings14d: fs.length, resolved: fs.filter((f) => f.status === "RESOLVED").length, runningCostUsd: round(ccpmRules.reduce((x, y) => x + y.budget.spentUsd, 0), 2) } }, { sources: r(CCPM, "Dashboard") }); } },
   { name: "ccpm_get_scorecard", domain: "Command Center Performance Monitor", product: CCPM, title: "Get supplier scorecard", description: "A supplier's weighted scorecard: KPIs with actual, target, weight and score.", operation: "ccpm.read", kind: "read", binding: "CCPM scorecard", basis: BASIS_INC,
     inputSchema: s.obj({ partner: s.str("Partner name or ID.") }, ["partner"]),
     handler: (a, ctx) => { const p = partnerArg(ctx, "ccpm_get_scorecard", "ccpm.read", a.partner); if (p.early) return p.early; return ok(ctx, "ccpm_get_scorecard", "ccpm.read", scorecard(p.id!), { sources: r(CCPM, "Scorecard", [p.id!]), interpretation: "Weights are set by the client. Scores are computed from observed transactions." }); } },
@@ -397,11 +409,14 @@ export const ccpmTools: ToolDef[] = [
 ];
 
 export function resetApps() {
-  for (const [id, json] of mutated) { const t = txById(id)!; const o = JSON.parse(json); for (const k of Object.keys(t)) delete (t as any)[k]; Object.assign(t, o); }
-  mutated.clear();
+  clearTxOverrides();
   for (const k of Object.keys(findingState)) delete findingState[k];
   alertRules.splice(2);
   ccpmRules.splice(6);
+}
+/** Removes every transaction override and restores generated values. */
+export function clearTxOverrides() {
+  for (const [id, rec] of Object.entries(txOverrides)) { const t = txById(id); if (t) { delete t._o; delete (t as any).redelivered; for (const k of Object.keys(rec.refs ?? {})) delete (t.refs as any)[k]; } delete txOverrides[id]; }
 }
 
 export const appTools: ToolDef[] = [...ccimTools, ...tgiAppTools, ...ccpmTools];

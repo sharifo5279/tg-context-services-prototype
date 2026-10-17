@@ -1,5 +1,5 @@
 // Transaction evidence tools (Trading Grid Insights).
-import { transactions, txById, STATUS_TEXT, SEARCH_LIMIT_DAYS, renderPayload, Tx } from "../data/insights.js";
+import { transactions, txById, STATUS_TEXT, SEARCH_LIMIT_DAYS, renderPayload, Tx, ackOf, docsByPo, docsByKey } from "../data/insights.js";
 import { ok, fail, deny, scopeFilter, Ctx } from "../runtime.js";
 import { ToolDef, s, PAGE, paginate, MODELED } from "./types.js";
 import { resolveCompany, parseTime } from "./common.js";
@@ -130,7 +130,7 @@ export const insightsTools: ToolDef[] = [
       let found: Tx[] = [];
       if (args.transaction_id) { const t = txById(args.transaction_id); if (t) found = [t]; }
       else if (args.control_number) found = transactions.filter((t) => Object.values(t.controlNumbers).includes(String(args.control_number)));
-      else if (args.key_value) found = transactions.filter((t) => Object.values(t.keys).some((k: any) => k.value?.toUpperCase() === String(args.key_value).toUpperCase()) && t.documentType !== "997" && t.documentType !== "CONTRL");
+      else if (args.key_value) found = docsByKey(args.key_value).filter((t) => t.documentType !== "997" && t.documentType !== "CONTRL" && Object.values(t.keys).some((k: any) => k.value?.toUpperCase() === String(args.key_value).toUpperCase()));
       found = found.filter((t) => env === "ALL" || t.environment === env);
       const visible = found.filter((t) => scopeFilter(t.partnerCompanyId));
       if (found.length && !visible.length) return deny(ctx, "get_transaction", "transaction.read", "Transaction exists outside the permitted organization and BUID.");
@@ -139,7 +139,7 @@ export const insightsTools: ToolDef[] = [
         return ok(ctx, "get_transaction", "transaction.read", { unique: false, candidates: visible.map(row) }, { sources: [{ product: P, operation: SEARCH }], interpretation: `Identifier matched ${visible.length} transactions. Select one transaction ID.` });
       }
       const t = visible[0];
-      const { _t, ...rest } = t as any;
+      const rest = t.toJSON();
       return ok(ctx, "get_transaction", "transaction.read", { ...rest, statusInterpretation: STATUS_TEXT[t.sourceStatus] }, { sources: [{ product: P, operation: SEARCH, objectIds: [t.transactionId] }], freshnessSeconds: 60 });
     },
   },
@@ -157,9 +157,11 @@ export const insightsTools: ToolDef[] = [
     }),
     handler: (args, ctx) => {
       const w = window(args);
-      const inWin = transactions.filter((t) => t._t >= Date.now() - LIMIT_MS && t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId));
-      const byPo = (po: string) => inWin.filter((t) => t.refs.poNumber === po);
-      const acksOf = (id: string) => inWin.filter((t) => t.refs.ackForTransactionId === id);
+      const minT = Date.now() - LIMIT_MS;
+      const okT = (t: Tx) => t._t >= minT && t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId);
+      const byPo = (po: string) => docsByPo(po).filter(okT);
+      const acksOf = (id: string) => { const a = ackOf(id); return a && okT(a) ? [a] : []; };
+      const inWin = { filter: (f: (t: Tx) => boolean) => { const out: Tx[] = []; for (const t of transactions) { if (t._t < minT) break; if (okT(t) && f(t)) out.push(t); } return out; } };
       if (args.scan) {
         const pf = partnerFilter(ctx, "get_related_transactions", args.partner);
         if (pf.early) return pf.early;
@@ -219,7 +221,7 @@ export const insightsTools: ToolDef[] = [
     }),
     handler: (args, ctx) => {
       const evidenceFor = (t: Tx) => {
-        const a = transactions.find((x) => x.refs.ackForTransactionId === t.transactionId);
+        const a = ackOf(t.transactionId);
         const age = (Date.now() - t._t) / 3600_000;
         return {
           transactionId: t.transactionId, documentType: t.documentType, partner: row(t).partner, sentOrReceivedAt: t.receivedAt,

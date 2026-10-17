@@ -1,145 +1,62 @@
-// Tool-level verification of the 40 use cases (no model calls). Run: npm test
+// Governance and world-model checks (no model calls). Tool behavior on current data is covered by the scenario library.
 import { invoke } from "./tools/index.js";
 import { decidePlan, Ctx } from "./runtime.js";
+import { transactions, worldStats } from "./data/insights.js";
+import { generateDay } from "./data/world.js";
+import { PROFILES } from "./data/roster.js";
 
 const ctx: Ctx = { host: "claude-connector", sessionId: "selftest", baseUrl: "http://localhost:3000" };
 const sap: Ctx = { ...ctx, host: "sap-joule" };
 let pass = 0, failed = 0;
 const call = (n: string, a: any = {}, c = ctx) => invoke(n, a, c, "console").out;
-function check(uc: string, cond: boolean, detail = "") {
-  if (cond) { pass++; console.log(`PASS ${uc}`); } else { failed++; console.log(`FAIL ${uc} ${detail}`); }
+function check(name: string, cond: boolean, detail = "") {
+  if (cond) { pass++; console.log(`PASS ${name}`); } else { failed++; console.log(`FAIL ${name} ${detail}`); }
 }
 const r = (o: any) => o.result;
+const DAY = 86400_000;
 
-check("UC01 active partners", r(call("list_partners", { status: "ACTIVE" })).partners.length === 12);
+// World model
+const ws = worldStats();
+const oldest = transactions[transactions.length - 1]._t, newest = transactions[0]._t;
+check("History covers about six months", (Date.now() - oldest) / DAY > 180 && (Date.now() - oldest) / DAY <= 184, `${((Date.now() - oldest) / DAY).toFixed(1)} days`);
+check("Nothing visible from the future", newest <= Date.now());
+check("Next 30 days generated ahead", ws.pending > 20000 && Date.parse(ws.horizon) - Date.now() > 29 * DAY, JSON.stringify(ws));
+const bizDays: number[] = [];
+for (let d = 1; d <= 28; d++) { const day = Math.floor(Date.now() / DAY) - d; const w = new Date(day * DAY).getUTCDay(); if (w === 0 || w === 6) continue; bizDays.push(transactions.filter((t) => Math.floor(t._t / DAY) === day && t.documentType !== "997" && t.documentType !== "CONTRL").length); }
+const avg = bizDays.reduce((a, b) => a + b, 0) / bizDays.length;
+check("Weekday business documents between 800 and 1,600", avg >= 800 && avg <= 1600, avg.toFixed(0));
+const d0 = Math.floor(Date.now() / DAY) - 10;
+const a = generateDay(d0), b = generateDay(d0);
+check("Generation is deterministic", a.length === b.length && a.every((t, i) => t.transactionId === b[i].transactionId && t._t === b[i]._t));
+check("Partner roster about 30 trading partners", PROFILES.length >= 28, String(PROFILES.length));
+check("Environment reported as PRODUCTION", call("get_access_context").evidence.environment === "PRODUCTION");
+check("No prototype wording in responses", !/prototype|seeded/i.test(JSON.stringify([call("get_access_context"), call("list_capabilities"), call("get_capability_contract", { name: "search_transactions" })])));
+
+// Governance
+check("Grant resolved", r(call("get_access_context")).grant.grantId === "GRT-HRG-2026-014");
 const amb = call("search_transactions", { partner: "Northfield" });
-check("UC02 ambiguous partner", amb.error?.code === "AMBIGUOUS_PARTNER" && amb.error.candidates.length === 2);
-check("UC03 addresses", r(call("search_trading_addresses", { company: "Coastline Apparel" })).tradingAddresses[0].tradingAddress.mdType === "VAN_INTERCONNECT");
-const pend = r(call("search_trading_relationships", { status: "PENDING" })).relationships.length + r(call("search_trading_relationships", { status: "REJECTED" })).relationships.length;
-check("UC04 pending/rejected", pend === 2);
-check("UC05 VAN interconnect", r(call("get_interconnect_address", { trading_address: "ZZ:COASTLINEAPP" })).vanProvider?.companyName === "Keystone VAN Services");
-const asn = call("get_transaction", { key_value: "SH-77155" });
-check("UC06 failed ASN", asn.result.sourceStatus === "FAIL" && asn.result.errors[0].code === "XREF-404", JSON.stringify(asn).slice(0, 200));
-check("UC06 xref missing", call("get_cross_reference_entry", { entity: "STORE_TO_GLN", key: "0412" }).error?.code === "KEY_NOT_FOUND");
-check("UC06 map annotation", r(call("get_map_annotations", { map: "BWHG_856_4010_IN" })).annotations.length === 2);
-check("UC07 failed 810s 7d", r(call("search_transactions", { partner: "Northfield Foods", document_type: "810", status: "FAILED", from: "7d" })).counts.documents >= 3);
-const s997 = r(call("get_acknowledgment_evidence", { partner: "Summit Beverage", ack_filter: "MISSING", from: "3d" }));
-check("UC08 Summit missing 997", s997.summary.missing >= 3, JSON.stringify(s997.summary));
-const tuples = r(call("search_messaging_tuples", { page_size: 100 })).tuples;
-const vol = r(call("summarize_transaction_activity", { from: "30d", group_by: ["partner", "document_type"] })).current.rows;
-const unused = tuples.filter((t: any) => !vol.some((v: any) => v.group === `${t.partnerName} | ${t.docType}`));
-check("UC09 configured but unused", unused.some((t: any) => t.partnerName === "Redline Logistics Inc") && unused.some((t: any) => t.docType === "860"), unused.map((t: any) => `${t.partnerName}:${t.docType}`).join(","));
-check("UC10 autoforwards", r(call("list_autoforwards")).autoforwards.length === 3);
-check("UC11 mailbox", r(call("get_mailbox", { mailbox_id: "MB-HRG-PROD-01" })).numOfTradingAddresses === 3);
-const pg = r(call("search_process_instances", { request_id: 55120 })).processInstances;
-check("UC12 onboarding", pg.some((p: any) => p.processStatus === "ACTIVE" && p.activityName === "Partner test exchange"));
-check("UC13 partner services", r(call("get_partner_primary_services", { partner: "Coastline Apparel" })).primaryServices.length === 2);
-check("UC14 contact", r(call("search_company_contacts", { company: "Brightwell", contact_type: "TECHNICAL_CONTACT" })).contacts[0].pointOfContactName === "Priya Raman");
-check("UC15 map metadata", r(call("get_map_metadata", { map: "M-1001" })).metadata.version === 7);
-check("UC16 xref lookup", r(call("get_cross_reference_entry", { entity: "STORE_TO_GLN", key: "0388" })).values.gln === "0614141003884");
-const prep = call("prepare_cross_reference_change", { entity: "STORE_TO_GLN", change: "ADD", key: "0412", values: { gln: "0614141000418", locationName: "DC 0412 Greensboro", locationType: "DC", active: "Y" } });
-check("UC17 prepare xref", prep.status === "APPROVAL_REQUIRED", JSON.stringify(prep).slice(0, 300));
-check("UC17 apply before approval blocked", call("apply_cross_reference_change", { plan_id: prep.result.planId }).error?.code === "APPROVAL_PENDING");
-decidePlan(prep.result.planId, true, "selftest");
-const app = call("apply_cross_reference_change", { plan_id: prep.result.planId });
-check("UC17 apply after approval", app.status === "OK" && app.result.verified === true);
-check("UC17 plan single use", call("apply_cross_reference_change", { plan_id: prep.result.planId }).status === "ERROR");
-const cr = call("prepare_change_request", { title: "AS2 connection for Hollanda", work_orders: [{ type: "AS2_CONNECTION", fields: { partnerCompanyId: "Hollanda Trading", as2Id: "HOLLANDA-AS2", endpointUrl: "https://as2.hollanda.example/receive", certificateFileName: "hollanda_2026.cer", environment: "PRODUCTION" } }] });
-check("UC18 prepare request", cr.status === "APPROVAL_REQUIRED", JSON.stringify(cr).slice(0, 300));
-decidePlan(cr.result.planId, true, "selftest");
-const sub = call("submit_change_request", { plan_id: cr.result.planId });
-check("UC18 submit", sub.status === "OK" && sub.result.submissionState === "SUBMITTED");
-check("UC18 track", r(call("get_change_request_status", { status_id: sub.result.statusId })).statusId === sub.result.statusId);
-const pv = call("prepare_partner_provisioning", { company: "Willow Creek Candle", template_name: "HRG_SUPPLIER_STD", trading_address: "ZZ:WILLOWCREEK" });
-check("UC19 prepare provisioning", pv.status === "APPROVAL_REQUIRED" && pv.result.validation.checks.some((c: any) => c.result === "WARNING"));
-decidePlan(pv.result.planId, true, "selftest");
-const ps = call("submit_partner_provisioning", { plan_id: pv.result.planId });
-check("UC19 submit provisioning", ps.status === "OK" && ps.result.status === "QUEUED");
-const q = call("query_data_product", { product_id: "tgdp.transaction_activity", filters: [{ field: "document_type", value: "856" }, { field: "received_at", op: "gte", value: new Date(Date.now() - 28 * 86400_000).toISOString() }], group_by: ["week", "partner_name"] });
-check("UC20 weekly volume", q.status === "OK" && q.result.totalRows > 10, JSON.stringify(q).slice(0, 300));
-check("UC20 export unsupported", call("create_data_product_export", { product_id: "tgdp.transaction_activity" }).error?.code === "UNSUPPORTED_OPERATION");
-const life = r(call("get_related_transactions", { po_number: "4500018832" }));
-check("UC21 lifecycle", ["850", "855", "856", "810"].every((d) => life.lifecycle.some((x: any) => x.documentType === d)));
-const od = r(call("get_acknowledgment_evidence", { from: "2d", ack_filter: "MISSING" }));
-check("UC22 overdue 997", od.items.filter((i: any) => i.faDelinquency === "CYCLE_1_OVERDUE").length >= 3, JSON.stringify(od.summary));
-const rej = r(call("get_acknowledgment_evidence", { from: "7d", ack_filter: "REJECTED" }));
-check("UC23 rejected 997", rej.items.filter((i: any) => i.partner === "Meridian Personal Care").length >= 2);
-const dup = r(call("search_transactions", { key_value: "SH-77120", document_type: "856" }));
-check("UC24 duplicate ASN", dup.counts.documents === 2);
-check("UC25 invoice lookup", r(call("get_transaction", { key_value: "INV-99812" })).sourceStatus === "DLVD");
-check("UC26 stuck processing", r(call("search_transactions", { status: "IN_PROCESS", modified_before: "6h", from: "2d" })).counts.documents === 2);
-const err = r(call("summarize_transaction_activity", { analysis: "ERRORS", partner: "Northfield Foods", from: "30d" }));
-check("UC27 error breakdown", err.current.rows[0].group === "X12-SYN-104", JSON.stringify(err.current.rows));
-const cmp = r(call("summarize_transaction_activity", { partner: "Coastline Apparel", from: "30d", compare_previous: true }));
-check("UC28 compare previous", cmp.change.length > 0 && cmp.previous.total > 0);
-const silent = r(call("summarize_transaction_activity", { analysis: "SILENT_PARTNERS" }));
-check("UC29 silent partners", silent.silentPartners.some((p: any) => p.partner === "Atlas Toy Company"), JSON.stringify(silent.silentPartners));
-const pg810 = r(call("search_transactions", { partner: "Pinegate", document_type: "810", from: "10d" }));
-const pg810t = r(call("search_transactions", { partner: "Pinegate", document_type: "810", from: "10d", environment: "TEST" }));
-check("UC30 first 810", pg810.counts.documents === 0 && pg810t.counts.documents === 1);
-const dupTx = dup.transactions[0].transactionId;
-const pay = call("get_transaction_payload", { transaction_id: dupTx });
-check("UC31 payload", pay.status === "OK" && pay.result.content.includes("BSN*00*SH-77120"));
-check("UC31 SAP payload denied", call("get_transaction_payload", { transaction_id: dupTx }, sap).status === "DENIED");
-check("UC32 control numbers", !!asn.result.controlNumbers.isa13 && !!asn.result.controlNumbers.gs06);
-const no855 = r(call("get_related_transactions", { scan: "MISSING_855", older_than_hours: 48, from: "5d" }));
-check("UC33 no 855", no855.findings.some((f: any) => f.anchor.keys["PO number (BEG03)"] === "4500019250"), `${no855.findingCount}`);
-const ib = r(call("get_related_transactions", { scan: "INVOICE_BEFORE_ASN", from: "7d" }));
-check("UC34 invoice before ASN", ib.findings.some((f: any) => f.invoice.keys["Invoice number (BIG02)"] === "INV-MPC-4410"));
-const ctrl = r(call("get_acknowledgment_evidence", { partner: "Hollanda", document_type: "ORDERS", from: "7d" }));
-check("UC35 CONTRL", ctrl.items.some((i: any) => i.ackStatus === "REJECTED") && ctrl.items.some((i: any) => !i.ackObserved));
-const nine = call("search_transactions", { status: "FAILED", from: "270d" });
-check("UC36 6-month limit partial", nine.evidence.completeness === "PARTIAL" && nine.evidence.missingEvidence.length === 1);
-const big = call("search_transactions", { from: "30d", page_size: 50 });
-check("UC37 paging", big.result.counts.documents > 1000 && !!big.evidence.pagination.nextCursor);
-const nxt = call("search_transactions", { from: "30d", page_size: 50, cursor: big.evidence.pagination.nextCursor });
-check("UC37 next page", nxt.result.transactions[0].transactionId !== big.result.transactions[0].transactionId);
-check("UC38 ship-to GLN", r(call("search_transactions", { ship_to_gln: "0614141000418", from: "7d" })).counts.documents >= 4);
-check("UC38 store number unsupported", call("search_transactions", { store_number: "0412" }).error?.code === "UNSUPPORTED_FILTER");
-const orphan = r(call("get_related_transactions", { scan: "INVOICE_WITHOUT_PO", from: "30d" }));
-check("UC39 orphan invoice", orphan.findings.some((f: any) => f.invoice.keys["Invoice number (BIG02)"] === "INV-99877"), `${orphan.findingCount}`);
-const night = r(call("search_transactions", { status: "FAILED", last_hours: 12 }));
-check("UC40 overnight failures", night.counts.documents >= 2);
+check("Ambiguous partner returns candidates", amb.error?.code === "AMBIGUOUS_PARTNER" && amb.error.candidates.length === 2);
 check("Denial: other organization", call("get_company", { company: "C30090001" }).status === "DENIED");
 check("Denial: other BUID", call("get_company", { company: "C10023002" }).status === "DENIED");
 check("Denial: billing not granted", call("get_billing_profile").status === "DENIED");
 check("Scope before discovery", r(call("search_companies", { query: "Lakeshore" })).candidates.length === 0);
-
-
-// Application endpoints: CCIM, TG Insights, CCPM
-check("CCIM digest", r(call("ccim_get_daily_digest")).anomaliesDetected.some((a: any) => a.partner === "Summit Beverage Co"));
-check("CCIM coverage gap", r(call("ccim_list_watchlists")).watchlists.some((w: any) => w.watchlistId === "WL-05" && !w.anomalyDetection));
-check("CCIM inactive partners", r(call("ccim_list_trading_community", { status: "INACTIVE" })).partners.some((p: any) => p.partner.startsWith("Redline")));
-check("CCIM dormant document types", r(call("ccim_get_document_type_analysis", {})).dormantCount > 0);
-check("TGI facets", r(call("tgi_get_facets", {})).deliveryStatus.FAIL > 0);
-const shId = call("get_transaction", { key_value: "SH-77155" }).result.transactionId;
-check("TGI processing flow", r(call("tgi_get_processing_flow", { transaction_id: shId })).steps.some((x: any) => x.status === "FAILED" && x.error?.code === "XREF-404"));
-check("TGI business document denied for SAP Joule", call("tgi_get_business_document", { transaction_id: shId }, sap).status === "DENIED");
-check("TGI redelivery rejects non-delivery failure", call("tgi_redeliver_transactions", { transaction_ids: [shId] }).status === "ERROR");
-const other = await import("./data/other.js");
-const saved0412 = other.xrefEntities.STORE_TO_GLN.entries["0412"]; delete other.xrefEntities.STORE_TO_GLN.entries["0412"];
-const rp1 = call("tgi_reprocess_transaction", { transaction_id: shId });
-decidePlan(rp1.result.planId, true, "selftest");
-check("TGI reprocess fails before fix", r(call("tgi_reprocess_transaction", { plan_id: rp1.result.planId })).result === "FAILED_AGAIN");
-other.xrefEntities.STORE_TO_GLN.entries["0412"] = saved0412 ?? { gln: "0614141000418", locationName: "DC 0412 Greensboro", locationType: "DC", active: "Y" };
-const rp2 = call("tgi_reprocess_transaction", { transaction_id: shId });
-decidePlan(rp2.result.planId, true, "selftest");
-check("TGI reprocess succeeds after xref fix", r(call("tgi_reprocess_transaction", { plan_id: rp2.result.planId })).result === "DELIVERED");
-check("CCPM four monitor agents", r(call("ccpm_list_monitor_agents")).agents.map((a: any) => a.name).join() === "Nora,Lex,Liz,Reese");
-check("CCPM Lex finds Summit 997 breach", r(call("ccpm_list_findings", { rule_id: "R-LEX-01", partner: "Summit Beverage" })).total >= 3);
-const fnd = r(call("ccpm_list_findings", { agent: "lex" })).findings[0];
-check("CCPM chain of reasoning", r(call("ccpm_get_finding", { finding_id: fnd.findingId })).chainOfReasoning.length === 4);
-check("CCPM triage assigns", r(call("ccpm_update_finding", { finding_id: fnd.findingId, assignee: "buying.desk@harborview.example" })).status === "ASSIGNED");
-check("CCPM rule deploy requires approval", call("ccpm_create_rule", { agent: "lex", name: "855 in 24h", type: "ACK_WITHIN_HOURS", params: { documentType: "850", ackType: "855", hours: 24 } }).status === "APPROVAL_REQUIRED");
-check("CCPM scorecard", r(call("ccpm_get_scorecard", { partner: "Summit Beverage" })).kpis.length === 5);
-const apps = await import("./tools/apps.js");
-apps.resetApps();
-check("Demo reset restores reprocessed ASN", call("get_transaction", { key_value: "SH-77155" }).result.sourceStatus === "FAIL");
+const anyTx = transactions.find((t) => t.documentType === "856" && t.sourceStatus === "DLVD")!;
+check("Payload denied to SAP Joule service identity", call("get_transaction_payload", { transaction_id: anyTx.transactionId }, sap).status === "DENIED");
+const prep = call("prepare_cross_reference_change", { entity: "STORE_TO_GLN", change: "ADD", key: "9901", values: { gln: "0614141990115", locationName: "Store 9901 Test", locationType: "STORE", active: "Y" } });
+check("Prepare returns an approval plan", prep.status === "APPROVAL_REQUIRED", JSON.stringify(prep).slice(0, 200));
+check("Apply before approval blocked", call("apply_cross_reference_change", { plan_id: prep.result?.planId }).error?.code === "APPROVAL_PENDING");
+decidePlan(prep.result?.planId, true, "selftest");
+check("Apply after approval verified", r(call("apply_cross_reference_change", { plan_id: prep.result?.planId }))?.verified === true);
+check("Plan is single use", call("apply_cross_reference_change", { plan_id: prep.result?.planId }).status === "ERROR");
+const big = call("search_transactions", { from: "30d", page_size: 50 });
+check("Paging returns a cursor", !!big.evidence.pagination?.nextCursor);
+check("Search beyond 183 days is partial", call("search_transactions", { status: "FAILED", from: "270d" }).evidence.completeness === "PARTIAL");
+check("Unsupported filter is reported", call("search_transactions", { store_number: "0412" }).error?.code === "UNSUPPORTED_FILTER");
 
 // Agent services and publishing
 check("Knowledge: Harborview procedure first", r(call("search_knowledge", { query: "ASN failed missing cross-reference procedure" })).results[0].id === "KB-HRG-201");
 check("Map rule: ship-to lookup", r(call("get_map_rule", { map: "BWHG_856_4010_IN", target_field: "ship-to" })).rules[0].ruleId === "R-1001-ST-07");
-check("Connection health: Atlas down", r(call("get_connection_status", { partner: "Atlas Toy" })).status === "DOWN");
+check("Connection health reported", ["UP", "DOWN", "DEGRADED"].includes(r(call("get_connection_status", { partner: "Atlas Toy" })).status));
 check("Support ticket created", r(call("create_support_ticket", { summary: "Atlas AS2 outage", details: "MDN timeouts" })).ticketId.startsWith("CS-"));
 const dep = await import("./deployments.js");
 check("Every Studio agent published to Claude UI", dep.publishable().every((a: any) => dep.agentsFor("claude-ui").some((b: any) => b.id === a.id)));

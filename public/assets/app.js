@@ -44,7 +44,7 @@
   const hostBy = (k) => S.meta.hosts.find((h) => h.key === k);
   const agent = (id) => S.meta.agents.find((a) => a.id === id);
   const studioAgents = () => S.meta.agents.filter((a) => a.id !== "tg-aviator");
-  const STATUS_CLS = { "Live today": "ok", "On the roadmap": "info", Incubating: "warn", Prototype: "neutral" };
+  const STATUS_CLS = { "Live today": "ok", "On the roadmap": "info", Incubating: "warn", Custom: "neutral" };
   const statusTag = (a) => `<span class="pill ${STATUS_CLS[a.status] ?? "neutral"}">${esc(a.status)}</span>`;
   const uc = (n) => S.meta.useCases.find((u) => u.n === n);
   const promptOf = (n) => (typeof n === "number" ? uc(n).prompt : n);
@@ -224,13 +224,13 @@
 
   function shellStandard({ title, tag, nav, inner, cls = "" }) {
     return `<header class="topbar ${cls}"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">${esc(title)}</span>${tag ? `<span class="tag">${esc(tag)}</span>` : ""}</div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
-      <div class="layout"><nav class="sidenav">${nav}<div class="foot">Prototype on seeded data. Not connected to production Trading Grid.</div></nav><main class="main">${inner}</main></div>`;
+      <div class="layout"><nav class="sidenav">${nav}</nav><main class="main">${inner}</main></div>`;
   }
 
   // ---------- Demo journey ----------
   const SCENES = [
-    { n: 1, where: "Trading Grid Online", title: "Find the failed ASN", text: "Open Transactions, filter to delivery failures and select ASN SH-77155.", href: "/tgo" },
-    { n: 2, where: "Trading Grid Online", title: "Analyze with Aviator", text: "Analyze with Aviator runs the Error Analysis Agent. Payloads runs the Payload Analysis Agent.", href: "/tgo/insights?q=SH-77155&open=1" },
+    { n: 1, where: "Trading Grid Online", title: "Find a failed ASN", text: "Open Transactions, filter to failed deliveries and select a failed ASN.", href: "/tgo" },
+    { n: 2, where: "Trading Grid Online", title: "Analyze with Aviator", text: "Analyze with Aviator runs the Error Analysis Agent. Payloads runs the Payload Analysis Agent.", href: () => `/tgo/insights?q=${encodeURIComponent(S.meta.examples?.openXrefAsn?.shipmentId ?? S.meta.examples?.failedAsn?.shipmentId ?? "")}&open=1` },
     { n: 3, where: "Trading Grid Online", title: "Review agent access", text: "Review applications with access to Harborview data, their scope and operations.", href: "/tgo/access" },
     { n: 4, where: "Aviator Studio", title: "Run ASN Exception Agent", text: "Identify the cause through Context Services and prepare the cross-reference fix.", href: "/studio/agents/asn-exception/simulate" },
     { n: 5, where: "Aviator Studio", title: "Approve the change", text: "Approval binds to the exact entry. The agent applies it and returns a verified readback.", href: "/studio/agents/asn-exception/simulate" },
@@ -242,14 +242,14 @@
   ];
   function pageBoundaries() {
     const row = (a, b, c) => `<tr><td><strong>${esc(a)}</strong></td><td>${esc(b)}</td><td class="small muted">${esc(c)}</td></tr>`;
-    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Simulation boundaries</span><span class="tag">Prototype</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
+    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Simulation boundaries</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
     <div class="journey"><h1>Implemented and simulated components</h1><p class="sub">Seeded retail data. Not connected to production Trading Grid.</p>
     <div class="section-title">Implemented</div><table class="t"><tbody>
       ${row("Tool runtime", `${S.tools.length} tools run against seeded data and return evidence envelopes.`, `95 from the incubation brief; ${S.tools.length - 95} application tools modeled on the Innovation Guide. CMS fields follow Swagger v2 to v5.`)}
       ${row("Entitlements", "Organization, BUID, solution, operation, client suspension and agent blocks enforced on every call.", "Fail closed.")}
       ${row("Approvals", "Changes follow prepare, approve, recheck and submit. Plans are single use and expire.", "")}
       ${row("Agents", "Agents run on Claude models with their assigned tools.", "Answers use seeded data only.")}
-      ${row("MCP endpoint", "Streamable HTTP endpoint for tools and agents. Claude connects live.", "Prototype tokens. OAuth not implemented.")}
+      ${row("MCP endpoint", "Streamable HTTP endpoint for tools and agents. Claude connects live.", "Client tokens. OAuth not implemented.")}
     </tbody></table>
     <div class="section-title">Simulated</div><table class="t"><tbody>
       ${row("Trading Grid Online and TG Insights screens", "Layouts follow shipped screens. Data is seeded.", "Not connected to production.")}
@@ -263,7 +263,7 @@
 
   function pageJourney() {
     const col = (cls, label, items, sub) => `<div class="lane ${cls}"><div class="lh">${esc(label)}</div><div class="ls">${esc(sub)}</div>${items.map(([t, d, href]) => `<button class="lanecard" data-href="${href}"><strong>${esc(t)}</strong><span>${esc(d)}</span></button>`).join("")}</div>`;
-    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Trading Grid agent journey</span><span class="tag">Prototype</span></div><div class="spacer"></div><button class="btn ghost sm" data-href="/boundaries">${ic("shield")}Simulation boundaries</button><button class="btn ghost sm" data-demoreset>${ic("refresh")}Reset demo</button>${avatar()}</header>
+    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Trading Grid agent journey</span></div><div class="spacer"></div><button class="btn ghost sm" data-href="/boundaries">${ic("shield")}Simulation boundaries</button><button class="btn ghost sm" data-demoreset>${ic("refresh")}Reset demo</button>${avatar()}</header>
     <div class="journey">
       <h1>Trading Grid agent journey</h1>
       <p class="sub">Investigate one failed ASN in Trading Grid Online, Aviator Studio and external agent platforms.</p>
@@ -277,8 +277,8 @@
         ${col("", "External", EXT.map((k) => [hostBy(k).name, hostBy(k).authPattern, `/ext?eco=${k}`]), "Customer agent platforms")}
       </div>
       <div class="section-title">Demo script</div>
-      <div class="scenes">${SCENES.map((s, i) => ({ ...s, n: i + 1 })).map((s) => `<div class="scene"><div class="sn">${s.n}</div><div class="sb"><div class="sw">${esc(s.where)}</div><div class="st">${esc(s.title)}</div><div class="sd">${esc(s.text)}</div></div><button class="btn sm" data-href="${s.href}">${ic("play")}Open</button></div>`).join("")}</div>
-      <p class="small muted" style="margin-top:20px">Prototype. Seeded retail data; not connected to production Trading Grid. Tool contracts are proposed.</p>
+      <div class="scenes">${SCENES.map((s, i) => ({ ...s, n: i + 1 })).map((s) => `<div class="scene"><div class="sn">${s.n}</div><div class="sb"><div class="sw">${esc(s.where)}</div><div class="st">${esc(s.title)}</div><div class="sd">${esc(s.text)}</div></div><button class="btn sm" data-href="${typeof s.href === "function" ? s.href() : s.href}">${ic("play")}Open</button></div>`).join("")}</div>
+      
     </div>`;
   }
 
@@ -461,7 +461,7 @@
     const n = a.tools === "ALL" ? S.meta.toolCount : a.tools.length;
     return `<div class="agentcard" data-href="/studio/agents/${a.id}"><div class="h"><div class="aico">${ic("agent")}</div><div><div class="nm">${esc(a.name)}</div><div class="small muted">${esc(a.persona)}</div></div><span style="margin-left:auto">${statusTag(a)}</span></div><div class="role">${esc(a.role)}</div><div class="meta"><span>${n} tools</span><span>Based on ${esc(a.inspiredBy[0].name)}</span></div></div>`;
   }
-  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio. Prototype agents are demo only.</p></div><div class="content">${["Live today", "On the roadmap", "Incubating", "Prototype"].map((st) => { const list = studioAgents().filter((a) => a.status === st); return list.length ? `<div class="section-title">${st} <span class="muted small">${list.length}</span></div><div class="agentgrid">${list.map(agentCard).join("")}</div>` : ""; }).join("")}</div>`);
+  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio. Custom agents are built in Aviator Studio.</p></div><div class="content">${["Live today", "On the roadmap", "Incubating", "Prototype"].map((st) => { const list = studioAgents().filter((a) => a.status === st); return list.length ? `<div class="section-title">${st} <span class="muted small">${list.length}</span></div><div class="agentgrid">${list.map(agentCard).join("")}</div>` : ""; }).join("")}</div>`);
 
   function deploymentsView(a) {
     const d = S.deploy?.agents.find((x) => x.agentId === a.id);
@@ -577,7 +577,7 @@
         <details><summary>Arguments</summary><pre class="json">${esc(JSON.stringify(rs?.args ?? st.args, null, 2))}</pre></details>
         ${rs?.out ? `<details><summary>Response</summary><pre class="json">${esc(JSON.stringify(rs.out, null, 2))}</pre></details>` : ""}</div>`; }).join("")}</div></td></tr>`; };
     return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Test scenarios</h1><div class="actions"><button class="btn primary" data-scall ${sc.running ? "disabled" : ""}>${ic("play")}${sc.running ? "Running" : "Run all"}</button></div></div>
-      <p class="sub">Executable scenarios for every tool against the seeded data, with expected status and result checks.</p></div>
+      <p class="sub">Executable scenarios for every tool against current Trading Grid data, with expected status and result checks.</p></div>
       <div class="content">
         <div class="kv scsum"><span class="k">Scenarios</span><span>${sc.catalog.length}</span><span class="k">Tools covered</span><span>${sc.coverage.covered} of ${sc.coverage.tools}</span><span class="k">Last run</span><span>${ran.length ? `${passed} passed, ${ran.length - passed} failed, ${sc.catalog.length - ran.length} not run` : "Not run"}</span></div>
         <div class="filters"><input class="input" data-scq placeholder="Search scenario, ID or tool" value="${esc(sc.q)}"><select class="select" data-scdomain><option value="">All domains</option>${opt(domains, sc.domain)}</select><select class="select" data-sckind><option value="">All types</option>${opt(kinds, sc.kind)}</select><select class="select" data-scresult><option value="">All results</option>${opt(["Passed", "Failed", "Not run"], sc.result)}</select><span class="small muted" style="align-self:center">${rows.length} shown</span></div>
@@ -600,10 +600,10 @@
   }
 
   function sampleArgs(t) {
-    const ex = { partner: "Brightwell Home Goods", company: "Brightwell Home Goods", key_value: "SH-77155", transaction_id: "", trading_address: "ZZ:BRIGHTWELLHG", map: "BWHG_856_4010_IN", entity: "STORE_TO_GLN", key: "0388", product_id: "tgdp.transaction_activity", mailbox_id: "MB-HRG-PROD-01", bpr_id: "BPR-4104", tpr_id: "TPR-70041", solution_id: "SOL-HRG-RETAIL-01", poc_id: "POC-BWHG-01", legal_entity_id: "LE-HRG-US-01", invitation_id: 7702, request_id: 55120, pi_unique_id: 900304, workflow_template_id: 3101, status_id: "ST-10421", work_order_id: "WO-5521", tracking_id: "TRK-PGH-0091", operation_ref: "ST-10421", name: "search_transactions", file_id: "SPEC-1001-A", search_token: "Store", schedule_id: "SCH-0007", template_name: "HRG_SUPPLIER_STD", po_number: "4500018832" };
+    const ex = { partner: "Brightwell Home Goods", company: "Brightwell Home Goods", key_value: S.meta.examples?.failedAsn?.shipmentId ?? "", transaction_id: "", trading_address: "ZZ:BRIGHTWELLHG", map: "BWHG_856_4010_IN", entity: "STORE_TO_GLN", key: "0388", product_id: "tgdp.transaction_activity", mailbox_id: "MB-HRG-PROD-01", bpr_id: "BPR-4104", tpr_id: "TPR-70041", solution_id: "SOL-HRG-RETAIL-01", poc_id: "POC-BWHG-01", legal_entity_id: "LE-HRG-US-01", invitation_id: 7702, request_id: 55120, pi_unique_id: 900304, workflow_template_id: 3101, status_id: "ST-10421", work_order_id: "WO-5521", tracking_id: "TRK-PGH-0091", operation_ref: "ST-10421", name: "search_transactions", file_id: "SPEC-1001-A", search_token: "Store", schedule_id: "SCH-0007", template_name: "HRG_SUPPLIER_STD", po_number: "4500018832" };
     const o = {};
     for (const r of t.inputSchema.required ?? []) o[r] = ex[r] ?? "";
-    if (!Object.keys(o).length && t.name === "search_transactions") o.key_value = "SH-77155";
+    if (!Object.keys(o).length && t.name === "search_transactions") o.key_value = S.meta.examples?.failedAsn?.shipmentId ?? "";
     return JSON.stringify(o, null, 2);
   }
   function toolDrawer(name) {
@@ -645,8 +645,8 @@
         <pre class="json">curl -s ${esc(m.url)} \\
   -H "Authorization: Bearer ${esc(m.tokens["claude-connector"].token)}" \\
   -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \\
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_transaction","arguments":{"key_value":"SH-77155"}}}'</pre>
-        <p class="small muted">Prototype credentials. Production requires OAuth with PKCE and audience-bound tokens through the Aviator AKS gateway.</p>
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_transactions","arguments":{"document_type":"856","status":"FAILED","from":"7d"}}}'</pre>
+        <p class="small muted">Client tokens are issued per application. OAuth with PKCE through the Aviator AKS gateway is the target pattern.</p>
       </div>`);
   }
 

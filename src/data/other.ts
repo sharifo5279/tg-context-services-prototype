@@ -3,14 +3,15 @@
 // were not supplied for these products.
 import { dAgo, hAgo } from "../util.js";
 import { HUB_ID, SOLUTION_ID } from "./cms.js";
-import { STORES } from "./insights.js";
+import { STORE_LIST, onWorldDay } from "./insights.js";
+import { PROFILES } from "./roster.js";
 
 // ---- Cartographer: maps ---------------------------------------------------------------------------
 
 export const CARTO_SOLUTION = "CARTO-HRG-01";
 
 export const mappingSolutions = [
-  { solutionId: CARTO_SOLUTION, solutionName: "Harborview retail maps", sourceSolutionIds: [SOLUTION_ID], translators: ["Contivo", "AI"], mapCount: 12 },
+  { solutionId: CARTO_SOLUTION, solutionName: "Harborview retail maps", sourceSolutionIds: [SOLUTION_ID], translators: ["Contivo", "AI"], mapCount: 13 },
 ];
 
 const map = (mapId: string, mapName: string, version: number, direction: string, sourceFormat: string, targetFormat: string, status: string, prodMap: boolean, acceptanceState: string, owner: string, modifiedDaysAgo: number, promotedDaysAgo: number | null, partners: string[], extras: any = {}) => ({
@@ -26,7 +27,7 @@ const map = (mapId: string, mapName: string, version: number, direction: string,
 export const maps = [
   map("M-1001", "BWHG_856_4010_IN", 7, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "s.okafor", 4, 3, ["C20004"], { lookups: ["STORE_TO_GLN"], characteristics: { targetFields: 212, unmappedTargetFields: 9, lookups: 1 } }),
   map("M-1002", "NFF_810_4010_IN", 4, "INBOUND", "X12 004010 810", "SAP IDoc INVOIC", "ACTIVE", true, "ACCEPTED", "s.okafor", 140, 139, ["C20001"], { lookups: [], characteristics: { targetFields: 168, unmappedTargetFields: 4, lookups: 0 } }),
-  map("M-1003", "HRG_850_4010_OUT", 12, "OUTBOUND", "SAP IDoc ORDERS", "X12 004010 850", "ACTIVE", true, "ACCEPTED", "edi.team", 60, 59, ["C20001", "C20002", "C20003", "C20004", "C20005", "C20007", "C20008", "C20009"], { lookups: ["VENDOR_NUMBER_BY_PARTNER"], characteristics: { targetFields: 190, unmappedTargetFields: 2, lookups: 1 } }),
+  map("M-1003", "HRG_850_4010_OUT", 12, "OUTBOUND", "SAP IDoc ORDERS", "X12 004010 850", "ACTIVE", true, "ACCEPTED", "edi.team", 60, 59, PROFILES.filter((p) => p.flow === "X12_SUPPLIER").map((p) => p.id), { lookups: ["VENDOR_NUMBER_BY_PARTNER"], characteristics: { targetFields: 190, unmappedTargetFields: 2, lookups: 1 } }),
   map("M-1004", "HOL_ORDERS_D96A_OUT", 3, "OUTBOUND", "SAP IDoc ORDERS", "EDIFACT D96A ORDERS", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, ["C20006"]),
   map("M-1005", "CST_856_4010_IN", 5, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "j.patel", 90, 88, ["C20003"]),
   map("M-1006", "PGH_810_4010_IN", 1, "INBOUND", "X12 004010 810", "SAP IDoc INVOIC", "IN_TEST", false, "PENDING", "j.patel", 3, null, ["C20005"]),
@@ -35,7 +36,8 @@ export const maps = [
   map("M-1009", "CRL_945_4010_IN", 4, "INBOUND", "X12 004010 945", "SAP IDoc SHPCON", "ACTIVE", true, "ACCEPTED", "j.patel", 75, 74, ["C20013"], { lookups: [], characteristics: { targetFields: 96, unmappedTargetFields: 3, lookups: 0 } }),
   map("M-1010", "CRL_214_4010_IN", 3, "INBOUND", "X12 004010 214", "SAP IDoc TRXSTA", "ACTIVE", true, "ACCEPTED", "j.patel", 30, 29, ["C20013"], { lookups: ["CARRIER_STATUS_CODE"], characteristics: { targetFields: 41, unmappedTargetFields: 1, lookups: 1 } }),
   map("M-1011", "HRG_940_4010_OUT", 6, "OUTBOUND", "SAP IDoc SHPORD", "X12 004010 940", "ACTIVE", true, "ACCEPTED", "edi.team", 120, 119, ["C20013"]),
-  map("M-1012", "HRG_812_4010_OUT", 2, "OUTBOUND", "SAP FI chargeback", "X12 004010 812", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, ["C20001"]),
+  map("M-1012", "HRG_812_4010_OUT", 2, "OUTBOUND", "SAP FI chargeback", "X12 004010 812", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, PROFILES.filter((p) => p.flow === "X12_SUPPLIER").map((p) => p.id)),
+  map("M-1013", "HRG_856_4010_STORE_IN", 2, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "s.okafor", 45, 44, ["C20017", "C20021"], { lookups: ["STORE_TO_GLN"], characteristics: { targetFields: 205, unmappedTargetFields: 7, lookups: 1 } }),
 ];
 
 export const mapSpecifications: Record<string, any[]> = {
@@ -57,7 +59,7 @@ export const specFileContent: Record<string, string> = {
 export const mapAnnotations: Record<string, any[]> = {
   "M-1001": [
     { annotationId: "AN-501", author: "s.okafor", createdOn: dAgo(4), text: "v7: ship-to N1*ST with N103=92 now resolves the store number through STORE_TO_GLN instead of a hardcoded table. Work order WO-5488.", replies: [{ author: "edi.team", createdOn: dAgo(3), text: "Promoted to production." }], attachments: [{ name: "WO-5488_change_summary.pdf" }] },
-    { annotationId: "AN-502", author: "j.patel", createdOn: dAgo(3), text: "Reminder: new DC 0412 Greensboro goes live this week. Confirm STORE_TO_GLN entry before first receipts.", replies: [], attachments: [] },
+    { annotationId: "AN-502", author: "j.patel", createdOn: dAgo(3), text: "Reminder: confirm the STORE_TO_GLN entry before the first receipts at every new store or DC opening.", replies: [], attachments: [] },
   ],
   "M-1006": [{ annotationId: "AN-601", author: "j.patel", createdOn: dAgo(3), text: "Initial map for Pinegate 810. Test file INV-PGH-0001 translated successfully.", replies: [], attachments: [] }],
 };
@@ -68,7 +70,7 @@ export const xrefEntities: Record<string, any> = {
   STORE_TO_GLN: {
     entityName: "STORE_TO_GLN", description: "Store or DC number to GS1 GLN", keyColumn: "storeNumber", columns: ["gln", "locationName", "locationType", "active"],
     state: { reserved: false, reservedBy: null },
-    entries: Object.fromEntries(Object.entries(STORES).filter(([k]) => k !== "0412").map(([k, v]) => [k, { gln: v.gln, locationName: v.name, locationType: "STORE", active: "Y" }])),
+    entries: {} as Record<string, any>,
     lastModifiedOn: dAgo(45), lastModifiedBy: "edi.team",
   },
   ITEM_UPC_TO_SKU: {
@@ -197,15 +199,18 @@ export const dataProducts = [
   },
 ];
 
-export const ccimEvents = [
-  { event_id: "EV-9001", detected_at: hAgo(20), watchlist: "Inbound ASN volume", partner_name: "Brightwell Home Goods", document_type: "856", event_type: "ANOMALY", detail: "Failed 856 count above expected range" },
-  { event_id: "EV-9002", detected_at: hAgo(26), watchlist: "PO acknowledgment", partner_name: "Summit Beverage Co", document_type: "997", event_type: "ANOMALY", detail: "No 997 received for outbound 850s since 32 hours ago" },
-  { event_id: "EV-9004", detected_at: hAgo(15), watchlist: "Inbound document volume", partner_name: "Crestline Logistics LLC", document_type: "214", event_type: "FAILED_TRANSACTION", detail: "214 failed: status code A9 not in CARRIER_STATUS_CODE" },
-  { event_id: "EV-9005", detected_at: hAgo(14), watchlist: "Outbound remittance", partner_name: "Coastline Apparel Co", document_type: "820", event_type: "FAILED_TRANSACTION", detail: "820 delivery rejected by Keystone VAN interconnect" },
-  { event_id: "EV-9003", detected_at: hAgo(200), watchlist: "Inbound document volume", partner_name: "Atlas Toy Company", document_type: "856", event_type: "ANOMALY", detail: "Inbound volume dropped to zero" },
-];
+
 
 export const deliverySchedules: any[] = [
   { scheduleId: "SCH-0009", productId: "tgdp.transaction_activity", version: "1.2", cadence: "DAILY (05:00 UTC)", destination: "HRG-SFTP-DATA (approved destination)", format: "PARQUET", status: "PAUSED", configVersion: 2, createdAt: dAgo(40), lastRun: { at: dAgo(9), status: "FAILED", records: 0, error: "Destination quota exceeded" }, nextRun: null },
   { scheduleId: "SCH-0007", productId: "tgdp.partner_directory", version: "0.9", cadence: "WEEKLY (Mon 06:00 UTC)", destination: "HRG-SFTP-DATA (approved destination)", format: "CSV", status: "ACTIVE", configVersion: 3, createdAt: dAgo(60), lastRun: { at: dAgo(4), status: "SUCCEEDED", records: 11 }, nextRun: dAgo(-3) },
 ];
+
+/** Adds STORE_TO_GLN entries whose maintenance date has passed. User changes are kept. Runs at startup and daily. */
+export function refreshStoreXref(now = Date.now()) {
+  const today = Math.floor(now / 86400_000);
+  const e = xrefEntities.STORE_TO_GLN.entries;
+  for (const st of STORE_LIST) if (st.xrefDay <= today && !e[st.number] && !(xrefEntities.STORE_TO_GLN._deleted ?? []).includes(st.number)) e[st.number] = { gln: st.gln, locationName: st.name, locationType: st.name.startsWith("DC") ? "DC" : "STORE", active: "Y" };
+}
+refreshStoreXref();
+onWorldDay(() => refreshStoreXref());

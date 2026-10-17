@@ -61,7 +61,7 @@ const accessTools: ToolDef[] = [
     handler: (a, ctx) => {
       const t = permitted(ctx).find((x) => x.name === a.name);
       if (!t) return fail(ctx, "get_capability_contract", "access.read", "UNAVAILABLE", "Capability is unknown, retired or not authorized for this caller.");
-      return ok(ctx, "get_capability_contract", "access.read", { name: t.name, version: "0.1", title: t.title, description: t.description, domain: t.domain, product: t.product, actionClass: t.kind, operation: t.operation, sourceBinding: t.binding, contractBasis: t.basis, inputSchema: t.inputSchema, output: "Evidence envelope: status, result, evidence (sourceRefs, observedAt, freshness, completeness, missingEvidence), access decision" }, { sources: [{ product: A, operation: "Capability registry" }] });
+      return ok(ctx, "get_capability_contract", "access.read", { name: t.name, version: "0.1", title: t.title, description: t.description, domain: t.domain, product: t.product, actionClass: t.kind, operation: t.operation, sourceBinding: t.binding, inputSchema: t.inputSchema, output: "Evidence envelope: status, result, evidence (sourceRefs, observedAt, freshness, completeness, missingEvidence), access decision" }, { sources: [{ product: A, operation: "Capability registry" }] });
     },
   },
   {

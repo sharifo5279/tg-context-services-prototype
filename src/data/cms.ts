@@ -2,6 +2,7 @@
 // Field names follow the CommunityManagementServices v2-v5 Swagger definitions in CMS_context.md.
 // All companies, people and identifiers are fictional.
 import { dAgo, hAgo } from "../util.js";
+import { NEW_PARTNERS, PROFILES, profileById, anchorDay, DAY } from "./roster.js";
 
 export const HUB_ID = "C10023001";
 export const HUB_ORG = "ORG-HRG";
@@ -42,6 +43,7 @@ const CO: Co[] = [
   { id: "C40001", name: "Keystone VAN Services", city: "Pittsburgh", state: "PA", country: "US", industry: "Value-added network", buid: "BU-KVAN", orgId: "ORG-KVAN", participation: "VAN", created: 3000 },
   { id: "C30090001", name: "Lakeshore Market Co", city: "Cleveland", state: "OH", country: "US", industry: "Retail", buid: "BU-LKS", orgId: "ORG-LKS", participation: "HUB", created: 1800 },
 ];
+for (const n of NEW_PARTNERS) { const p = profileById(n.id)!; CO.push({ id: n.id, name: n.name, city: n.city, state: n.state, country: "US", industry: n.industry, buid: `BU-${p.prefix}`, orgId: `ORG-${p.prefix}`, participation: "SPOKE", created: Math.max(5, -p.goLive + 30) }); }
 
 export const companies = CO.map((c) => ({
   companyId: c.id,
@@ -106,6 +108,7 @@ export const addresses: Addr[] = [
   { companyId: "C20014", mailboxId: "MB-HRG-WEBEDI-01", qualifier: "ZZ", address: "MAPLERIDGEWEB", alias: "Maple Ridge Crafts (web EDI)", deliveryMethod: "WEB_EDI", system: "TGMS", created: 160 },
   { companyId: "C20011", mailboxId: "MB-EVP-01", qualifier: "ZZ", address: "EVERGREENPP", alias: "Evergreen Paper", deliveryMethod: "SFTP", system: "TGMS", created: 21 },
 ];
+for (const n of NEW_PARTNERS) { const p = profileById(n.id)!; addresses.push({ companyId: n.id, mailboxId: p.protocol === "VAN_INTERCONNECT" ? "MB-KVAN-IC-07" : p.protocol === "WEB_EDI" ? "MB-HRG-WEBEDI-01" : `MB-${p.prefix}-01`, qualifier: n.qualifier, address: n.address, alias: n.name + (p.protocol === "VAN_INTERCONNECT" ? " (via Keystone VAN)" : p.protocol === "WEB_EDI" ? " (web EDI)" : ""), deliveryMethod: p.protocol, system: "TGMS", created: Math.max(3, -p.goLive + 10), ...(p.protocol === "VAN_INTERCONNECT" ? { viaVan: "C40001" } : {}) }); }
 
 export const addrKey = (a: { qualifier: string; address: string }) => `${a.qualifier}:${a.address}`;
 export const addrByKey = (k: string) => addresses.find((a) => addrKey(a) === k || a.address === k);
@@ -170,6 +173,7 @@ export const bprs = [
   BPR(4112, "C20013", "ACTIVE", 410, "3PL warehouse: shipping orders, shipping advice and shipment status"),
   BPR(4113, "C20014", "ACTIVE", 150, "Small supplier on Harborview web EDI"),
 ];
+for (const [i, n] of NEW_PARTNERS.entries()) { const p = profileById(n.id)!; bprs.push(BPR(4200 + i, n.id, "ACTIVE", Math.max(3, -p.goLive + 10), `${n.industry} supplier, ${p.protocol === "WEB_EDI" ? "web EDI" : p.protocol === "VAN_INTERCONNECT" ? "via Keystone VAN" : p.protocol}`)); }
 
 export const partnerDirectory = bprs.map((b) => {
   const p = companyById(b.partnerCompanyId)!;
@@ -208,6 +212,13 @@ const TPRS: TprSeed[] = [
   { id: "TPR-70131", bpr: "BPR-4113", partner: "C20014", status: "ACTIVE", type: "PRODUCTION", created: 148, docs: [["850", "SENDER"], ["856", "RECEIVER"], ["810", "RECEIVER"]], hubAddr: "ZZ:HARBORVIEWUS" },
   { id: "TPR-70112", bpr: "BPR-4111", partner: "C20011", status: "REJECTED", type: "TEST", created: 20, docs: [["850", "SENDER"]], hubAddr: "ZZ:HARBORVIEWTST" },
 ];
+for (const [i, n] of NEW_PARTNERS.entries()) {
+  const p = profileById(n.id)!;
+  const docs: [string, "SENDER" | "RECEIVER"][] = [["850", "SENDER"], ["860", "SENDER"], ...(p.poAck > 0 ? [["855", "RECEIVER"]] as [string, "RECEIVER"][] : []), ["856", "RECEIVER"], ["810", "RECEIVER"], ...(p.protocol === "WEB_EDI" ? [] : [["997", "SENDER"], ["997", "RECEIVER"]] as [string, "SENDER" | "RECEIVER"][])];
+  const created = Math.max(3, -p.goLive + 10);
+  TPRS.push({ id: `TPR-${70200 + i * 10 + 1}`, bpr: `BPR-${4200 + i}`, partner: n.id, status: "ACTIVE", type: "PRODUCTION", created, docs });
+  if (p.goLive > -45) TPRS.push({ id: `TPR-${70200 + i * 10 + 2}`, bpr: `BPR-${4200 + i}`, partner: n.id, status: "ACTIVE", type: "TEST", created, docs: [["850", "SENDER"], ["856", "RECEIVER"], ["810", "RECEIVER"]], hubAddr: "ZZ:HARBORVIEWTST" });
+}
 
 const aspect = (a: Addr) => {
   const c = companyById(a.companyId)!;
@@ -343,6 +354,7 @@ export const partnerPrimaryServices: Record<string, any[]> = {
   C20013: [{ primaryService: "EDI messaging (AS2)", subscriptionType: "DIRECT" }],
   C20014: [{ primaryService: "Supplier web EDI", subscriptionType: "SPONSORED" }],
 };
+for (const p of PROFILES) if (!partnerPrimaryServices[p.id]) partnerPrimaryServices[p.id] = [{ primaryService: p.protocol === "WEB_EDI" ? "Supplier web EDI" : p.protocol === "VAN_INTERCONNECT" ? "VAN interconnect messaging" : `EDI messaging (${p.protocol})`, subscriptionType: p.protocol === "WEB_EDI" ? "SPONSORED" : p.protocol === "VAN_INTERCONNECT" ? "INTERCONNECT" : "DIRECT" }];
 
 export const sponsoredServices = {
   [HUB_ID]: [{ serviceBundleDetails: bundle("SB-HRG-WEBEDI", "Harborview supplier web EDI", "SPOKE"), primaryServiceSubscription: [{ primaryService: "Supplier web EDI", subscriptionType: "SPONSORED" }], serviceInstanceMaps: ["WEBFORMS_850_810", "WEBFORMS_856"] }],
@@ -366,20 +378,21 @@ const poc = (id: string, co: string, first: string, last: string, type: string, 
 });
 
 export const contacts = [
-  poc("POC-HRG-01", HUB_ID, "Jordan", "Lee", "BUSINESS_CONTACT", "b2b.ops@harborview.example", "+1 704 555 0110", [], "YES"),
-  poc("POC-HRG-02", HUB_ID, "Sam", "Okafor", "TECHNICAL_CONTACT", "edi.team@harborview.example", "+1 704 555 0111", ["850", "856", "810"]),
-  poc("POC-BWHG-01", "C20004", "Priya", "Raman", "TECHNICAL_CONTACT", "edi-support@brightwell.example", "+1 614 555 0182", ["856", "810"], "YES"),
-  poc("POC-BWHG-02", "C20004", "Marcus", "Hale", "BUSINESS_CONTACT", "customer.ops@brightwell.example", "+1 614 555 0140"),
-  poc("POC-NFF-01", "C20001", "Elena", "Brandt", "TECHNICAL_CONTACT", "edi@northfieldfoods.example", "+1 612 555 0199", ["810"], "YES"),
-  poc("POC-SMB-01", "C20007", "Tom", "Alvarez", "SUPPORT_CONTACT", "edi.help@summitbev.example", "+1 303 555 0147", ["850", "997"], "YES"),
-  poc("POC-HOL-01", "C20006", "Femke", "de Vries", "TECHNICAL_CONTACT", "edi@hollanda.example", "+31 10 555 0123", ["ORDERS", "CONTRL"], "YES"),
-  poc("POC-PGH-01", "C20005", "Ava", "Collins", "TECHNICAL_CONTACT", "it@pinegatehome.example", "+1 828 555 0101", [], "YES"),
-  poc("POC-CRL-01", "C20013", "Dana", "Whitfield", "TECHNICAL_CONTACT", "edi@crestline3pl.example", "+1 775 555 0162", ["940", "945", "214"], "YES"),
-  poc("POC-CRL-02", "C20013", "Ray", "Okonkwo", "SUPPORT_CONTACT", "warehouse.ops@crestline3pl.example", "+1 775 555 0190", ["945"]),
-  poc("POC-MRC-01", "C20014", "Grace", "Lindqvist", "BUSINESS_CONTACT", "orders@mapleridgecrafts.example", "+1 541 555 0114", [], "YES"),
-  poc("POC-ATL-01", "C20008", "Owen", "Pierce", "TECHNICAL_CONTACT", "b2b@atlastoy.example", "+1 401 555 0133", ["850", "856"], "YES"),
-  poc("POC-CST-01", "C20003", "Luis", "Moreno", "TECHNICAL_CONTACT", "edi@coastline.example", "+1 213 555 0177", ["856", "810"], "YES"),
+  poc("POC-HRG-01", HUB_ID, "Jordan", "Lee", "BUSINESS_CONTACT", "b2b.ops@harborviewretail.com", "+1 704 555 0110", [], "YES"),
+  poc("POC-HRG-02", HUB_ID, "Sam", "Okafor", "TECHNICAL_CONTACT", "edi.team@harborviewretail.com", "+1 704 555 0111", ["850", "856", "810"]),
+  poc("POC-BWHG-01", "C20004", "Priya", "Raman", "TECHNICAL_CONTACT", "edi-support@brightwellhome.com", "+1 614 555 0182", ["856", "810"], "YES"),
+  poc("POC-BWHG-02", "C20004", "Marcus", "Hale", "BUSINESS_CONTACT", "customer.ops@brightwellhome.com", "+1 614 555 0140"),
+  poc("POC-NFF-01", "C20001", "Elena", "Brandt", "TECHNICAL_CONTACT", "edi@northfieldfoodsinc.com", "+1 612 555 0199", ["810"], "YES"),
+  poc("POC-SMB-01", "C20007", "Tom", "Alvarez", "SUPPORT_CONTACT", "edi.help@summitbevco.com", "+1 303 555 0147", ["850", "997"], "YES"),
+  poc("POC-HOL-01", "C20006", "Femke", "de Vries", "TECHNICAL_CONTACT", "edi@hollandatrading.nl", "+31 10 555 0123", ["ORDERS", "CONTRL"], "YES"),
+  poc("POC-PGH-01", "C20005", "Ava", "Collins", "TECHNICAL_CONTACT", "it@pinegatehome.com", "+1 828 555 0101", [], "YES"),
+  poc("POC-CRL-01", "C20013", "Dana", "Whitfield", "TECHNICAL_CONTACT", "edi@crestline3pl.com", "+1 775 555 0162", ["940", "945", "214"], "YES"),
+  poc("POC-CRL-02", "C20013", "Ray", "Okonkwo", "SUPPORT_CONTACT", "warehouse.ops@crestline3pl.com", "+1 775 555 0190", ["945"]),
+  poc("POC-MRC-01", "C20014", "Grace", "Lindqvist", "BUSINESS_CONTACT", "orders@mapleridgecrafts.com", "+1 541 555 0114", [], "YES"),
+  poc("POC-ATL-01", "C20008", "Owen", "Pierce", "TECHNICAL_CONTACT", "b2b@atlastoyco.com", "+1 401 555 0133", ["850", "856"], "YES"),
+  poc("POC-CST-01", "C20003", "Luis", "Moreno", "TECHNICAL_CONTACT", "edi@coastlineapparel.com", "+1 213 555 0177", ["856", "810"], "YES"),
 ];
+for (const n of NEW_PARTNERS) contacts.push(poc(`POC-${n.id.slice(1)}-01`, n.id, n.contact[0], n.contact[1], "TECHNICAL_CONTACT", n.contact[2], n.contact[3], ["850", "856", "810"], "YES"));
 
 export const privateContactRules = {
   [HUB_ID]: { tupleContactRules: [
@@ -428,3 +441,17 @@ export const workflowTemplates = [
 export const billingProfiles = {
   [HUB_ID]: [{ profileId: "BP-HRG-01", profileName: "Harborview US billing", isDefaultBillingProfile: "YES", companyId: HUB_ID, attention: "(restricted)", billingAddress: { city: "Charlotte", state: "NC", countryCode: "US" } }],
 };
+
+
+/** Applies partner lifecycle (go-live dates) to relationship statuses. Called at startup and daily. */
+export function refreshLifecycle(now = Date.now()) {
+  const today = Math.floor(now / DAY);
+  for (const p of PROFILES) {
+    const live = anchorDay(p.goLive) <= today;
+    for (const b of bprs) if (b.partnerCompanyId === p.id && (b.status === "ACTIVE" || b.status === "PENDING")) b.status = live ? "ACTIVE" : "PENDING";
+    for (const d of partnerDirectory) if (d.partnerCompanyId === p.id && (d.bprStatus === "ACTIVE" || d.bprStatus === "PENDING")) { d.bprStatus = live ? "ACTIVE" : "PENDING"; d.partnerShipStatus = live ? "ACTIVE" : "PENDING"; }
+    for (const t of tprs) if (t.partnerTradingAddress.companyId === p.id && t.tprType === "PRODUCTION" && (t.status === "ACTIVE" || t.status === "PENDING")) t.status = live ? "ACTIVE" : "PENDING";
+    for (const m of messagingTuples) if (m._partnerCompanyId === p.id && (m._status === "ACTIVE" || m._status === "PENDING")) { const t = tprs.find((x) => x.tradingPartnerRelationshipId === m._tprId); if (t) m._status = t.status; }
+  }
+}
+refreshLifecycle();

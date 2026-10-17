@@ -1,6 +1,7 @@
 // Catalog discovery, queries and delivery tools (Trading Grid Data Explorer over Trading Grid Data Platform).
 import * as O from "../data/other.js";
 import { transactions } from "../data/insights.js";
+import { ccimEventRows } from "../data/monitor.js";
 import { partnerDirectory, messagingTuples, companyById } from "../data/cms.js";
 import { ok, fail, createPlan, approvalRequired, consumePlan, scopeFilter, GRANT, Ctx } from "../runtime.js";
 import { ToolDef, s, NEW_CONTRACT } from "./types.js";
@@ -21,16 +22,20 @@ function product(ctx: Ctx, tool: string, op: string, id: string, version?: strin
   return { p };
 }
 
+const ACT: { key: string; rows: any[] } = { key: "", rows: [] };
 function rowsFor(productId: string): any[] {
   if (productId === "tgdp.transaction_activity") {
-    return transactions.filter((t) => t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId)).map((t) => ({
+    const key = `${transactions.length}|${Math.floor(Date.now() / 60_000)}`;
+    if (ACT.key === key) return ACT.rows;
+    ACT.key = key;
+    return (ACT.rows = transactions.filter((t) => t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId)).map((t) => ({
       transaction_id: t.transactionId, received_at: t.receivedAt, week: isoWeekStart(t.receivedAt), partner_company_id: t.partnerCompanyId,
       partner_name: companyById(t.partnerCompanyId)!.companyName, document_type: t.documentType, direction: t.direction, status: t.sourceStatus, document_count: t.documentCount,
-    }));
+    })));
   }
   if (productId === "tgdp.partner_directory") return partnerDirectory.map((p) => ({ bpr_id: p.bprId, partner_company_id: p.partnerCompanyId, partner_name: p.partnerCompanyName, status: p.partnerShipStatus, activation_date: p.partnerShipActivationDate?.slice(0, 10) ?? null }));
   if (productId === "tgdp.relationship_network") return messagingTuples.map((t: any) => ({ tpr_id: t._tprId, partner_company_id: t._partnerCompanyId, partner_name: companyById(t._partnerCompanyId)!.companyName, document_type: t.docType, direction: t.direction, status: t._status }));
-  if (productId === "tgdp.ccim_integration_events") return O.ccimEvents;
+  if (productId === "tgdp.ccim_integration_events") return ccimEventRows();
   return [];
 }
 
@@ -123,7 +128,7 @@ export const tgdpTools: ToolDef[] = [
       const first = q.rows!.slice(0, 100);
       return ok(ctx, "query_data_product", "dataproduct.query", { queryId: id, status: "COMPLETE", productId: r.p.productId, version: r.p.version, totalRows: q.total, returnedRows: first.length, rows: first, nextCursor: q.rows!.length > 100 ? "100" : null }, {
         sources: src(`Query ${r.p.productId}@${r.p.version}`, [id]), completeness: q.total! > q.rows!.length ? "PARTIAL" : "COMPLETE", freshnessSeconds: 900,
-        notes: r.p.productId === "tgdp.transaction_activity" ? ["Prototype seed holds 280 days of activity; the product contract states 25 months."] : undefined,
+        notes: r.p.productId === "tgdp.transaction_activity" ? ["Retained history in this environment: 6 months. The product contract states 25 months."] : undefined,
       });
     },
   },

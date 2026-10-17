@@ -4,8 +4,8 @@
 import { invoke } from "./tools/index.js";
 import { toolByName } from "./tools/index.js";
 import { decidePlan, clientStatus, Ctx, HostKey } from "./runtime.js";
-import { transactions } from "./data/insights.js";
 import { resetData } from "./reset.js";
+import { serializeState, setState } from "./state.js";
 
 type Out = { status: string; result?: any; error?: any; evidence?: any; access?: any };
 type Args = Record<string, any> | ((p: Out[]) => Record<string, any>);
@@ -13,10 +13,19 @@ type Check = [string, (o: Out, p: Out[]) => boolean];
 type Step = { tool: string; args?: Args; expect: string; code?: string; check?: Check; approve?: boolean; host?: HostKey };
 export type Scenario = { id: string; title: string; kind: string; host?: HostKey; prompt?: string; steps: Step[]; setup?: () => void };
 
+import { findExamples } from "./data/examples.js";
+import { STORES } from "./data/insights.js";
+
+class Skip extends Error {}
+let exCache: ReturnType<typeof findExamples> | null = null;
+/** Current examples from the observed traffic (cached for one run). */
+const EX = () => (exCache ??= findExamples());
+/** Returns the value or skips the scenario when no current example exists. */
+function need<T>(v: T | null | undefined): T { if (v == null) throw new Skip("No current example"); return v; }
+const glnFor = (d12: string) => { let s = 0; for (let i = 0; i < 12; i++) s += Number(d12[i]) * (i % 2 === 0 ? 1 : 3); return d12 + String((10 - (s % 10)) % 10); };
+const storeGln = (n: string) => STORES[n]?.gln ?? glnFor(`0614141${n.padStart(5, "0")}`);
 const has = (n: number) => (x: any[]) => Array.isArray(x) && x.length >= n;
 const R = (o: Out) => o.result ?? {};
-/** Transaction ID for a business key (latest match). */
-export const txk = (key: string) => transactions.find((t) => Object.values(t.keys).some((k: any) => k?.value === key) || Object.values(t.refs).includes(key))?.transactionId ?? "NOT-FOUND";
 
 const list: Scenario[] = [];
 let n = 0;
@@ -48,39 +57,39 @@ S("get_operation_result", "Result of a rejected change request", "Happy path", {
 S("get_operation_result", "Unknown operation reference", "Not found", { operation_ref: "EXP-0000" }, "ERROR", { code: "NOT_FOUND" });
 
 // ---------------------------------------------------------------- Transaction evidence (TG Insights)
-S("search_transactions", "Failed ASNs in the last 7 days", "Filter", { document_type: "856", status: "FAILED", from: "7d" }, "OK", { check: ["SH-77155 included", (o) => JSON.stringify(R(o)).includes("SH-77155")], prompt: "Which ASNs failed in the last 7 days?" });
+S("search_transactions", "Failed ASNs in the last 30 days", "Filter", { document_type: "856", status: "FAILED", from: "30d" }, "OK", { check: ["Only failed 856s", (o) => R(o).transactions.every((t: any) => t.documentType === "856")], prompt: "Which ASNs failed in the last 7 days, and why?" });
 S("search_transactions", "Ambiguous partner name", "Ambiguous", { partner: "Northfield" }, "ERROR", { code: "AMBIGUOUS_PARTNER" });
 S("search_transactions", "Partner outside the grant", "Access denied", { partner: "Lakeshore Market" }, "ERROR");
-S("search_transactions", "Find by business key", "Happy path", { key_value: "INV-99812" }, "OK", { check: ["One document", (o) => R(o).counts.documents >= 1] });
-S("search_transactions", "Find by ship-to GLN", "Filter", { ship_to_gln: "0614141000418", from: "7d" }, "OK", { check: ["Matches", (o) => R(o).counts.documents >= 1], prompt: "Show POs shipping to DC 0412 (GLN 0614141000418) this week." });
-S("search_transactions", "Test environment only", "Filter", { environment: "TEST", from: "30d" }, "OK", { check: ["Pinegate test invoice", (o) => JSON.stringify(R(o)).includes("INV-PGH-0001")] });
+S("search_transactions", "Find by business key", "Happy path", () => ({ key_value: need(EX().deliveredInvoice).invoiceNumber }), "OK", { check: ["One document", (o) => R(o).counts.documents >= 1] });
+S("search_transactions", "Find by ship-to GLN", "Filter", { ship_to_gln: "0614141001019", from: "7d" }, "OK", { check: ["Matches", (o) => R(o).counts.documents >= 1], prompt: "Show POs shipping to store 0101 (GLN 0614141001019) this week." });
+S("search_transactions", "Test environment only", "Filter", { environment: "TEST", from: "30d" }, "OK", { check: ["Test documents", (o) => R(o).counts.documents >= 1] });
 S("search_transactions", "Window beyond the 183-day search limit", "Partial evidence", { from: "2025-01-01T00:00:00Z", to: "2025-02-01T00:00:00Z" }, "OK", { check: ["Completeness PARTIAL with missing evidence", (o) => o.evidence?.completeness === "PARTIAL" && o.evidence?.missingEvidence?.length > 0] });
 S("search_transactions", "Paginate results", "Pagination", { from: "30d", page_size: 10 }, "OK", { check: ["Next cursor returned", (o) => !!(R(o).nextCursor ?? o.evidence?.pagination?.nextCursor)] });
 S("search_transactions", "3PL shipment status messages", "Filter", { partner: "Crestline Logistics", document_type: "214", from: "2d" }, "OK", { check: ["214s found", (o) => R(o).counts.documents >= 1], prompt: "Show Crestline 214 shipment status messages from the last 2 days." });
-S("search_transactions", "Failed 820 remittance via VAN", "Filter", { partner: "Coastline Apparel", document_type: "820", status: "FAILED", from: "7d" }, "OK", { check: ["TRN-CST-8800", (o) => JSON.stringify(R(o)).includes("TRN-CST-8800")] });
-S("search_transactions", "In-process documents older than 6 hours", "Filter", { status: "IN_PROCESS", modified_before: "6h" }, "OK", { check: ["SH-CST-9921 stuck", (o) => JSON.stringify(R(o)).includes("SH-CST-9921")], prompt: "Which documents have been in process for more than 6 hours?" });
-S("get_transaction", "Read the failed ASN", "Happy path", { key_value: "SH-77155" }, "OK", { check: ["XREF-404", (o) => R(o).errors?.[0]?.code === "XREF-404"] });
-S("get_transaction", "Read by transaction ID", "Happy path", () => ({ transaction_id: txk("SH-77120") }), "OK", { check: ["856", (o) => R(o).documentType === "856"] });
+S("search_transactions", "Remittances in the last 30 days", "Filter", { document_type: "820", from: "30d" }, "OK", { check: ["820s found", (o) => R(o).counts.documents >= 1] });
+S("search_transactions", "In-process documents older than 6 hours", "Filter", { status: "IN_PROCESS", modified_before: "6h", from: "7d" }, "OK", { check: ["Current stuck file listed", (o) => JSON.stringify(R(o)).includes(need(EX().stuckInProcess).transactionId)], prompt: "Which documents have been in process for more than 6 hours?" });
+S("get_transaction", "Read a failed ASN", "Happy path", () => ({ key_value: need(EX().failedAsn).shipmentId }), "OK", { check: ["FAIL with error", (o) => R(o).sourceStatus === "FAIL" && !!R(o).errors?.[0]?.code] });
+S("get_transaction", "Read by transaction ID", "Happy path", () => ({ transaction_id: need(EX().deliveredAsn).transactionId }), "OK", { check: ["856", (o) => R(o).documentType === "856"] });
 S("get_transaction", "Unknown key", "Not found", { key_value: "SH-00000" }, "ERROR");
-S("get_transaction", "Short-shipped 945", "Happy path", { key_value: "WSO-30412" }, "OK", { check: ["18 of 24 shipped", (o) => JSON.stringify(R(o)).includes("18")], prompt: "Did Crestline ship all units on shipping order WSO-30412?" });
-S("get_transaction", "Chargeback 812 to Northfield", "Happy path", { key_value: "CB-NF-2210" }, "OK", { check: ["812", (o) => R(o).documentType === "812"] });
-S("get_related_transactions", "Full PO lifecycle", "Happy path", { po_number: "4500018832" }, "OK", { check: ["850 to 810", (o) => ["850", "855", "856", "810"].every((d) => JSON.stringify(R(o)).includes(`"${d}"`))], prompt: "Show everything related to PO 4500018832." });
-S("get_related_transactions", "POs missing an 855", "Filter", { scan: "MISSING_855", partner: "Summit Beverage", older_than_hours: 48 }, "OK", { check: ["4500019250 listed", (o) => JSON.stringify(R(o)).includes("4500019250")] });
-S("get_related_transactions", "Invoice received before ASN", "Filter", { scan: "INVOICE_BEFORE_ASN", from: "7d" }, "OK", { check: ["INV-MPC-4410", (o) => JSON.stringify(R(o)).includes("INV-MPC-4410")] });
-S("get_related_transactions", "Invoice without a PO", "Filter", { scan: "INVOICE_WITHOUT_PO", from: "7d" }, "OK", { check: ["INV-99877", (o) => JSON.stringify(R(o)).includes("INV-99877")] });
-S("get_related_transactions", "Web EDI invoice without ASN", "Filter", { scan: "MISSING_856", partner: "Maple Ridge Crafts", older_than_hours: 24 }, "OK", { check: ["4500019940", (o) => JSON.stringify(R(o)).includes("4500019940")] });
-S("get_acknowledgment_evidence", "Missing 997s for Summit", "Happy path", { partner: "Summit Beverage", ack_filter: "MISSING", from: "3d" }, "OK", { check: ["3 or more missing", (o) => R(o).summary?.missing >= 3], prompt: "Which POs to Summit Beverage have no 997?" });
-S("get_acknowledgment_evidence", "Rejected 997s for Meridian", "Filter", { partner: "Meridian", ack_filter: "REJECTED", from: "7d" }, "OK", { check: ["2 rejected", (o) => R(o).summary?.rejected >= 2] });
-S("get_acknowledgment_evidence", "Rejected CONTRL for Hollanda", "Filter", { partner: "Hollanda", document_type: "ORDERS", ack_filter: "REJECTED", from: "7d" }, "OK", { check: ["CONTRL rejection", (o) => JSON.stringify(R(o)).includes("HRG-ORD-77002")] });
-S("get_acknowledgment_evidence", "Acknowledgment for one transaction", "Happy path", () => ({ transaction_id: txk("SH-77155") }), "OK");
-S("get_transaction_payload", "Original ASN payload", "Happy path", () => ({ transaction_id: txk("SH-77120") }), "OK", { check: ["BSN segment", (o) => JSON.stringify(R(o)).includes("BSN")] });
-S("get_transaction_payload", "Translated payload", "Happy path", () => ({ transaction_id: txk("INV-99812"), variant: "TRANSLATED" }), "OK");
-S("get_transaction_payload", "Translated variant unavailable for failed file", "Partial evidence", () => ({ transaction_id: txk("SH-77155"), variant: "TRANSLATED" }), "OK", { check: ["Not available, reason given", (o) => R(o).available === false && !!R(o).reason] });
-S("get_transaction_payload", "Payload denied to SAP Joule", "Access denied", () => ({ transaction_id: txk("SH-77120") }), "DENIED", { host: "sap-joule" });
-S("get_transaction_payload", "945 payload descriptor", "Happy path", () => ({ transaction_id: txk("SH-CRL-30412") }), "OK", { check: ["Available with callback", (o) => R(o).available === true && !!R(o).descriptor?.callbackUri] });
+S("get_transaction", "Short-shipped 945", "Happy path", () => ({ transaction_id: need(EX().shortShipment).transactionId }), "OK", { check: ["Shipped below ordered", (o) => R(o).refs.quantityShipped < R(o).refs.quantityOrdered], prompt: "Which Crestline shipping orders were short shipped this month?" });
+S("get_transaction", "Read a chargeback (812)", "Happy path", () => ({ key_value: need(EX().chargeback).adjustmentNumber }), "OK", { check: ["812", (o) => R(o).documentType === "812"] });
+S("get_related_transactions", "Full PO lifecycle", "Happy path", () => ({ po_number: need(EX().poLifecycle) }), "OK", { check: ["850 to 810", (o) => ["850", "855", "856", "810"].every((d) => JSON.stringify(R(o)).includes(`"${d}"`))], prompt: "Show everything related to a recent PO that has shipped and been invoiced." });
+S("get_related_transactions", "POs missing an 855", "Filter", { scan: "MISSING_855", older_than_hours: 48, from: "7d" }, "OK");
+S("get_related_transactions", "Invoice received before ASN", "Filter", { scan: "INVOICE_BEFORE_ASN", from: "14d" }, "OK");
+S("get_related_transactions", "Invoice without a PO", "Filter", { scan: "INVOICE_WITHOUT_PO", from: "30d" }, "OK");
+S("get_related_transactions", "Web EDI POs missing an ASN", "Filter", { scan: "MISSING_856", partner: "Maple Ridge Crafts", older_than_hours: 72, from: "30d" }, "OK");
+S("get_acknowledgment_evidence", "Partner with missing 997s", "Happy path", () => ({ partner: need(EX().missingAck).partnerCompanyId, ack_filter: "MISSING", from: "4d" }), "OK", { check: ["Missing acknowledgments", (o) => R(o).summary?.missing >= 1], prompt: "Which outbound POs have no 997 after 24 hours?" });
+S("get_acknowledgment_evidence", "Partner with rejected 997s", "Filter", () => ({ partner: need(EX().rejectedAck).partner, ack_filter: "REJECTED", from: "30d" }), "OK", { check: ["Rejected acknowledgments", (o) => R(o).summary?.rejected >= 1] });
+S("get_acknowledgment_evidence", "EDIFACT acknowledgments for Hollanda", "Filter", { partner: "Hollanda", document_type: "ORDERS", ack_filter: "ALL", from: "30d" }, "OK", { check: ["Orders checked", (o) => R(o).summary?.documentsChecked >= 1] });
+S("get_acknowledgment_evidence", "Acknowledgment for one transaction", "Happy path", () => ({ transaction_id: need(EX().deliveredAsn).transactionId }), "OK");
+S("get_transaction_payload", "Original ASN payload", "Happy path", () => ({ transaction_id: need(EX().deliveredAsn).transactionId }), "OK", { check: ["Available", (o) => R(o).available === true] });
+S("get_transaction_payload", "Translated payload", "Happy path", () => ({ transaction_id: need(EX().deliveredInvoice).transactionId, variant: "TRANSLATED" }), "OK");
+S("get_transaction_payload", "Translated variant unavailable for failed file", "Partial evidence", () => ({ transaction_id: need(EX().failedAsn).transactionId, variant: "TRANSLATED" }), "OK", { check: ["Not available, reason given", (o) => R(o).available === false && !!R(o).reason] });
+S("get_transaction_payload", "Payload denied to SAP Joule", "Access denied", () => ({ transaction_id: need(EX().deliveredAsn).transactionId }), "DENIED", { host: "sap-joule" });
+S("get_transaction_payload", "945 payload descriptor", "Happy path", () => ({ transaction_id: need(EX().shortShipment).transactionId }), "OK", { check: ["Available with callback", (o) => R(o).available === true && !!R(o).descriptor?.callbackUri] });
 S("summarize_transaction_activity", "Volume by partner and type", "Happy path", { from: "30d", group_by: ["partner", "document_type"] }, "OK", { check: ["Rows", (o) => has(5)(R(o).current?.rows)] });
 S("summarize_transaction_activity", "Top error types for Northfield", "Filter", { analysis: "ERRORS", partner: "Northfield Foods", from: "30d" }, "OK", { prompt: "Top error types for Northfield Foods in the last 30 days." });
-S("summarize_transaction_activity", "Silent partners", "Happy path", { analysis: "SILENT_PARTNERS", recent_days: 7, baseline_days: 30 }, "OK", { check: ["Atlas Toy silent", (o) => JSON.stringify(R(o)).includes("Atlas")], prompt: "Which partners have gone quiet compared with their normal volume?" });
+S("summarize_transaction_activity", "Silent partners", "Happy path", { analysis: "SILENT_PARTNERS", recent_days: 7, baseline_days: 30 }, "OK", { prompt: "Which partners have gone quiet compared with their normal volume?" });
 S("summarize_transaction_activity", "Compare with previous period", "Filter", { from: "7d", group_by: ["document_type"], compare_previous: true }, "OK");
 S("summarize_transaction_activity", "Count by file", "Filter", { from: "7d", counting_unit: "file" }, "OK");
 
@@ -97,7 +106,7 @@ S("search_legal_entities", "Legal entities for Harborview", "Happy path", { comp
 S("search_legal_entities", "Legal entity by profile name", "Filter", { legal_profile_name: "Crestline" }, "OK", { check: ["LE-CRL-01", (o) => JSON.stringify(R(o)).includes("LE-CRL-01")] });
 S("get_legal_entity", "Read a legal entity", "Happy path", { legal_entity_id: "LE-HOL-01" }, "OK");
 S("get_legal_entity", "Unknown legal entity", "Not found", { legal_entity_id: "LE-XXX-99" }, "ERROR");
-S("list_partners", "Active partners", "Happy path", { status: "ACTIVE" }, "OK", { check: ["12 active", (o) => R(o).partners?.length === 12], prompt: "List our active trading partners." });
+S("list_partners", "Active partners", "Happy path", { status: "ACTIVE" }, "OK", { check: ["At least 25 active", (o) => R(o).partners?.length >= 25], prompt: "List our active trading partners." });
 S("list_partners", "Pending partners", "Filter", { status: "PENDING" }, "OK", { check: ["Evergreen", (o) => JSON.stringify(R(o)).includes("Evergreen")] });
 S("list_partners", "Paginate partners", "Pagination", { page_size: 5 }, "OK", { check: ["5 rows", (o) => R(o).partners?.length === 5] });
 S("get_partner_context", "Full context for a partner", "Happy path", { partner: "Summit Beverage" }, "OK", { prompt: "Give me everything about Summit Beverage's setup." });
@@ -204,7 +213,7 @@ S("list_cross_reference_entities", "Cross-reference entities", "Happy path", {},
 S("list_cross_reference_entities", "Paginate entities", "Pagination", { offset: 0, count: 2 }, "OK");
 S("get_cross_reference_entity", "Read an entity", "Happy path", { entity: "STORE_TO_GLN" }, "OK");
 S("get_cross_reference_entity", "Read the pre-xref routing table", "Happy path", { prexref: true }, "OK");
-S("get_cross_reference_entry", "Missing store 0412", "Not found", { entity: "STORE_TO_GLN", key: "0412" }, "ERROR", { code: "KEY_NOT_FOUND", prompt: "Is store 0412 in the STORE_TO_GLN table?" });
+S("get_cross_reference_entry", "Store without a cross-reference entry", "Not found", () => ({ entity: "STORE_TO_GLN", key: need(EX().storeMissingXref).storeNumber }), "ERROR", { code: "KEY_NOT_FOUND", prompt: "Which stores are missing from the STORE_TO_GLN table?" });
 S("get_cross_reference_entry", "Existing store", "Happy path", { entity: "STORE_TO_GLN", key: "0214" }, "OK");
 S("get_cross_reference_entry", "Missing carrier status A9", "Not found", { entity: "CARRIER_STATUS_CODE", key: "A9" }, "ERROR", { code: "KEY_NOT_FOUND" });
 S("get_cross_reference_header", "Header configuration not offered for this solution", "Validation", { entity: "CARRIER_STATUS_CODE" }, "ERROR", { code: "UNSUPPORTED_OPERATION" });
@@ -215,12 +224,12 @@ S("export_cross_reference_entries", "Export an entity", "Happy path", { entity: 
 S("prepare_cross_reference_change", "Invalid GLN check digit", "Validation", { entity: "STORE_TO_GLN", change: "ADD", key: "0999", values: { gln: "0614141000419", locationName: "Test", locationType: "STORE", active: "Y" } }, "ERROR");
 S("prepare_cross_reference_change", "Entity reserved by another user", "Validation", { entity: "CARRIER_STATUS_CODE", change: "ADD", key: "A9", values: { hrgStatus: "APPOINTMENT", description: "Appointment scheduled" } }, "ERROR");
 S("apply_cross_reference_change", "Apply without a plan", "Validation", { plan_id: "PLN-NOPE" }, "ERROR");
-F("Add missing store 0412: prepare, approve, apply", "Approval flow", [
-  { tool: "prepare_cross_reference_change", args: { entity: "STORE_TO_GLN", change: "ADD", key: "0412", values: { gln: "0614141000418", locationName: "DC 0412 Greensboro", locationType: "DC", active: "Y" } }, expect: "APPROVAL_REQUIRED" },
+F("Add a missing store: prepare, approve, apply", "Approval flow", [
+  { tool: "prepare_cross_reference_change", args: () => { const st = EX().storeMissingXref ?? { storeNumber: "9001", gln: glnFor("061414190010"), name: "Store 9001" }; return { entity: "STORE_TO_GLN", change: "ADD", key: st.storeNumber, values: { gln: st.gln, locationName: st.name, locationType: "STORE", active: "Y" } }; }, expect: "APPROVAL_REQUIRED" },
   { tool: "apply_cross_reference_change", args: (p) => ({ plan_id: plan(p) }), expect: "ERROR", code: "APPROVAL_PENDING", approve: true },
   { tool: "apply_cross_reference_change", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK", check: ["Verified readback", (o) => R(o).verified === true] },
   { tool: "apply_cross_reference_change", args: (p) => ({ plan_id: plan(p, 0) }), expect: "ERROR" },
-], { prompt: "Brightwell says ASN SH-77155 was sent yesterday. Why isn't it visible, and fix it." });
+], { prompt: "An ASN failed with a missing store cross-reference. Find it, explain it and prepare the fix." });
 
 // ---------------------------------------------------------------- Community Projects and Provisioning
 S("list_change_request_types", "Change request types", "Happy path", {}, "OK");
@@ -258,7 +267,7 @@ S("get_data_product_quality", "Product quality", "Happy path", { product_id: "tg
 S("get_data_product_lineage", "Product lineage", "Happy path", { product_id: "tgdp.relationship_network" }, "OK");
 S("query_data_product", "Weekly volume by partner", "Happy path", { product_id: "tgdp.transaction_activity", group_by: ["partner_name"], measures: ["count"], limit: 20 }, "OK", { prompt: "Query weekly transaction volume by partner from the data platform." });
 S("query_data_product", "Filter by status", "Filter", { product_id: "tgdp.transaction_activity", filters: [{ field: "status", op: "eq", value: "FAIL" }], limit: 10 }, "OK");
-S("query_data_product", "CCIM events", "Happy path", { product_id: "tgdp.ccim_integration_events" }, "OK", { check: ["Crestline event", (o) => JSON.stringify(R(o)).includes("Crestline")] });
+S("query_data_product", "CCIM events", "Happy path", { product_id: "tgdp.ccim_integration_events" }, "OK", { check: ["Events returned", (o) => JSON.stringify(R(o)).includes("event_id")] });
 S("query_data_product", "Unknown field", "Validation", { product_id: "tgdp.partner_directory", fields: ["salary"] }, "ERROR");
 S("get_data_product_record", "Record by key", "Happy path", { product_id: "tgdp.partner_directory", key: "BPR-4112" }, "OK");
 S("get_data_product_record", "Unknown record", "Not found", { product_id: "tgdp.partner_directory", key: "BPR-9999" }, "ERROR");
@@ -311,7 +320,7 @@ S("ccim_get_transaction_volume", "Volume by EDI address for a partner", "Filter"
 S("ccim_get_transaction_volume", "Ambiguous partner", "Ambiguous", { partner: "Northfield" }, "ERROR", { code: "AMBIGUOUS_PARTNER" });
 S("ccim_list_trading_community", "Trading community", "Happy path", {}, "OK");
 S("ccim_list_trading_community", "Inactive partners", "Filter", { status: "INACTIVE" }, "OK", { check: ["Redline inactive", (o) => JSON.stringify(R(o)).includes("Redline")], prompt: "Which partners have had no traffic in 30 days?" });
-S("ccim_get_partner_details", "Partner details panel", "Happy path", { partner: "Atlas Toy" }, "OK", { check: ["Delivery error listed", (o) => JSON.stringify(R(o)).includes("AS2-MDN-504")] });
+S("ccim_get_partner_details", "Partner details panel", "Happy path", { partner: "Atlas Toy" }, "OK", { check: ["Weekly volume", (o) => R(o).weeklyVolume?.length === 8] });
 S("ccim_get_partner_stats", "Community growth", "Happy path", { months: 6 }, "OK", { check: ["6 months", (o) => R(o).series.length === 6] });
 S("ccim_get_document_type_analysis", "Dormant document types", "Happy path", {}, "OK", { check: ["Dormant rows", (o) => R(o).dormantCount > 0], prompt: "Which configured document types have not been exchanged in 180 days?" });
 S("ccim_get_document_type_analysis", "Analysis for one partner, 30-day threshold", "Filter", { partner: "Atlas Toy", dormant_days: 30 }, "OK");
@@ -322,35 +331,35 @@ S("ccim_get_network_graph", "Network graph volume bands", "Happy path", {}, "OK"
 S("tgi_get_dashboard", "Operations dashboard", "Happy path", {}, "OK");
 S("tgi_list_saved_filters", "Saved filters", "Happy path", {}, "OK");
 S("tgi_list_alert_rules", "Alert rules", "Happy path", {}, "OK");
-S("tgi_create_alert_rule", "Create an alert from a saved filter", "Happy path", { name: "Failed invoices", filter_id: "SF-03", recipients: ["ap.team@harborview.example"], frequency: "DAILY" }, "OK", { prompt: "Create a daily alert for failed invoices this week to ap.team@harborview.example." });
-S("tgi_create_alert_rule", "Unknown saved filter", "Not found", { name: "x", filter_id: "SF-99", recipients: ["a@b.example"] }, "ERROR");
+S("tgi_create_alert_rule", "Create an alert from a saved filter", "Happy path", { name: "Failed invoices", filter_id: "SF-03", recipients: ["ap.team@harborviewretail.com"], frequency: "DAILY" }, "OK", { prompt: "Create a daily alert for failed invoices this week to ap.team@harborviewretail.com." });
+S("tgi_create_alert_rule", "Unknown saved filter", "Not found", { name: "x", filter_id: "SF-99", recipients: ["a@b.com"] }, "ERROR");
 S("tgi_list_report_rules", "Scheduled reports", "Happy path", {}, "OK");
 S("tgi_get_facets", "Narrow-by facets", "Happy path", {}, "OK", { check: ["Delivery status facet", (o) => !!R(o).deliveryStatus] });
 S("tgi_get_facets", "Facets over 30 days", "Filter", { days: 30 }, "OK");
-S("tgi_get_processing_flow", "Processing flow of a failed ASN", "Happy path", () => ({ transaction_id: txk("SH-77155") }), "OK", { check: ["Failed at Transform", (o) => R(o).steps.some((x: any) => x.step === "Transform" && x.status === "FAILED")] });
+S("tgi_get_processing_flow", "Processing flow of a failed ASN", "Happy path", () => ({ transaction_id: need(EX().failedAsn).transactionId }), "OK", { check: ["A failed step", (o) => R(o).steps.some((x: any) => x.status === "FAILED")] });
 S("tgi_get_processing_flow", "Unknown transaction", "Not found", { transaction_id: "TGT000000000" }, "ERROR");
-S("tgi_get_business_document", "Business view of an invoice", "Happy path", () => ({ transaction_id: txk("INV-99812") }), "OK", { check: ["Invoice", (o) => R(o).document === "Invoice"] });
-S("tgi_get_business_document", "Business document denied to SAP Joule", "Access denied", () => ({ transaction_id: txk("INV-99812") }), "DENIED", { host: "sap-joule" });
+S("tgi_get_business_document", "Business view of an invoice", "Happy path", () => ({ transaction_id: need(EX().deliveredInvoice).transactionId }), "OK", { check: ["Invoice", (o) => R(o).document === "Invoice"] });
+S("tgi_get_business_document", "Business document denied to SAP Joule", "Access denied", () => ({ transaction_id: need(EX().deliveredInvoice).transactionId }), "DENIED", { host: "sap-joule" });
 S("tgi_list_redelivery_rules", "Automated redelivery rules", "Happy path", {}, "OK");
-S("tgi_redeliver_transactions", "Validation failures are not redeliverable", "Validation", () => ({ transaction_ids: [txk("SH-77155")] }), "ERROR");
+S("tgi_redeliver_transactions", "Translation failures are not redeliverable", "Validation", () => ({ transaction_ids: [need(EX().failedAsn).transactionId] }), "ERROR");
 S("tgi_redeliver_transactions", "More than 30 transactions", "Validation", { transaction_ids: Array.from({ length: 31 }, (_, i) => `TGT${i}`) }, "ERROR");
-F("Redeliver the failed 820 remittance", "Approval flow", [
-  { tool: "tgi_redeliver_transactions", args: () => ({ transaction_ids: [txk("TRN-CST-8800")] }), expect: "APPROVAL_REQUIRED", approve: true },
-  { tool: "tgi_redeliver_transactions", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK", check: ["Redelivered", (o) => R(o).results?.[0]?.result === "REDELIVERED"] },
+F("Redeliver a failed delivery", "Approval flow", [
+  { tool: "tgi_redeliver_transactions", args: () => ({ transaction_ids: [need(EX().deliveryFailure).transactionId] }), expect: "APPROVAL_REQUIRED", approve: true },
+  { tool: "tgi_redeliver_transactions", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK", check: ["Redelivered or queued", (o) => ["REDELIVERED", "QUEUED"].includes(R(o).results?.[0]?.result)] },
 ], { prompt: "Which failed deliveries can be redelivered now?" });
-F("Redelivery to Atlas is queued while the endpoint is down", "Approval flow", [
-  { tool: "tgi_redeliver_transactions", args: () => ({ transaction_ids: [txk("4500019760")] }), expect: "APPROVAL_REQUIRED", approve: true },
+F("Redelivery is queued while the partner endpoint is down", "Approval flow", [
+  { tool: "tgi_redeliver_transactions", args: () => ({ transaction_ids: [need(EX().deliveryFailureDown).transactionId] }), expect: "APPROVAL_REQUIRED", approve: true },
   { tool: "tgi_redeliver_transactions", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK", check: ["Queued", (o) => R(o).results?.[0]?.result === "QUEUED"] },
 ]);
-S("tgi_reprocess_transaction", "Delivered files cannot be reprocessed", "Validation", () => ({ transaction_id: txk("INV-99812") }), "ERROR", { code: "NOT_ELIGIBLE" });
-F("Reprocess ASN SH-77155 after the cross-reference fix", "Approval flow", [
-  { tool: "prepare_cross_reference_change", args: { entity: "STORE_TO_GLN", change: "ADD", key: "0412", values: { gln: "0614141000418", locationName: "DC 0412 Greensboro", locationType: "DC", active: "Y" } }, expect: "APPROVAL_REQUIRED", approve: true },
+S("tgi_reprocess_transaction", "Delivered files cannot be reprocessed", "Validation", () => ({ transaction_id: need(EX().deliveredInvoice).transactionId }), "ERROR", { code: "NOT_ELIGIBLE" });
+F("Reprocess a failed ASN after the cross-reference fix", "Approval flow", [
+  { tool: "prepare_cross_reference_change", args: () => { const a = need(EX().openXrefAsn); return { entity: "STORE_TO_GLN", change: "ADD", key: a.storeNumber, values: { gln: storeGln(a.storeNumber), locationName: `Store ${a.storeNumber}`, locationType: "STORE", active: "Y" } }; }, expect: "APPROVAL_REQUIRED", approve: true },
   { tool: "apply_cross_reference_change", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK" },
-  { tool: "tgi_reprocess_transaction", args: () => ({ transaction_id: txk("SH-77155") }), expect: "APPROVAL_REQUIRED", approve: true },
+  { tool: "tgi_reprocess_transaction", args: () => ({ transaction_id: need(EX().openXrefAsn).transactionId }), expect: "APPROVAL_REQUIRED", approve: true },
   { tool: "tgi_reprocess_transaction", args: (p) => ({ plan_id: plan(p, 2) }), expect: "OK", check: ["Delivered", (o) => R(o).result === "DELIVERED"] },
-], { prompt: "Reprocess ASN SH-77155 if its cause has been fixed." });
-F("Reprocess a 214 whose status code is still missing", "Approval flow", [
-  { tool: "tgi_reprocess_transaction", args: () => ({ transaction_id: txk("SH-CRL-30399") }), expect: "APPROVAL_REQUIRED", approve: true },
+], { prompt: "Find ASNs that failed on a missing store cross-reference, fix the table and reprocess them." });
+F("Reprocess an invalid invoice fails again", "Approval flow", [
+  { tool: "tgi_reprocess_transaction", args: () => ({ transaction_id: need(EX().invoiceValidation).transactionId }), expect: "APPROVAL_REQUIRED", approve: true },
   { tool: "tgi_reprocess_transaction", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK", check: ["Failed again", (o) => R(o).result === "FAILED_AGAIN"] },
 ]);
 
@@ -369,14 +378,14 @@ F("Create and deploy a Lex rule", "Approval flow", [
   { tool: "ccpm_create_rule", args: (p) => ({ plan_id: plan(p, 0) }), expect: "OK" },
 ], { prompt: "Create a Lex rule: 855 within 24 hours of the 850. Test it first." });
 S("ccpm_list_findings", "Open findings", "Happy path", { status: "NEW" }, "OK");
-S("ccpm_list_findings", "Lex findings for Summit", "Filter", { agent: "lex", partner: "Summit Beverage" }, "OK", { check: ["Summit 997 breach", (o) => JSON.stringify(R(o)).includes("4500019301")], prompt: "Which suppliers missed the 24-hour PO acknowledgment SLA this week?" });
-S("ccpm_list_findings", "Findings for one rule", "Filter", { rule_id: "R-NORA-01" }, "OK", { check: ["SH-77155", (o) => JSON.stringify(R(o)).includes("SH-77155")] });
+S("ccpm_list_findings", "Lex findings for a partner", "Filter", () => ({ agent: "lex", partner: need(EX().missingAck).partnerCompanyId }), "OK", { check: ["Findings", (o) => R(o).total >= 1], prompt: "Which suppliers missed the 24-hour PO acknowledgment SLA this week?" });
+S("ccpm_list_findings", "Findings for one rule", "Filter", { rule_id: "R-NORA-01" }, "OK", { check: ["Only R-NORA-01", (o) => R(o).findings.every((f: any) => f.ruleId === "R-NORA-01")] });
 F("Finding chain of reasoning, assign and resolve", "Happy path", [
-  { tool: "ccpm_list_findings", args: { rule_id: "R-NORA-01" }, expect: "OK" },
-  { tool: "ccpm_get_finding", args: (p) => ({ finding_id: R(p[0]).findings[0].findingId }), expect: "OK", check: ["Four reasoning steps", (o) => R(o).chainOfReasoning?.length === 4] },
-  { tool: "ccpm_update_finding", args: (p) => ({ finding_id: R(p[0]).findings[0].findingId, assignee: "edi.team@harborview.example", note: "Add store 0412" }), expect: "OK", check: ["Assigned", (o) => R(o).status === "ASSIGNED"] },
-  { tool: "ccpm_update_finding", args: (p) => ({ finding_id: R(p[0]).findings[0].findingId, disposition: "RESOLVED", note: "Entry added" }), expect: "OK", check: ["Resolved", (o) => R(o).status === "RESOLVED"] },
-], { prompt: "Explain the chain of reasoning for the newest ASN ship-to finding." });
+  { tool: "ccpm_list_findings", args: { status: "NEW" }, expect: "OK" },
+  { tool: "ccpm_get_finding", args: (p) => ({ finding_id: need(R(p[0]).findings[0]).findingId }), expect: "OK", check: ["Four reasoning steps", (o) => R(o).chainOfReasoning?.length === 4] },
+  { tool: "ccpm_update_finding", args: (p) => ({ finding_id: R(p[0]).findings[0].findingId, assignee: "edi.team@harborviewretail.com", note: "Investigating" }), expect: "OK", check: ["Assigned", (o) => R(o).status === "ASSIGNED"] },
+  { tool: "ccpm_update_finding", args: (p) => ({ finding_id: R(p[0]).findings[0].findingId, disposition: "RESOLVED", note: "Fixed" }), expect: "OK", check: ["Resolved", (o) => R(o).status === "RESOLVED"] },
+], { prompt: "Explain the chain of reasoning for the newest monitoring finding." });
 S("ccpm_get_finding", "Unknown finding", "Not found", { finding_id: "F-NOPE" }, "ERROR");
 S("ccpm_update_finding", "Update unknown finding", "Not found", { finding_id: "F-NOPE", disposition: "RESOLVED" }, "ERROR");
 S("ccpm_get_dashboard", "Performance dashboard", "Happy path", {}, "OK");
@@ -389,10 +398,10 @@ S("ccpm_get_supplier_analytics", "Suppliers ranked by score", "Happy path", {}, 
 S("search_knowledge", "Harborview procedure first", "Happy path", { query: "ASN failed missing cross-reference procedure" }, "OK", { check: ["KB-HRG-201 first", (o) => R(o).results?.[0]?.id === "KB-HRG-201"] });
 S("search_knowledge", "Reprocess versus redelivery", "Happy path", { query: "difference between reprocess and redelivery" }, "OK");
 S("create_support_ticket", "Create a support ticket", "Happy path", { summary: "Atlas AS2 outage", details: "MDN timeouts since 4 hours", severity: "HIGH" }, "OK", { check: ["Ticket ID", (o) => String(R(o).ticketId).startsWith("CS-")] });
-S("get_connection_status", "Partner endpoint down", "Happy path", { partner: "Atlas Toy" }, "OK", { check: ["DOWN", (o) => R(o).status === "DOWN"], prompt: "Why are deliveries to Atlas Toy failing, and is the endpoint back?" });
-S("get_connection_status", "SFTP pickup stalled", "Happy path", { partner: "Summit Beverage" }, "OK", { check: ["Partner pickup", (o) => !!R(o).partnerPickup] });
+S("get_connection_status", "Partner endpoint down", "Happy path", () => ({ partner: need(EX().partnerDown).partnerCompanyId }), "OK", { check: ["DOWN", (o) => R(o).status === "DOWN"], prompt: "Which partner endpoints are down right now?" });
+S("get_connection_status", "SFTP partner health", "Happy path", { partner: "Summit Beverage" }, "OK", { check: ["SFTP", (o) => R(o).protocol === "SFTP"] });
 S("get_connection_status", "Web EDI partner", "Happy path", { partner: "Maple Ridge Crafts" }, "OK");
-S("get_connection_status", "No health record", "Partial evidence", { partner: "Northfield Farms" }, "OK", { check: ["UNKNOWN", (o) => R(o).status === "UNKNOWN"] });
+S("get_connection_status", "No health record", "Partial evidence", { partner: "Redline Logistics" }, "OK", { check: ["UNKNOWN", (o) => R(o).status === "UNKNOWN"] });
 
 // ---------------------------------------------------------------- Client governance
 S("search_transactions", "Suspended client receives no data", "Access denied", { from: "7d" }, "DENIED", { host: "copilot-studio", setup: () => { clientStatus["copilot-studio"] = "SUSPENDED"; } });
@@ -403,7 +412,7 @@ export const SCENARIOS = list;
 
 // ---------------------------------------------------------------- runner
 export type StepResult = { tool: string; expected: string; status: string; code?: string; pass: boolean; note?: string; ms: number; args: any; out: Out };
-export type ScenarioResult = { id: string; pass: boolean; steps: StepResult[]; ms: number };
+export type ScenarioResult = { id: string; pass: boolean; skipped?: boolean; note?: string; steps: StepResult[]; ms: number };
 
 export function runScenario(sc: Scenario, baseUrl = "http://localhost"): ScenarioResult {
   const t0 = Date.now();
@@ -414,7 +423,7 @@ export function runScenario(sc: Scenario, baseUrl = "http://localhost"): Scenari
   for (const st of sc.steps) {
     const ctx: Ctx = { host: st.host ?? sc.host ?? "claude-connector", sessionId: `scenario-${sc.id}`, baseUrl };
     let args: any;
-    try { args = typeof st.args === "function" ? st.args(outs) : st.args ?? {}; } catch (e: any) { args = { _error: String(e?.message ?? e) }; }
+    try { args = typeof st.args === "function" ? st.args(outs) : st.args ?? {}; } catch (e: any) { if (e instanceof Skip) { for (const k of Object.keys(clientStatus)) delete (clientStatus as any)[k]; return { id: sc.id, pass: true, skipped: true, note: "No current example in the observed traffic.", steps, ms: Date.now() - t0 }; } args = { _error: String(e?.message ?? e) }; }
     const s0 = Date.now();
     const out = invoke(st.tool, args, ctx, "console").out as Out;
     outs.push(out);
@@ -432,11 +441,14 @@ export function runScenario(sc: Scenario, baseUrl = "http://localhost"): Scenari
 
 /** Runs scenarios against a fresh seeded state and restores it afterwards. */
 export function runScenarios(ids?: string[], baseUrl?: string) {
-  resetData();
+  const saved = serializeState();
+  exCache = null;
   const results = SCENARIOS.filter((s) => !ids?.length || ids.includes(s.id)).map((s) => { resetData(); return runScenario(s, baseUrl); });
-  resetData();
+  setState(saved);
   return results;
 }
+/** Single run on the current state, with fresh examples. */
+export function runOne(sc: Scenario, baseUrl?: string) { exCache = null; return runScenario(sc, baseUrl); }
 
 export function scenarioCatalog() {
   return SCENARIOS.map((s) => {

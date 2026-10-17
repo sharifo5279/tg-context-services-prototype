@@ -13,11 +13,15 @@ import { catalog, invoke, audit, TOOLS } from "./tools/index.js";
 import { HOSTS, GRANT, PERSONA, plans, decidePlan, clientStatus, scopeFilter, HostKey } from "./runtime.js";
 import { AGENTS, USE_CASES } from "./agents.js";
 import { handleMcp, hostForToken, tokenFor, resetGateway } from "./mcp.js";
-import { txById, renderPayload, transactions, STATUS_TEXT } from "./data/insights.js";
+import { txById, renderPayload, transactions, STATUS_TEXT, onWorldDay, worldStats } from "./data/insights.js";
+import { refreshLifecycle } from "./data/cms.js";
+import { findExamples } from "./data/examples.js";
+onWorldDay(() => refreshLifecycle());
 import { exports } from "./tools/tgdp.js";
 import { xrefEntities } from "./data/other.js";
 import { resetData } from "./reset.js";
-import { scenarioCatalog, SCENARIOS, runScenario, runScenarios, coverage } from "./scenarios.js";
+import { loadState } from "./persist.js";
+import { scenarioCatalog, SCENARIOS, runOne, runScenarios, coverage } from "./scenarios.js";
 
 const PASSWORD = process.env.DEMO_PASSWORD || "OpenText1000!";
 const SIGN = process.env.MCP_SECRET || PASSWORD;
@@ -41,7 +45,7 @@ function authed(req: any) {
 
 app.get("/healthz", (_req, res) => res.json({ ok: true, tools: TOOLS.length }));
 
-// OAuth discovery probes from MCP clients: this prototype uses token auth, so report no metadata.
+// OAuth discovery probes from MCP clients: token auth is used, so report no metadata.
 app.use("/.well-known", (_req, res) => res.status(404).json({ error: "not_found" }));
 
 // ---- MCP endpoint (bearer token or token-in-path) ---------------------------------------------------
@@ -77,7 +81,7 @@ app.get("/api/meta", (req, res) => {
     product: "Trading Grid Context Services", model: MODEL, apiKeyConfigured: apiKeyConfigured(), toolCount: TOOLS.length,
     persona: PERSONA, grant: GRANT, hosts: Object.values(HOSTS),
     agents: AGENTS, useCases: USE_CASES,
-    clientStatus,
+    clientStatus, examples: findExamples(), world: worldStats(),
     mcp: { url: `${b}/mcp`, tokens: Object.fromEntries((Object.keys(HOSTS) as HostKey[]).filter((h) => h !== "tg-aviator").map((h) => [h, { token: tokenFor(h), pathUrl: `${b}/mcp/k/${tokenFor(h)}` }])) },
   });
 });
@@ -147,7 +151,7 @@ app.get("/api/tgo/transactions/:id", (req, res) => {
   const t: any = txById(req.params.id);
   if (!t) return res.status(404).json({ error: "Transaction not found." });
   const ack = transactions.find((x) => x.refs.ackForTransactionId === t.transactionId);
-  const { _t, ...rest } = t;
+  const rest = t.toJSON();
   const related = t.refs.poNumber ? transactions.filter((x) => x.transactionId !== t.transactionId && (x.refs.poNumber === t.refs.poNumber || x.refs.ackForTransactionId === t.transactionId)).sort((a, b) => a._t - b._t).map(tgoRow) : transactions.filter((x) => x.refs.ackForTransactionId === t.transactionId).map(tgoRow);
   res.json({ ...rest, related, translated: t.payloadVariants.includes("TRANSLATED") ? renderPayload(t, "TRANSLATED") : null, row: tgoRow(t), statusText: STATUS_TEXT[t.sourceStatus], ack: ack ? { transactionId: ack.transactionId, documentType: ack.documentType, status: ack.ack?.status, code: ack.ack?.code, receivedAt: ack.receivedAt } : null, payloadPreview: renderPayload(t, "ORIGINAL") });
 });
@@ -185,7 +189,7 @@ app.post("/api/scenarios/run", (req, res) => {
   if (req.body?.all) return res.json({ results: runScenarios(undefined, base).map((r) => trim(r, false)) });
   const list = SCENARIOS.filter((x) => ids.includes(x.id));
   if (!list.length) return res.status(400).json({ error: "No scenarios selected. Provide scenario IDs or all=true." });
-  res.json({ results: list.map((x) => trim(runScenario(x, base), true)) });
+  res.json({ results: list.map((x) => trim(runOne(x, base), true)) });
 });
 
 app.get("/api/backlog", (_req, res) => {
@@ -209,4 +213,5 @@ app.get("/api/xref-export/:entity", (req, res) => { const e = xrefEntities[req.p
 app.use(express.static(PUBLIC, { index: false }));
 app.get(/.*/, (_req, res) => res.sendFile(path.join(PUBLIC, "index.html")));
 
-app.listen(PORT, () => console.log(`Trading Grid Context Services prototype on :${PORT} (model ${MODEL}, ${TOOLS.length} tools, API key ${apiKeyConfigured() ? "set" : "missing"})`));
+try { await loadState(); } catch (e: any) { console.error("Persistence: load failed; continuing in memory:", e?.message ?? e); }
+app.listen(PORT, () => console.log(`Trading Grid Context Services on :${PORT} (model ${MODEL}, ${TOOLS.length} tools, API key ${apiKeyConfigured() ? "set" : "missing"}, ${worldStats().visible} transactions visible, ${worldStats().pending} scheduled)`));
