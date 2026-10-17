@@ -318,7 +318,7 @@
     const c = conv(key, S.av.agentId, "tg-aviator");
     mounts[key] = aviatorChat;
     return `<aside class="aviator${S.av.max ? " max" : ""}" data-scroll><div class="avh">${AV_LOGO}<div><div class="avt">Aviator</div><div class="avs">${esc(a.subtitle ?? "Trading Grid Online")}</div></div>
-      <div class="avicons"><button class="iconbtn" data-avnew title="New conversation">${ic("refresh")}</button><button class="iconbtn" data-avmax title="${S.av.max ? "Exit full screen" : "Full screen"}">${ic(S.av.max ? "collapse" : "expand")}</button><button class="iconbtn" data-avclose title="Close">${ic("x")}</button></div></div>
+      <div class="avicons"><button class="iconbtn" data-avnew title="New conversation">${ic("refresh")}</button><button class="avmaxbtn" data-avmax title="${S.av.max ? "Exit full screen (Esc)" : "Full screen"}">${ic(S.av.max ? "collapse" : "expand")}<span>${S.av.max ? "Exit full screen" : "Full screen"}</span></button><button class="iconbtn" data-avclose title="Close">${ic("x")}</button></div></div>
       <div class="avb" data-conv="${key}">${aviatorChat(c)}</div></aside>`;
   }
   function openAviator(agentId, prompt, txId) {
