@@ -29,6 +29,11 @@
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>',
     collapse: '<path d="M4 14h6v6M20 10h-6V4M10 14l-7 7M14 10l7-7"/>',
+    grid: '<path d="M5 5h2v2H5zM11 5h2v2h-2zM17 5h2v2h-2zM5 11h2v2H5zM11 11h2v2h-2zM17 11h2v2h-2zM5 17h2v2H5zM11 17h2v2h-2zM17 17h2v2h-2z"/>',
+    back: '<path d="M15 18l-6-6 6-6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    thumbup: '<path d="M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2l-2 6a2 2 0 0 1-2 2H7"/>',
+    thumbdown: '<path d="M17 13V4h3v9zM17 13l-4 7a2 2 0 0 1-3-2l1-4H6a2 2 0 0 1-2-2l2-6a2 2 0 0 1 2-2h9"/>',
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
   };
   const ic = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${I[n] ?? ""}</svg>`;
@@ -157,13 +162,17 @@
       raf[key] = 0;
       const el = document.querySelector(`[data-conv="${key}"]`);
       if (!el || !mounts[key]) return;
-      const scroller = el.querySelector(".chatframe.max .chatscroll") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
-      const near = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 160;
+      const find = () => el.querySelector(".chatframe.max .chatscroll") ?? el.querySelector(".cps-msgs") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
+      const old = find();
+      const near = old.scrollTop + old.clientHeight >= old.scrollHeight - 160, top = old.scrollTop;
+      const focused = document.activeElement === el.querySelector("textarea");
       const draft = el.querySelector("textarea")?.value ?? "";
       el.innerHTML = mounts[key](S.convs[key]);
-      const ta = el.querySelector("textarea"); if (ta) ta.value = draft;
+      const ta = el.querySelector("textarea"); if (ta) { ta.value = draft; if (focused) ta.focus(); }
       document.querySelectorAll(`[data-side="${key}"]`).forEach((s) => (s.innerHTML = sideMounts[key]?.(S.convs[key]) ?? ""));
-      if (near) scroller.scrollTop = scroller.scrollHeight;
+      const cnt = String(S.convs[key]?.items.length ?? 0); const grew = el.dataset.n !== cnt; el.dataset.n = cnt;
+      const sc = find();
+      sc.scrollTop = near || grew ? sc.scrollHeight : top;
     });
   }
   const sideMounts = {};
@@ -697,6 +706,81 @@
       </div><div class="content" data-conv="${key}">${mounts[key](c)}</div></main></div>`;
   }
 
+  // ---------- Copilot Studio style client (simulated) ----------
+  S.cps = { view: "test", tab: "overview" };
+  const CPS_AGENT = "Harborview B2B Operations";
+  function cpsCard(p) {
+    const st = S.plans.find((x) => x.planId === p.planId)?.status ?? p.planStatus ?? p.status;
+    const cks = p.validation?.checks ?? [];
+    const pending = st === "PENDING_APPROVAL";
+    const fact = (k, v) => `<div class="k">${esc(k)}</div><div class="v">${v}</div>`;
+    return `<div class="cps-card"><div class="cps-card-h">${ic("check")}<span>Approval required</span><span class="cps-st ${pending ? "p" : st === "REJECTED" ? "r" : "a"}">${pending ? "Pending" : esc(String(st).replace("_", " ").toLowerCase())}</span></div>
+      <div class="cps-card-t">${esc(p.summary)}</div>
+      <div class="cps-facts">${fact("Target", `<span class="mono">${esc(p.target)}</span>`)}${cks.length ? fact("Checks", `${cks.filter((c) => c.result === "PASS").length} of ${cks.length} passed`) : ""}${fact("Plan", `<span class="mono">${esc(p.planId)}</span>`)}${fact("Expires", esc(new Date(p.expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })))}</div>
+      ${pending ? `<div class="cps-card-a"><button class="cps-btn primary" data-approve="${p.planId}">Approve</button><button class="cps-btn" data-reject="${p.planId}">Reject</button></div>` : ""}</div>`;
+  }
+  function cpsItem(c, m, mi) {
+    if (m.role === "user") return `<div class="cps-row u"><div class="cps-bub u">${esc(m.text)}</div></div>`;
+    const a = agent(m.agentId);
+    const done = !m.thinking && (m.text || m.error);
+    return `<div class="cps-row b"><div class="cps-av">${ic("spark")}</div><div class="cps-col">
+      <div class="cps-who">${esc(CPS_AGENT)}${m.steps.length || m.thinking ? ` <span class="cps-via">via ${esc(a?.name ?? "Aviator agent")}</span>` : ""}</div>
+      ${activity(m, mi, m.route)}
+      ${m.error ? `<div class="cps-bub b err">${esc(m.error)}</div>` : ""}
+      ${m.text ? `<div class="cps-bub b md">${md(m.text)}</div>` : ""}
+      ${m.plans.map(cpsCard).join("")}
+      ${done ? `<div class="cps-meta"><span>AI-generated content may be incorrect</span><span class="cps-fb">${ic("thumbup")}${ic("thumbdown")}</span></div>` : ""}</div></div>`;
+  }
+  function cpsChat(c, agentId, avail, blocked) {
+    const a = agent(agentId);
+    const starters = !c.items.length && a?.starters?.length ? `<div class="cps-chips">${a.starters.slice(0, 4).map((n) => `<button class="cps-chip" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div>` : "";
+    return `<div class="cps-th"><button class="cps-icon cps-back" data-cpsview="main" title="Agent overview">${ic("back")}</button><div class="cps-tt">Test your agent</div><button class="cps-icon" data-newconv="${c.key}" title="Start new test session">${ic("refresh")}</button></div>
+      <div class="cps-sel"><label>Connected agent</label><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "All Trading Grid tools" : x.name)}</option>`).join("")}</select></div>
+      ${blocked ? `<div class="cps-bar err">${ic("shield")}<span>Access to Trading Grid is suspended by the Harborview administrator. Requests return no data.</span></div>` : ""}
+      <div class="cps-msgs">
+        <div class="cps-row b"><div class="cps-av">${ic("spark")}</div><div class="cps-col"><div class="cps-who">${esc(CPS_AGENT)}</div><div class="cps-bub b">Hello. I can find transactions, explain failures, check partner connections and prepare Trading Grid changes for your approval.</div>${starters}</div></div>
+        ${c.items.map((m, mi) => cpsItem(c, m, mi)).join("")}
+      </div>
+      <form class="cps-comp" data-compose><textarea rows="1" placeholder="Ask a question or describe what you need" ${c.busy ? "disabled" : ""}></textarea><button class="cps-send" ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>`;
+  }
+  function pageCopilot() {
+    const eco = "copilot-studio";
+    const avail = studioAgents().filter((a) => S.deploy?.agents.find((x) => x.agentId === a.id)?.clients[eco]?.published && !S.deploy.agents.find((x) => x.agentId === a.id).clients[eco].blocked);
+    const agentId = avail.some((a) => a.id === qs().get("agent")) ? qs().get("agent") : (avail.find((a) => a.id === "context-assistant") ?? avail[0])?.id;
+    const h = hostBy(eco);
+    const key = `ext:${eco}:${agentId}`;
+    const c = conv(key, agentId, eco);
+    const blocked = (S.meta.clientStatus[eco] ?? "ACTIVE") !== "ACTIVE";
+    mounts[key] = (cc) => cpsChat(cc, agentId, avail, blocked);
+    const rail = [["home", "Home"], ["plus", "Create"], ["agent", "Agents"], ["swap", "Flows"], ["wrench", "Tools"], ["list", "Library"]].map(([i, l]) => `<div class="cps-ri ${l === "Agents" ? "on" : ""}">${ic(i)}<span>${l}</span></div>`).join("");
+    const tabs = [["overview", "Overview"], ["tools", "Tools"], ["agents", "Agents"], ["activity", "Activity"]];
+    const tab = S.cps.tab;
+    const mine = (S.audit ?? []).filter((x) => x.host === eco).slice(0, 12);
+    const toolsByDomain = Object.entries(S.tools.reduce((m, t) => ((m[t.domain] = (m[t.domain] ?? 0) + 1), m), {}));
+    const agentRow = (x) => `<div class="cps-li"><div class="cps-li-i">${ic("agent")}</div><div class="cps-li-b"><div class="t">${esc(x.name)}</div><div class="d">${esc(x.role)}</div></div><button class="cps-btn sm" data-cpsuse="${x.id}">Test</button></div>`;
+    let body;
+    if (tab === "tools") body = `<section class="cps-sec"><div class="cps-sh"><h3>Tools</h3><span class="cps-pill ok">Connected</span></div>
+        <div class="cps-li"><div class="cps-li-i">${ic("server")}</div><div class="cps-li-b"><div class="t">Trading Grid Context Services</div><div class="d">Model Context Protocol server · ${S.meta.toolCount} tools · ${esc(h.authPattern)}</div></div></div>
+        <table class="cps-t"><thead><tr><th>Capability area</th><th>Tools</th></tr></thead><tbody>${toolsByDomain.map(([d, n]) => `<tr><td>${esc(d)}</td><td>${n}</td></tr>`).join("")}</tbody></table></section>`;
+    else if (tab === "agents") body = `<section class="cps-sec"><div class="cps-sh"><h3>Connected agents</h3><span class="cps-sub">${avail.length} Trading Grid Aviator agents published to this client</span></div>${avail.map(agentRow).join("")}</section>`;
+    else if (tab === "activity") body = `<section class="cps-sec"><div class="cps-sh"><h3>Activity</h3><span class="cps-sub">Recent Trading Grid calls from this agent</span></div>${mine.length ? `<table class="cps-t"><thead><tr><th>Time</th><th>Tool</th><th>Decision</th></tr></thead><tbody>${mine.map((x) => `<tr><td>${esc(new Date(x.at).toLocaleTimeString())}</td><td class="mono">${esc(x.tool)}</td><td>${esc(x.decision)}</td></tr>`).join("")}</tbody></table>` : `<div class="cps-empty">No activity yet. Ask a question in the test pane.</div>`}</section>`;
+    else body = `<section class="cps-sec"><div class="cps-sh"><h3>Details</h3></div><div class="cps-facts wide">
+        <div class="k">Description</div><div class="v">B2B operations assistant for Harborview Retail Group. Answers from Trading Grid through Trading Grid Context Services.</div>
+        <div class="k">Orchestration</div><div class="v">Generative</div>
+        <div class="k">Connection</div><div class="v">${esc(h.route.join(" › "))}</div>
+        <div class="k">Signed in as</div><div class="v">${esc(h.principal)}</div></div></section>
+      <section class="cps-sec"><div class="cps-sh"><h3>Tools</h3><button class="cps-link" data-cpstab="tools">See all</button></div><div class="cps-li"><div class="cps-li-i">${ic("server")}</div><div class="cps-li-b"><div class="t">Trading Grid Context Services</div><div class="d">${S.meta.toolCount} tools · Connected</div></div><span class="cps-pill ok">On</span></div></section>
+      <section class="cps-sec"><div class="cps-sh"><h3>Agents</h3><button class="cps-link" data-cpstab="agents">See all ${avail.length}</button></div>${avail.filter((x) => x.id !== "context-assistant").slice(0, 4).map(agentRow).join("")}</section>`;
+    return `<div class="cps"><header class="cps-top"><span class="cps-waffle">${ic("grid")}</span><span class="cps-prod">Copilot Studio</span><span class="cps-sim">Simulated</span><div class="spacer"></div><span class="cps-env">Environment: Harborview Production</span><button class="cps-icon light" data-href="/" title="Demo journey">${ic("route")}</button></header>
+      <div class="cps-body v-${S.cps.view}"><nav class="cps-rail">${rail}</nav>
+        <main class="cps-main"><div class="cps-crumb">Agents › ${esc(CPS_AGENT)}</div>
+          <div class="cps-ah"><div class="cps-tile">${ic("spark")}</div><div><div class="cps-an">${esc(CPS_AGENT)}</div><div class="cps-sub">Published · Microsoft Teams, web</div></div><div class="spacer"></div><button class="cps-btn primary cps-testbtn" data-cpsview="test">Test</button></div>
+          <div class="cps-tabs">${tabs.map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-cpstab="${k}">${l}</button>`).join("")}</div>
+          ${blocked ? `<div class="cps-bar err">${ic("shield")}<span>Trading Grid access for this client is suspended in Trading Grid Online.</span></div>` : ""}
+          ${body}</main>
+        <aside class="cps-test" data-conv="${key}">${mounts[key](c)}</aside></div></div>`;
+  }
+
   // ---------- router ----------
   let poll = 0;
   async function render() {
@@ -725,7 +809,7 @@
     else if (p === "/cs/access") { S.audit = await api("/api/audit"); html = pageCsAccess(); }
     else if (p === "/cs/approvals") { S.plans = await api("/api/plans"); html = pageCsApprovals(); }
     else if (p.startsWith("/approve/")) { S.plans = await api("/api/plans"); html = await pageApprove(p.split("/")[2]); }
-    else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageExt(); }
+    else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; if ((qs().get("eco") ?? "copilot-studio") === "copilot-studio") { S.audit = await api("/api/audit"); html = pageCopilot(); } else html = pageExt(); }
     else html = shellCs(`<div class="content"><div class="empty">Page not found. Return to the demo journey.</div></div>`);
     app.innerHTML = html;
     if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; S.txTab = "details"; return render(); }
@@ -737,9 +821,12 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-cpsview],[data-cpstab],[data-cpsuse]");
     if (!t || t.disabled) return;
     const d = t.dataset;
+    if (d.cpsview) { S.cps.view = d.cpsview; return render(); }
+    if (d.cpstab) { S.cps.tab = d.cpstab; return render(); }
+    if (d.cpsuse) { S.cps.view = "test"; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`/ext?${u}`); }
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }
     if (d.scall != null) { if (!confirm(`Run all ${S.sc.catalog.length} scenarios? Demo data is reset before each scenario and restored afterwards.`)) return; S.sc.running = true; render(); const r = await api("/api/scenarios/run", { method: "POST", body: { all: true } }); S.sc.running = false; for (const x of r.results ?? []) S.sc.results[x.id] = x; S.plans = await api("/api/plans"); return render(); }
     if (d.scrow) { S.sc.open[d.scrow] = !S.sc.open[d.scrow]; return render(); }
@@ -794,6 +881,7 @@
     if (d.sckind != null) { S.sc.kind = ev.target.value; render(); }
     if (d.scresult != null) { S.sc.result = ev.target.value; render(); }
     if (d.days != null) { S.tgoFilters.days = ev.target.value; render(); }
+    if (d.cpsagent != null) { const u = new URLSearchParams(location.search); u.set("eco", "copilot-studio"); u.set("agent", ev.target.value); go(`/ext?${u}`); }
     if (d.extagent != null) { const u = new URLSearchParams(location.search); u.set("agent", ev.target.value); go(`/ext?${u}`); }
   });
   app.addEventListener("input", (ev) => {

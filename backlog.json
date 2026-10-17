@@ -1194,12 +1194,13 @@
         {
           "key": "TGCS-1102",
           "title": "Microsoft Copilot Studio style client",
-          "status": "Proposed",
+          "status": "Done",
           "size": "M",
           "source": "Omar request",
           "desc": "Copilot Studio test pane layout with agent topics and MCP tool activity.",
           "accept": "Recognizable layout; labeled simulated.",
-          "reality": "Demo construct"
+          "reality": "Demo construct",
+          "note": "Copilot Studio style client at /ext?eco=copilot-studio: agent overview, tools, connected agents, activity, test pane with adaptive-card approvals. Responsive for phone and laptop. Labeled Simulated; no vendor logos."
         },
         {
           "key": "TGCS-1103",
