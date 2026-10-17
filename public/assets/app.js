@@ -229,35 +229,35 @@
 
   // ---------- Demo journey ----------
   const SCENES = [
-    { n: 1, where: "Trading Grid Online", title: "Find the failed ASN in TG Insights", text: "From Trading Grid Online, open Transactions, filter to delivery failures and open ASN SH-77155.", href: "/tgo" },
-    { n: 2, where: "Trading Grid Online", title: "Analyze it with Aviator", text: "Analyze with Aviator runs the Error Analysis Agent. The Payloads tab runs the Payload Analysis Agent.", href: "/tgo/insights?q=SH-77155&open=1" },
-    { n: 3, where: "Trading Grid Online", title: "Authorize agent access", text: "Review which agent applications can reach Harborview's Trading Grid data, with scope and operations.", href: "/tgo/access" },
-    { n: 4, where: "Aviator Studio", title: "Run the ASN Exception Agent", text: "The agent uses Trading Grid Context Services over MCP, finds the cause and prepares the cross-reference fix.", href: "/studio/agents/asn-exception/simulate" },
-    { n: 5, where: "Aviator Studio", title: "Approve the change", text: "The approval card binds to the exact entry. After approval the agent applies it and returns a verified readback.", href: "/studio/agents/asn-exception/simulate" },
-    { n: 6, where: "Trading Grid Context Services", title: "Inspect the service layer", text: "Every call is authorized and audited with client, principal, route and decision.", href: "/cs" },
-    { n: 7, where: "External ecosystems", title: "Same context in Copilot Studio, Gemini, Joule and Claude", text: "Run the published agent through the Aviator AKS gateway. SAP Joule's service identity is denied payload access.", href: "/ext?eco=copilot-studio" },
-    { n: 8, where: "External ecosystems", title: "Claude calls Trading Grid agents", text: "In Claude with the connector on, ask a question. Claude calls Error Analysis Agent or Xref Checker Agent as tools; the agent runs inside Context Services and returns its evidence.", href: "/cs/agents" },
-    { n: 8, where: "External ecosystems", title: "Connect Claude live", text: "Add the Claude connector URL and ask Claude directly. The calls appear in the service layer audit.", href: "/cs/clients" },
-    { n: 9, where: "Trading Grid Online", title: "Suspend access and fail closed", text: "Suspend Copilot Studio in Agent access, rerun the request and show that no data is returned.", href: "/tgo/access" },
+    { n: 1, where: "Trading Grid Online", title: "Find the failed ASN", text: "Open Transactions, filter to delivery failures and select ASN SH-77155.", href: "/tgo" },
+    { n: 2, where: "Trading Grid Online", title: "Analyze with Aviator", text: "Analyze with Aviator runs the Error Analysis Agent. Payloads runs the Payload Analysis Agent.", href: "/tgo/insights?q=SH-77155&open=1" },
+    { n: 3, where: "Trading Grid Online", title: "Review agent access", text: "Review applications with access to Harborview data, their scope and operations.", href: "/tgo/access" },
+    { n: 4, where: "Aviator Studio", title: "Run ASN Exception Agent", text: "Identify the cause through Context Services and prepare the cross-reference fix.", href: "/studio/agents/asn-exception/simulate" },
+    { n: 5, where: "Aviator Studio", title: "Approve the change", text: "Approval binds to the exact entry. The agent applies it and returns a verified readback.", href: "/studio/agents/asn-exception/simulate" },
+    { n: 6, where: "Trading Grid Context Services", title: "Inspect the service layer", text: "Review authorization and audit records by client, principal, route and decision.", href: "/cs" },
+    { n: 7, where: "External platforms", title: "Run in external platforms", text: "Run the published agent through the Aviator AKS gateway. SAP Joule is denied payload access.", href: "/ext?eco=copilot-studio" },
+    { n: 8, where: "External platforms", title: "Call agents from Claude", text: "Claude calls Trading Grid agents as tools. Agents run in Context Services and return evidence.", href: "/cs/agents" },
+    { n: 8, where: "External platforms", title: "Connect Claude", text: "Add the connector URL in Claude. Calls appear in the service layer audit.", href: "/cs/clients" },
+    { n: 9, where: "Trading Grid Online", title: "Suspend access", text: "Suspend Copilot Studio, rerun the request and confirm no data is returned.", href: "/tgo/access" },
   ];
   function pageBoundaries() {
     const row = (a, b, c) => `<tr><td><strong>${esc(a)}</strong></td><td>${esc(b)}</td><td class="small muted">${esc(c)}</td></tr>`;
     return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Simulation boundaries</span><span class="tag">Prototype</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
-    <div class="journey"><h1>What is real and what is simulated</h1><p class="sub">This prototype runs on seeded retail data and is not connected to production Trading Grid.</p>
-    <div class="section-title">Working in this prototype</div><table class="t"><tbody>
-      ${row("Tool runtime", `${S.tools.length} Context Services tools execute against seeded data and return evidence envelopes: 95 from the incubation brief and ${S.tools.length - 95} application tools for Command Center Integration Monitor, TG Insights and Command Center Performance Monitor.`, "CMS fields follow the v2 to v5 Swagger exports. Application tools are modeled on the Innovation Guide.")}
-      ${row("Entitlements", "Organization, BUID, solution, operation, client suspension and agent blocks are enforced on every call.", "Fail closed.")}
-      ${row("Approvals", "Changes require prepare, approve, recheck and submit; plans are single use and expire.", "")}
-      ${row("Agents", "Agents run on Claude models with the tools listed on each agent.", "Answers come from the seeded data only.")}
-      ${row("MCP endpoint", "Real Streamable HTTP endpoint; Claude can connect and call tools and agents.", "Prototype tokens, not OAuth.")}
+    <div class="journey"><h1>Implemented and simulated components</h1><p class="sub">Seeded retail data. Not connected to production Trading Grid.</p>
+    <div class="section-title">Implemented</div><table class="t"><tbody>
+      ${row("Tool runtime", `${S.tools.length} tools run against seeded data and return evidence envelopes.`, `95 from the incubation brief; ${S.tools.length - 95} application tools modeled on the Innovation Guide. CMS fields follow Swagger v2 to v5.`)}
+      ${row("Entitlements", "Organization, BUID, solution, operation, client suspension and agent blocks enforced on every call.", "Fail closed.")}
+      ${row("Approvals", "Changes follow prepare, approve, recheck and submit. Plans are single use and expire.", "")}
+      ${row("Agents", "Agents run on Claude models with their assigned tools.", "Answers use seeded data only.")}
+      ${row("MCP endpoint", "Streamable HTTP endpoint for tools and agents. Claude connects live.", "Prototype tokens. OAuth not implemented.")}
     </tbody></table>
     <div class="section-title">Simulated</div><table class="t"><tbody>
-      ${row("Trading Grid Online and TG Insights screens", "Layouts follow shipped screens; data is seeded.", "Not connected to production.")}
-      ${row("Aviator Studio", "Agent definition, simulate and deployments are demo constructs.", "Aviator Studio for Business Network is in incubation.")}
-      ${row("Aviator AKS gateway", "Shown as a route hop with a per-client call limit.", "Gateway behavior is owned by the central Aviator team.")}
-      ${row("External ecosystem screens", "Copilot Studio, Gemini Enterprise and SAP Joule are simulated clients.", "Claude can be connected for real.")}
-      ${row("Insights, Cartographer, Projects and TGDP contracts", "Response shapes are modeled from the incubation brief.", "Labeled on every tool.")}
-      ${row("Agent status", "Live today, on the roadmap and incubating labels follow the Aviator portfolio.", "Roadmap and incubating agents are not commitments.")}
+      ${row("Trading Grid Online and TG Insights screens", "Layouts follow shipped screens. Data is seeded.", "Not connected to production.")}
+      ${row("Aviator Studio", "Agent definition, simulation and deployments are demo constructs.", "Aviator Studio for Business Network is in incubation.")}
+      ${row("Aviator AKS gateway", "Represented as a route hop with a per-client call limit.", "Owned by the central Aviator team.")}
+      ${row("External ecosystem screens", "Copilot Studio, Gemini Enterprise and SAP Joule are simulated.", "Claude connects live.")}
+      ${row("Insights, Cartographer, Projects, TGDP and application contracts", "Response shapes modeled on the incubation brief and Innovation Guide.", "Basis labeled on each tool.")}
+      ${row("Agent status", "Status labels follow the Aviator portfolio.", "Roadmap and incubating agents are not commitments.")}
     </tbody></table></div>`;
   }
 
@@ -265,20 +265,20 @@
     const col = (cls, label, items, sub) => `<div class="lane ${cls}"><div class="lh">${esc(label)}</div><div class="ls">${esc(sub)}</div>${items.map(([t, d, href]) => `<button class="lanecard" data-href="${href}"><strong>${esc(t)}</strong><span>${esc(d)}</span></button>`).join("")}</div>`;
     return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Trading Grid agent journey</span><span class="tag">Prototype</span></div><div class="spacer"></div><button class="btn ghost sm" data-href="/boundaries">${ic("shield")}Simulation boundaries</button><button class="btn ghost sm" data-demoreset>${ic("refresh")}Reset demo</button>${avatar()}</header>
     <div class="journey">
-      <h1>One trading community, from Trading Grid Online to any agent ecosystem</h1>
-      <p class="sub">Harborview Retail Group investigates a missing ship notice in Trading Grid Online. Then it runs the same investigation from Aviator Studio and from external agent platforms through Trading Grid Context Services.</p>
+      <h1>Trading Grid agent journey</h1>
+      <p class="sub">Investigate one failed ASN in Trading Grid Online, Aviator Studio and external agent platforms.</p>
       <div class="lanes">
-        ${col("", "Internal", [["Trading Grid Online", "TG Insights transactions and agent access administration", "/tgo/insights"], ["Trading Grid Aviator", "Error Analysis, Payload Analysis and Transaction Finder agents, in app", "/tgo/insights?aviator=1"]], "Core Business Network applications")}
+        ${col("", "Internal", [["Trading Grid Online", "TG Insights transactions and agent access", "/tgo/insights"], ["Trading Grid Aviator", "In-app Error Analysis, Payload Analysis and Transaction Finder agents", "/tgo/insights?aviator=1"]], "Core Business Network applications")}
         <div class="lanearrow">›</div>
-        ${col("", "OpenText", [["Aviator Studio", "Shared Aviator agents built and simulated on Trading Grid Context Services", "/studio"]], "Outside Trading Grid Online")}
+        ${col("", "OpenText", [["Aviator Studio", "Agent definition, simulation and publishing", "/studio"]], "Outside Trading Grid Online")}
         <div class="lanearrow">›</div>
-        ${col("emph", "Service layer", [["Trading Grid Context Services", `${S.meta.toolCount} governed MCP tools, grants, approvals and audit`, "/cs"], ["Aviator AKS gateway", "Central Aviator egress to external ecosystems", "/cs/clients"]], "Governed externalization")}
+        ${col("emph", "Service layer", [["Trading Grid Context Services", `${S.meta.toolCount} governed MCP tools, grants, approvals and audit`, "/cs"], ["Aviator AKS gateway", "Central Aviator egress to external platforms", "/cs/clients"]], "Governed externalization")}
         <div class="lanearrow">›</div>
-        ${col("", "External", EXT.map((k) => [hostBy(k).name, hostBy(k).authPattern, `/ext?eco=${k}`]), "Customer agent ecosystems")}
+        ${col("", "External", EXT.map((k) => [hostBy(k).name, hostBy(k).authPattern, `/ext?eco=${k}`]), "Customer agent platforms")}
       </div>
       <div class="section-title">Demo script</div>
       <div class="scenes">${SCENES.map((s, i) => ({ ...s, n: i + 1 })).map((s) => `<div class="scene"><div class="sn">${s.n}</div><div class="sb"><div class="sw">${esc(s.where)}</div><div class="st">${esc(s.title)}</div><div class="sd">${esc(s.text)}</div></div><button class="btn sm" data-href="${s.href}">${ic("play")}Open</button></div>`).join("")}</div>
-      <p class="small muted" style="margin-top:20px">Prototype on seeded retail data. Not connected to production Trading Grid. Tool contracts are proposed.</p>
+      <p class="small muted" style="margin-top:20px">Prototype. Seeded retail data; not connected to production Trading Grid. Tool contracts are proposed.</p>
     </div>`;
   }
 
@@ -384,7 +384,7 @@
           <div class="txtabs"><span class="active">Transactions</span><form class="txsearch" data-txsearch>${ic("search")}<input name="q" placeholder="Search from transactions" value="${esc(f.q ?? "")}"></form></div>
           <div class="txbar"><span class="small muted">${d.total} transactions</span><button class="btn sm" data-reload>Refresh</button></div>
           <div style="overflow:auto"><table class="txt"><thead><tr><th>Arrival time<div>Transaction status</div></th><th>Sender name<div>Sender org ID</div></th><th>Receiver name<div>Receiver org ID</div></th><th>OpenText transaction ID<div>Sender transaction ID</div></th><th>Transaction type<div>EDI type</div></th></tr></thead><tbody>
-          ${d.rows.map((r) => `<tr data-tx="${r.transactionId}"><td><a>${esc(fmtTime(r.receivedAt))}</a><div class="st">${statusIcon(r.delivery)}${r.hasError ? `<span class="sicon bad">${ic("x")}</span>` : ""}${esc(r.delivery)}</div></td><td>${esc(r.sender.companyName)}<div>${esc(r.sender.orgId)}</div></td><td>${esc(r.receiver.companyName)}<div>${esc(r.receiver.orgId)}</div></td><td class="mono">${esc(r.transactionId)}<div>${esc(r.senderTransactionId)}</div></td><td>${esc(r.transactionType)}<div>${esc(r.ediType)}</div></td></tr>`).join("") || `<tr><td colspan="5" class="muted">No transactions match the filters.</td></tr>`}
+          ${d.rows.map((r) => `<tr data-tx="${r.transactionId}"><td><a>${esc(fmtTime(r.receivedAt))}</a><div class="st">${statusIcon(r.delivery)}${r.hasError ? `<span class="sicon bad">${ic("x")}</span>` : ""}${esc(r.delivery)}</div></td><td>${esc(r.sender.companyName)}<div>${esc(r.sender.orgId)}</div></td><td>${esc(r.receiver.companyName)}<div>${esc(r.receiver.orgId)}</div></td><td class="mono">${esc(r.transactionId)}<div>${esc(r.senderTransactionId)}</div></td><td>${esc(r.transactionType)}<div>${esc(r.ediType)}</div></td></tr>`).join("") || `<tr><td colspan="5" class="muted">No transactions match the filters. Clear filters to view all.</td></tr>`}
           </tbody></table></div>
         </section>
       </div>${S.txOpen ? await txDetail(S.txOpen) : ""}`;
@@ -429,7 +429,7 @@
     const inner = `<div class="tgo-crumbs">${ic("home")}<span>/</span><span>Account Manager</span><span>/</span><strong>Agent access</strong></div>
       <div class="tgo-page">
         <div class="titlerow"><h1>Agent access</h1></div>
-        <p class="sub">Agent applications that can reach Harborview Retail Group's Trading Grid data. Access is limited to the scope below and can be suspended at any time.</p>
+        <p class="sub">Applications with access to Harborview Retail Group's Trading Grid data, limited to the scope below.</p>
         <div class="section-title">Grant</div>
         <table class="t"><tbody>
           <tr><td class="muted" style="width:220px">Grant</td><td class="mono">${esc(S.meta.grant.grantId)}</td></tr>
@@ -443,9 +443,9 @@
         <div style="overflow:auto"><table class="t"><thead><tr><th>Application</th><th>Exposure</th><th>Execution principal</th><th>Operations</th><th>Last used</th><th>Status</th><th></th></tr></thead><tbody>
         ${ext.map((h) => { const st = S.meta.clientStatus[h.key] ?? "ACTIVE"; return `<tr><td><strong>${esc(h.name)}</strong><div class="small muted">${esc(h.authPattern)}</div></td><td class="small">${esc(h.exposure)}${h.exposure === "External" ? "<div class=\"muted\">via Aviator AKS gateway</div>" : ""}</td><td class="mono small">${esc(h.principal)}<div class="muted">${esc(h.principalType.replace("_", " ").toLowerCase())}</div></td><td>${h.operations.length} of ${Math.max(...S.meta.hosts.map((x) => x.operations.length))}</td><td class="small">${last[h.key] ? esc(new Date(last[h.key]).toLocaleTimeString()) : '<span class="muted">Not used</span>'}</td><td><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Active" : "Suspended"}</span></td><td>${st === "ACTIVE" ? `<button class="btn sm danger" data-suspend="${h.key}">Suspend access</button>` : `<button class="btn sm" data-restore="${h.key}">Restore access</button>`}</td></tr>`; }).join("")}
         </tbody></table></div>
-        <p class="small muted">Suspension takes effect on the next call. Context Services denies every operation for a suspended application.</p>
+        <p class="small muted">Suspension applies on the next call. All operations are denied while suspended.</p>
         <div class="section-title">Agents available to each application</div>
-        <p class="sub" style="margin-top:0">Agents published by OpenText through Aviator Studio. Block an agent to stop one application from calling it.</p>
+        <p class="sub" style="margin-top:0">Agents published through Aviator Studio. Block an agent per application.</p>
         <div style="overflow:auto"><table class="t"><thead><tr><th>Agent</th><th>Status</th>${ext.map((h) => `<th>${esc(h.shortName)}</th>`).join("")}</tr></thead><tbody>
         ${(S.deploy?.agents ?? []).filter((x) => Object.values(x.clients).some((c) => c.published)).map((x) => `<tr><td><strong>${esc(x.name)}</strong></td><td>${statusTag(x)}</td>${ext.map((h) => { const st = x.clients[h.key]; if (!st?.published) return '<td class="small muted">Not published</td>'; return `<td><button class="btn sm ${st.blocked ? "" : "ghost"}" data-blockagent="${h.key}|${x.agentId}" data-on="${st.blocked ? 0 : 1}">${st.blocked ? "Unblock" : "Block"}</button>${st.blocked ? ' <span class="pill bad">Blocked</span>' : ""}</td>`; }).join("")}</tr>`).join("")}
         </tbody></table></div>
@@ -461,13 +461,13 @@
     const n = a.tools === "ALL" ? S.meta.toolCount : a.tools.length;
     return `<div class="agentcard" data-href="/studio/agents/${a.id}"><div class="h"><div class="aico">${ic("agent")}</div><div><div class="nm">${esc(a.name)}</div><div class="small muted">${esc(a.persona)}</div></div><span style="margin-left:auto">${statusTag(a)}</span></div><div class="role">${esc(a.role)}</div><div class="meta"><span>${n} tools</span><span>Based on ${esc(a.inspiredBy[0].name)}</span></div></div>`;
   }
-  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Trading Grid Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio; prototype agents are demo-only.</p></div><div class="content">${["Live today", "On the roadmap", "Incubating", "Prototype"].map((st) => { const list = studioAgents().filter((a) => a.status === st); return list.length ? `<div class="section-title">${st} <span class="muted small">${list.length}</span></div><div class="agentgrid">${list.map(agentCard).join("")}</div>` : ""; }).join("")}</div>`);
+  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio. Prototype agents are demo only.</p></div><div class="content">${["Live today", "On the roadmap", "Incubating", "Prototype"].map((st) => { const list = studioAgents().filter((a) => a.status === st); return list.length ? `<div class="section-title">${st} <span class="muted small">${list.length}</span></div><div class="agentgrid">${list.map(agentCard).join("")}</div>` : ""; }).join("")}</div>`);
 
   function deploymentsView(a) {
     const d = S.deploy?.agents.find((x) => x.agentId === a.id);
-    if (!d) return `<div class="empty">This agent is not publishable.</div>`;
-    return `<p class="sub" style="margin-top:0">Published agents appear as the MCP tool <span class="mono">${esc(d.toolName)}</span> for each selected client. The customer administrator can still block an agent per client in Trading Grid Online.</p>
-      ${a.status !== "Live today" ? `<div class="alert" style="margin:10px 0">${esc(a.status)} agent. External clients see it labeled as a preview.</div>` : ""}
+    if (!d) return `<div class="empty">Not publishable. TG Aviator runs only in Trading Grid Online.</div>`;
+    return `<p class="sub" style="margin-top:0">Published agents appear as the MCP tool <span class="mono">${esc(d.toolName)}</span> for each published client. Administrators can block an agent per client in Trading Grid Online.</p>
+      ${a.status !== "Live today" ? `<div class="alert" style="margin:10px 0">${esc(a.status)} agent. Labeled as a preview in external clients.</div>` : ""}
       <table class="t"><thead><tr><th>Client</th><th>Route</th><th>Published</th><th>Trading Grid Online</th><th></th></tr></thead><tbody>
       ${S.deploy.clients.map((h) => { const st = d.clients[h]; const hh = hostBy(h); return `<tr><td><strong>${esc(hh.name)}</strong></td><td class="small">${esc(hh.route.join(" › "))}</td><td><span class="pill ${st.published ? "ok" : "neutral"}">${st.published ? "Published" : "Not published"}</span></td><td>${st.blocked ? '<span class="pill bad">Blocked by admin</span>' : '<span class="small muted">Allowed</span>'}</td><td><button class="btn sm ${st.published ? "danger" : ""}" data-publish="${a.id}|${h}" data-on="${st.published ? 0 : 1}">${st.published ? "Unpublish" : "Publish"}</button></td></tr>`; }).join("")}
       </tbody></table>`;
@@ -491,7 +491,7 @@
     if (!a) return shellStudio(`<div class="content"><div class="empty">Agent not found.</div></div>`);
     const key = `studio:${id}`;
     const c = conv(key, id, "aviator-studio");
-    mounts[key] = (cc) => chatView(cc, { startLabel: "Start with a use case" });
+    mounts[key] = (cc) => chatView(cc, { startLabel: "Use cases" });
     sideMounts[key] = (cc) => resources(a, cc);
     const def = `<div class="rolebox">${esc(a.role)}</div>
       <div class="label"><span>Task instructions</span><span class="small muted">Scenario: ${esc(a.scenario)}</span></div>
@@ -509,7 +509,7 @@
     const areas = [...new Set(S.meta.useCases.map((u) => u.area))];
     const f = S.ucFilter ?? "";
     const rows = S.meta.useCases.filter((u) => !f || u.area === f);
-    return shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Use cases</h1></div><p class="sub">Forty retail B2B scenarios, each assigned to an agent.</p></div>
+    return shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Use cases</h1></div><p class="sub">40 retail B2B scenarios with assigned agents.</p></div>
       <div class="content"><div class="filters"><select class="select" data-ucarea><option value="">All areas</option>${areas.map((a) => `<option ${a === f ? "selected" : ""}>${esc(a)}</option>`).join("")}</select></div>
       <div style="overflow:auto"><table class="t"><thead><tr><th>#</th><th>Use case</th><th>Prompt</th><th>Area</th><th>Agent</th><th></th></tr></thead><tbody>
       ${rows.map((u) => `<tr><td class="mono">UC${u.n}</td><td><strong>${esc(u.title)}</strong></td><td class="small">${esc(u.prompt)}</td><td class="small">${esc(u.area)}</td><td class="small">${esc(agent(u.agent).name)}</td><td><button class="btn sm" data-runuc="${u.n}">${ic("play")}Run</button></td></tr>`).join("")}
@@ -526,16 +526,16 @@
 
   function pageCsAgents() {
     const d = S.deploy;
-    return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Published agents</h1></div><p class="sub">Aviator agents callable as MCP tools. Each run executes inside Context Services under the caller's grant, and every tool call is audited under the agent.</p></div>
+    return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Published agents</h1></div><p class="sub">Aviator agents available as MCP tools. Runs execute under the caller's grant; each tool call is audited.</p></div>
       <div class="content"><div style="overflow:auto"><table class="t"><thead><tr><th>Agent</th><th>MCP tool</th><th>Status</th>${d.clients.map((h) => `<th>${esc(hostBy(h).shortName)}</th>`).join("")}</tr></thead><tbody>
       ${d.agents.map((x) => `<tr><td><strong>${esc(x.name)}</strong></td><td class="mono small">${esc(x.toolName)}</td><td>${statusTag(x)}</td>${d.clients.map((h) => { const st = x.clients[h]; return `<td>${st.blocked ? '<span class="pill bad">Blocked</span>' : st.published ? '<span class="pill ok">Published</span>' : '<span class="small muted">No</span>'}</td>`; }).join("")}</tr>`).join("")}
-      </tbody></table></div><p class="small muted">Publishing is managed in Aviator Studio, Deployments. Blocking is managed by the customer administrator in Trading Grid Online, Agent access. The Aviator AKS gateway limits agent calls per client.</p></div>`);
+      </tbody></table></div><p class="small muted">Publish in Aviator Studio Deployments. Block in Trading Grid Online Agent access. The Aviator AKS gateway limits agent calls per client.</p></div>`);
   }
 
   function auditTable(rows) {
     return rows.length ? `<div style="overflow:auto"><table class="t"><thead><tr><th>Time</th><th>Route</th><th>Principal</th><th>Tool</th><th>Decision</th><th>Result</th><th>ms</th></tr></thead><tbody>
       ${rows.map((a) => `<tr><td class="small">${esc(new Date(a.at).toLocaleTimeString())}</td><td class="small">${esc(a.route)}${a.operation === "agent.invoke" ? ' <span class="pill info">Agent call</span>' : a.channel?.startsWith("agent:") ? ` <span class="pill neutral">via ${esc(agent(a.channel.slice(6))?.name ?? "agent")}</span>` : a.channel === "mcp" ? ' <span class="pill info">MCP</span>' : ""}</td><td class="mono small">${esc(a.principal)}</td><td class="mono small">${esc(a.tool)}</td><td><span class="pill ${a.decision === "PERMIT" ? "ok" : "bad"}">${esc(a.decision)}</span></td><td class="small">${esc(a.status)}</td><td class="small">${a.ms}</td></tr>`).join("")}
-      </tbody></table></div>` : `<div class="empty">No calls recorded since the service started.</div>`;
+      </tbody></table></div>` : `<div class="empty">No calls recorded.</div>`;
   }
 
   function pageCsOverview() {
@@ -545,7 +545,7 @@
     return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Overview</h1><div class="actions"><button class="btn ghost" data-reload>${ic("refresh")}Refresh</button></div></div>
       <p class="sub">Governed MCP access to Trading Grid context for OpenText and customer agents. Every call is authorized, scoped and audited.</p></div>
       <div class="content">
-        <div class="kpis"><div class="kpi"><div class="v">${S.meta.toolCount}</div><div class="k">MCP tools</div></div><div class="kpi"><div class="v">6</div><div class="k">Trading Grid source products</div></div><div class="kpi"><div class="v">${S.meta.hosts.length - 1}</div><div class="k">Registered clients</div></div><div class="kpi"><div class="v">${rows.length}</div><div class="k">Calls since start</div></div></div>
+        <div class="kpis"><div class="kpi"><div class="v">${S.meta.toolCount}</div><div class="k">MCP tools</div></div><div class="kpi"><div class="v">6</div><div class="k">Trading Grid source products</div></div><div class="kpi"><div class="v">${S.meta.hosts.length - 1}</div><div class="k">Registered clients</div></div><div class="kpi"><div class="v">${rows.length}</div><div class="k">Calls recorded</div></div></div>
         <div class="section-title">Request path</div>
         <div class="flow4">
           <div class="box"><h4>Clients</h4><ul class="small"><li>Aviator Studio (direct)</li>${EXT.map((k) => `<li>${esc(hostBy(k).shortName)}</li>`).join("")}</ul></div><div class="arrow">›</div>
@@ -590,7 +590,7 @@
     el.addEventListener("click", async (ev) => {
       if (ev.target.closest("[data-close]")) el.remove();
       if (ev.target.closest("#tryRun")) {
-        let args; try { args = JSON.parse($("#tryArgs", el).value || "{}"); } catch { $("#tryOut", el).innerHTML = `<div class="alert bad">Arguments are not valid JSON.</div>`; return; }
+        let args; try { args = JSON.parse($("#tryArgs", el).value || "{}"); } catch { $("#tryOut", el).innerHTML = `<div class="alert bad">Invalid JSON. Correct the arguments and retry.</div>`; return; }
         $("#tryOut", el).innerHTML = `<div class="thinking"><span class="dots"><span></span><span></span><span></span></span>Invoking</div>`;
         const r = await api(`/api/tools/${t.name}/invoke`, { method: "POST", body: { host: $("#tryHost", el).value, args } });
         $("#tryOut", el).innerHTML = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">${statusPill({ done: true, status: r.envelope.status, envelope: r.envelope })}${r.envelope.evidence ? `<span class="pill ${r.envelope.evidence.completeness === "COMPLETE" ? "ok" : "warn"}">${esc(r.envelope.evidence.completeness)}</span>` : ""}<span class="small muted">${r.ms} ms</span></div><pre class="json">${esc(JSON.stringify(r.envelope, null, 2))}</pre>`;
@@ -601,7 +601,7 @@
   function pageCsClients() {
     const m = S.meta.mcp;
     const hosts = S.meta.hosts.filter((h) => h.key !== "tg-aviator");
-    return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Clients and endpoint</h1></div><p class="sub">One MCP endpoint for every client. Each client authenticates with its own credential, which selects its execution principal and grant.</p></div>
+    return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Clients and endpoint</h1></div><p class="sub">One MCP endpoint for all clients. Each client credential selects its execution principal and grant.</p></div>
       <div class="content">
         <table class="t"><tbody><tr><td class="muted" style="width:200px">Endpoint</td><td class="mono">${esc(m.url)}</td><td><button class="btn sm ghost" data-copy="${esc(m.url)}">Copy</button></td></tr>
         <tr><td class="muted">Transport</td><td colspan="2">Streamable HTTP, JSON responses, POST only</td></tr>
@@ -617,7 +617,7 @@
   -H "Authorization: Bearer ${esc(m.tokens["claude-connector"].token)}" \\
   -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_transaction","arguments":{"key_value":"SH-77155"}}}'</pre>
-        <p class="small muted">Prototype credentials. Production requires OAuth with PKCE, registered callbacks and audience-bound tokens issued through the Aviator AKS gateway.</p>
+        <p class="small muted">Prototype credentials. Production requires OAuth with PKCE and audience-bound tokens through the Aviator AKS gateway.</p>
       </div>`);
   }
 
@@ -639,8 +639,8 @@
     return `<tr><td class="mono">${esc(p.planId)}</td><td>${esc(p.summary)}</td><td class="mono small">${esc(p.submitTool)}</td><td class="small">${esc(hostBy(p.host)?.shortName ?? p.host)}</td><td><span class="pill ${cls}">${esc(p.status.replace("_", " "))}</span></td><td class="small muted">${esc(new Date(p.createdAt).toLocaleString())}</td>
       <td>${p.status === "PENDING_APPROVAL" ? `<button class="btn sm primary" data-approve="${p.planId}">Approve</button> <button class="btn sm danger" data-reject="${p.planId}">Reject</button>` : ""}</td></tr>`;
   }
-  const pageCsApprovals = () => shellCs(`<div class="pagehead"><div class="titlerow"><h1>Approvals</h1><div class="actions"><button class="btn ghost" data-reload>${ic("refresh")}Refresh</button></div></div><p class="sub">Prepared changes awaiting an authorized user. Approval binds to the exact target and parameters and expires after 30 minutes.</p></div>
-      <div class="content">${S.plans.length ? `<div style="overflow:auto"><table class="t"><thead><tr><th>Plan</th><th>Action</th><th>Submit tool</th><th>Client</th><th>Status</th><th>Created</th><th></th></tr></thead><tbody>${S.plans.map(planRow).join("")}</tbody></table></div>` : `<div class="empty">No plans prepared. Plans appear when an agent prepares a change.</div>`}</div>`);
+  const pageCsApprovals = () => shellCs(`<div class="pagehead"><div class="titlerow"><h1>Approvals</h1><div class="actions"><button class="btn ghost" data-reload>${ic("refresh")}Refresh</button></div></div><p class="sub">Prepared changes awaiting approval. Approval binds to the exact target and parameters and expires after 30 minutes.</p></div>
+      <div class="content">${S.plans.length ? `<div style="overflow:auto"><table class="t"><thead><tr><th>Plan</th><th>Action</th><th>Submit tool</th><th>Client</th><th>Status</th><th>Created</th><th></th></tr></thead><tbody>${S.plans.map(planRow).join("")}</tbody></table></div>` : `<div class="empty">No pending plans. Plans appear when an agent prepares a change.</div>`}</div>`);
   async function pageApprove(id) {
     const p = await api(`/api/plans/${id}`);
     if (p.error) return shellCs(`<div class="content"><div class="empty">Plan ${esc(id)} not found.</div></div>`);
@@ -656,10 +656,10 @@
     const key = `ext:${eco}:${agentId}`;
     const c = conv(key, agentId, eco);
     const st = S.meta.clientStatus[eco] ?? "ACTIVE";
-    mounts[key] = (cc) => chatView(cc, { startLabel: "Run a published agent request", placeholder: `Message the agent in ${h.shortName}` });
+    mounts[key] = (cc) => chatView(cc, { startLabel: "Suggested requests", placeholder: `Message the agent in ${h.shortName}` });
     const nav = navList([{ g: "Ecosystem", items: EXT.map((k) => ["globe", `/ext?eco=${k}&agent=${agentId}`, hostBy(k).shortName]) }], location.pathname + location.search);
     return `<header class="topbar ext"><div class="brand"><span class="extmark">${ic("globe")}</span><span class="name">External ecosystem client</span><span class="tag">Simulated</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
-      <div class="layout"><nav class="sidenav">${nav}<div class="foot">Simulated client surface. Calls are real MCP tool invocations through the Context Services runtime.</div></nav>
+      <div class="layout"><nav class="sidenav">${nav}<div class="foot">Simulated client. Requests run as MCP tool calls through Context Services.</div></nav>
       <main class="main"><div class="pagehead"><div class="titlerow"><h1>${esc(h.name)}</h1><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Connected" : "Suspended in Trading Grid Online"}</span>
         <div class="actions"><select class="select" data-extagent>${avail.map((a) => `<option value="${a.id}" ${a.id === agentId ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select><button class="btn" data-newconv="${key}">${ic("refresh")}New conversation</button></div></div>
         <div class="routebar">${ic("route")}${h.route.map((r, i) => `<span class="${i === 1 ? "gw" : i === 2 ? "cs" : ""}">${esc(r)}</span>`).join('<span class="sep">›</span>')}</div>
@@ -696,7 +696,7 @@
     else if (p === "/cs/approvals") { S.plans = await api("/api/plans"); html = pageCsApprovals(); }
     else if (p.startsWith("/approve/")) { S.plans = await api("/api/plans"); html = await pageApprove(p.split("/")[2]); }
     else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageExt(); }
-    else html = shellCs(`<div class="content"><div class="empty">Page not found.</div></div>`);
+    else html = shellCs(`<div class="content"><div class="empty">Page not found. Return to the demo journey.</div></div>`);
     app.innerHTML = html;
     if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; S.txTab = "details"; return render(); }
     if (p === "/cs" || p === "/cs/access") poll = setTimeout(() => { if (location.pathname === p && !document.querySelector(".drawer")) render(); }, 4000);
@@ -737,7 +737,7 @@
     if (d.prompt) { const key = keyOf(t); return send(key, d.prompt); }
     if (d.publish) { const [agentId, host] = d.publish.split("|"); S.deploy = await api("/api/deployments", { method: "POST", body: { agentId, host, published: t.dataset.on === "1" } }); return render(); }
     if (d.blockagent) { const [host, agentId] = d.blockagent.split("|"); await api(`/api/clients/${host}/agents/${agentId}`, { method: "POST", body: { blocked: t.dataset.on === "1" } }); return render(); }
-    if (d.demoreset != null) { if (!confirm("Reset the demo to its seeded state? Approvals, changes, suspensions, conversations and the audit log are cleared.")) return; await api("/api/demo/reset", { method: "POST" }); S.convs = {}; S.plans = []; S.av.open = false; S.txOpen = null; t.textContent = "Demo reset"; setTimeout(render, 600); return; }
+    if (d.demoreset != null) { if (!confirm("Reset demo data? Approvals, changes, suspensions, conversations and the audit log will be cleared.")) return; await api("/api/demo/reset", { method: "POST" }); S.convs = {}; S.plans = []; S.av.open = false; S.txOpen = null; t.textContent = "Demo reset"; setTimeout(render, 600); return; }
     if (d.runuc) { const u = uc(Number(d.runuc)); go(`/studio/agents/${u.agent === "tg-aviator" ? "context-assistant" : u.agent}/simulate`); return setTimeout(() => send(`studio:${u.agent}`, u.prompt), 0); }
     if (d.href) return go(d.href);
   });

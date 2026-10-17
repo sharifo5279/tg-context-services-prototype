@@ -70,7 +70,7 @@ export const AGENTS: AgentDef[] = [
     status: "Live today",
     name: "Daily Summarizer Agent",
     persona: "Integration operations lead",
-    role: "Your role is to tell the operations lead what failed or went unacknowledged overnight, which partners and flows are affected, and what to look at first.",
+    role: "Report overnight failures and missing acknowledgments, the affected partners and flows, and what to review first.",
     inspiredBy: [{ name: "Daily Summarizer Agent", where: "Command Center Integration Monitor" }, { name: "Transaction Finder Agent", where: "TG Insights" }],
     scenario: "Morning operations triage",
     instructions: [
@@ -89,7 +89,7 @@ export const AGENTS: AgentDef[] = [
     status: "Prototype",
     name: "ASN Exception Agent",
     persona: "EDI support analyst",
-    role: "Your role is to help the EDI team catch advance ship notices that were rejected, failed or missing, explain why, and prepare the fix and the follow-up to each supplier.",
+    role: "Identify rejected, failed or missing advance ship notices, explain the cause, and prepare the fix and supplier follow-up.",
     inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Map-level Intelligence Agent", where: "Trading Grid Cartographer" }, { name: "Xref Checker Agent (incubating)", where: "Innovation Guide scenario" }],
     scenario: "“Where are my ASNs?”",
     instructions: [
@@ -110,7 +110,7 @@ export const AGENTS: AgentDef[] = [
     subtitle: "Trading Grid Insights Error Analysis",
     name: "Error Analysis Agent",
     persona: "Supplier management and B2B support",
-    role: "Your role is to read a failed document, explain the error in plain language, show which side owns the fix, and draft a notice that tells the supplier exactly what to change.",
+    role: "Explain a failed document's error, identify which side owns the fix, and draft the supplier notice.",
     inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Payload Analysis Agent", where: "TG Insights" }, { name: "Audience Message Composer Agent (scenario)", where: "Innovation Guide scenario" }],
     scenario: "Telling a supplier exactly what to fix",
     instructions: [
@@ -129,7 +129,7 @@ export const AGENTS: AgentDef[] = [
     status: "Incubating",
     name: "FA Reconciliation Agent",
     persona: "EDI manager",
-    role: "Your role is to catch every purchase order that was not acknowledged on time, separate missing from rejected acknowledgments, and say which suppliers need follow-up.",
+    role: "Identify purchase orders not acknowledged on time, separate missing from rejected acknowledgments, and list suppliers for follow-up.",
     inspiredBy: [{ name: "FA Reconciliation Agent (incubating)", where: "Innovation Guide scenario" }, { name: "Lex, timing and SLA (incubation)", where: "Command Center Performance Monitor" }],
     scenario: "Every late PO acknowledgment caught and explained",
     instructions: [
@@ -148,7 +148,7 @@ export const AGENTS: AgentDef[] = [
     status: "On the roadmap",
     name: "Onboarding Guide Agent",
     persona: "Onboarding manager",
-    role: "Your role is to report where each new trading partner is in onboarding, confirm first live transactions, and prepare provisioning and connection requests for approval.",
+    role: "Report onboarding status per new partner, confirm first live transactions, and prepare provisioning and connection requests.",
     inspiredBy: [{ name: "Onboarding Guide Agent (roadmap)", where: "Trading Grid Aviator in Partner Hub" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
     scenario: "First days of a new trading partner",
     instructions: [
@@ -167,7 +167,7 @@ export const AGENTS: AgentDef[] = [
     status: "Live today",
     name: "Community Insights Agent",
     persona: "Supply chain and sourcing leader",
-    role: "Your role is to answer questions about the trading community: who is active, which relationships have gone quiet, how volume is changing, and which data products support the analysis.",
+    role: "Answer trading community questions: active partners, inactive relationships, volume trends and supporting data products.",
     inspiredBy: [{ name: "Community Insights Agent", where: "Command Center Integration Monitor" }],
     scenario: "Finding dormant or inactive partner relationships",
     instructions: [
@@ -186,7 +186,7 @@ export const AGENTS: AgentDef[] = [
     status: "Prototype",
     name: "Context Services Assistant",
     persona: "Any Trading Grid user",
-    role: "Your role is to answer any question about Harborview's trading community, connectivity, transactions, maps, requests and data products using every authorized Trading Grid Context Services tool.",
+    role: "Answer questions about Harborview's community, connectivity, transactions, maps, requests and data products with every authorized tool.",
     inspiredBy: [{ name: "Knowledge Agent", where: "Trading Grid Aviator" }],
     scenario: "Answers without a support ticket",
     instructions: [

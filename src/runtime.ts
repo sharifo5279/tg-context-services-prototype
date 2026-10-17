@@ -173,7 +173,7 @@ export const clientStatus: Record<string, "ACTIVE" | "SUSPENDED"> = {};
 
 export function checkOperation(ctx: Ctx, operation: string): string | null {
   const h = hostOf(ctx);
-  if (clientStatus[h.key] === "SUSPENDED") return `Access for client ${h.name} is suspended in Trading Grid Online (Agent access). No Trading Grid data is returned.`;
+  if (clientStatus[h.key] === "SUSPENDED") return `Access suspended for ${h.name} in Trading Grid Online Agent access. No data returned.`;
   if (!h.operations.includes(operation)) {
     return `Operation '${operation}' is not in the grant for ${h.principalType === "SERVICE_IDENTITY" ? "service identity" : "principal"} ${h.principal} (${h.name}).`;
   }

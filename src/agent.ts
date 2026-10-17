@@ -91,7 +91,7 @@ async function runCore(s: Session, ctx: Ctx, agentId: string, channel: string, e
       stream.on("text", (delta: string) => emit({ type: "text", delta }));
       msg = await stream.finalMessage();
     } catch (e: any) {
-      emit({ type: "error", message: `Model request failed: ${e?.message ?? e}` });
+      emit({ type: "error", message: `Model request failed: ${e?.message ?? e}. Retry the request.` });
       if (s.messages[s.messages.length - 1]?.role === "user" && typeof s.messages[s.messages.length - 1].content === "string") s.messages.pop();
       return;
     }
@@ -125,7 +125,7 @@ function session(id: string, host: HostKey, agentId: string) {
 }
 
 export async function runTurn(opts: { sessionId: string; host: HostKey; agentId: string; message: string; baseUrl: string }, emit: (e: any) => void) {
-  if (!client) { emit({ type: "error", message: "Agent runtime unavailable. ANTHROPIC_API_KEY is not set on the server. Tools remain available in the Tools catalog." }); return; }
+  if (!client) { emit({ type: "error", message: "Agent runtime unavailable. Model API key not configured. Tools remain available in the Tools catalog." }); return; }
   const s = session(opts.sessionId, opts.host, opts.agentId);
   s.messages.push({ role: "user", content: opts.message });
   await runCore(s, { host: opts.host, sessionId: opts.sessionId, baseUrl: opts.baseUrl }, opts.agentId, "console", emit);
@@ -135,7 +135,7 @@ export async function runTurn(opts: { sessionId: string; host: HostKey; agentId:
 export async function runAgentForCaller(opts: { host: HostKey; agentId: string; request: string; conversationId?: string; baseUrl: string }) {
   const conversationId = opts.conversationId || `cv-${Math.random().toString(36).slice(2, 10)}`;
   const t0 = Date.now();
-  if (!client) return { conversationId, text: "Agent runtime unavailable: the model API key is not configured on the server.", steps: [], plans: [], ms: 0, error: true };
+  if (!client) return { conversationId, text: "Agent runtime unavailable. Model API key not configured.", steps: [], plans: [], ms: 0, error: true };
   const sid = `mcp:${opts.host}:${conversationId}`;
   const s = session(sid, opts.host, opts.agentId);
   s.messages.push({ role: "user", content: opts.request });

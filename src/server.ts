@@ -47,7 +47,7 @@ app.use("/.well-known", (_req, res) => res.status(404).json({ error: "not_found"
 async function mcpRoute(req: any, res: any, token: string | null) {
   const host = hostForToken(token);
   if (!host) return res.status(401).json({ jsonrpc: "2.0", error: { code: -32001, message: "Unauthorized. Provide a valid Trading Grid Context Services token." }, id: null });
-  if (req.method !== "POST") return res.status(405).set("Allow", "POST").json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed. This server is stateless; use POST." }, id: null });
+  if (req.method !== "POST") return res.status(405).set("Allow", "POST").json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed. Use POST." }, id: null });
   try { await handleMcp(req, res, host, baseUrl(req)); }
   catch (e: any) { if (!res.headersSent) res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: String(e?.message ?? e) }, id: null }); }
 }
@@ -98,7 +98,7 @@ app.post("/api/chat", async (req, res) => {
   res.flushHeaders?.();
   const emit = (e: any) => res.write(JSON.stringify(e) + "\n");
   if (HOSTS[host as HostKey].exposure === "External" && !agentsFor(host).some((a) => a.id === agentId)) {
-    emit({ type: "error", message: `This agent is not available to ${HOSTS[host as HostKey].name}. Publish it in Aviator Studio, Deployments, or unblock it in Trading Grid Online, Agent access.` });
+    emit({ type: "error", message: `Agent not available to ${HOSTS[host as HostKey].name}. Publish it in Aviator Studio Deployments or unblock it in Trading Grid Online Agent access.` });
     return res.end();
   }
   try { await runTurn({ sessionId, host, agentId, message, baseUrl: baseUrl(req) }, emit); }
