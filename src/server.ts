@@ -1,6 +1,7 @@
 // HTTP server: console (password gate), agent API, tool API and the remote MCP endpoint.
 import express from "express";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { runTurn, resetSession, MODEL, apiKeyConfigured } from "./agent.js";
@@ -33,6 +34,9 @@ function authed(req: any) {
 }
 
 app.get("/healthz", (_req, res) => res.json({ ok: true, tools: TOOLS.length }));
+
+// OAuth discovery probes from MCP clients: this prototype uses token auth, so report no metadata.
+app.use("/.well-known", (_req, res) => res.status(404).json({ error: "not_found" }));
 
 // ---- MCP endpoint (bearer token or token-in-path) ---------------------------------------------------
 async function mcpRoute(req: any, res: any, token: string | null) {
@@ -136,6 +140,11 @@ app.get("/api/tgo/transactions/:id", (req, res) => {
   const { _t, ...rest } = t;
   const related = t.refs.poNumber ? transactions.filter((x) => x.transactionId !== t.transactionId && (x.refs.poNumber === t.refs.poNumber || x.refs.ackForTransactionId === t.transactionId)).sort((a, b) => a._t - b._t).map(tgoRow) : transactions.filter((x) => x.refs.ackForTransactionId === t.transactionId).map(tgoRow);
   res.json({ ...rest, related, translated: t.payloadVariants.includes("TRANSLATED") ? renderPayload(t, "TRANSLATED") : null, row: tgoRow(t), statusText: STATUS_TEXT[t.sourceStatus], ack: ack ? { transactionId: ack.transactionId, documentType: ack.documentType, status: ack.ack?.status, code: ack.ack?.code, receivedAt: ack.receivedAt } : null, payloadPreview: renderPayload(t, "ORIGINAL") });
+});
+
+app.get("/api/backlog", (_req, res) => {
+  try { res.type("application/json").send(readFileSync(path.join(__dirname, "..", "backlog.json"), "utf8")); }
+  catch { res.status(404).json({ error: "Backlog not found." }); }
 });
 
 app.get("/api/audit", (_req, res) => res.json(audit.slice(0, 200)));

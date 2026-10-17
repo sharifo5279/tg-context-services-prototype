@@ -1,0 +1,184 @@
+{
+  "updated": "2026-10-17",
+  "legend": {
+    "status": ["Done", "In progress", "Ready", "Proposed"],
+    "priority": "Set by Omar. Unset items wait for prioritization.",
+    "size": "S: under a day. M: one to two days. L: three days or more."
+  },
+  "epics": [
+    {
+      "key": "TGCS-E1", "title": "Demo platform foundation", "goal": "Runtime, data, security model and deployment that every surface depends on.",
+      "items": [
+        { "key": "TGCS-101", "title": "Seeded retail trading community", "status": "Done", "size": "M", "source": "Brief", "desc": "Harborview Retail hub, 11 partners, 280 days of transactions, CMS-shaped configuration.", "accept": "All 40 use cases pass tool-level tests." },
+        { "key": "TGCS-102", "title": "95 candidate MCP tools", "status": "Done", "size": "L", "source": "Brief", "desc": "Every tool in the incubation inventory with source binding and contract basis.", "accept": "Catalog lists 95 tools; each invokable from the console." },
+        { "key": "TGCS-103", "title": "Evidence envelope and entitlement checks", "status": "Done", "size": "M", "source": "Brief", "desc": "Organization, BUID, solution and operation evaluated on every call; source refs and completeness returned.", "accept": "Cross-org, cross-BUID and ungranted operations fail closed." },
+        { "key": "TGCS-104", "title": "Approval-gated changes", "status": "Done", "size": "M", "source": "Brief", "desc": "Prepare, approve, recheck, submit and track; plans bound to exact parameters, single use, 30-minute expiry.", "accept": "Submit before approval is blocked; reuse is rejected." },
+        { "key": "TGCS-105", "title": "Render deployment with password gate", "status": "Done", "size": "S", "source": "Omar request", "desc": "Single web service with console password and Anthropic API key.", "accept": "Live at tg-context-services-prototype.onrender.com." },
+        { "key": "TGCS-106", "title": "Demo journey landing page", "status": "Done", "size": "S", "source": "Omar request", "desc": "Exposure ladder and nine-scene script from Trading Grid Online to external ecosystems.", "accept": "Each scene opens the right surface." },
+        { "key": "TGCS-107", "title": "Backlog footer", "status": "Done", "size": "S", "source": "Omar request", "desc": "Epics and features visible from every page for prioritization.", "accept": "Footer opens the backlog; filters by epic and status." },
+        { "key": "TGCS-108", "title": "Demo reset control", "status": "Proposed", "size": "S", "source": "Recording readiness", "desc": "Reset approvals, cross-reference changes, suspensions and conversations between takes.", "accept": "One action restores the seeded state." },
+        { "key": "TGCS-109", "title": "Always-on hosting", "status": "Proposed", "size": "S", "source": "Recording readiness", "desc": "Move to a paid Render plan to remove the 50-second cold start and keep state between sessions.", "accept": "First request responds in under 2 seconds." },
+        { "key": "TGCS-110", "title": "Expanded seeded data", "status": "Proposed", "size": "M", "source": "Guide scenarios", "desc": "Add non-EDI suppliers, a 3PL with 214s, returnable assets, chargebacks and e-invoices to support supply chain scenarios.", "accept": "Data supports TGCS-8xx scenarios without placeholders." }
+      ]
+    },
+    {
+      "key": "TGCS-E2", "title": "Trading Grid Online and TG Insights", "goal": "The internal starting point, matching shipped Trading Grid Online and TG Insights screens.",
+      "items": [
+        { "key": "TGCS-201", "title": "Trading Grid Online home", "status": "Done", "size": "S", "source": "Guide: Knowledge agent screenshot", "desc": "Portal header, MyAviator, welcome panel and application tiles.", "accept": "Matches the shipped layout." },
+        { "key": "TGCS-202", "title": "TG Insights transactions on JATO UX", "status": "Done", "size": "M", "source": "Guide: TG Insights JATO refresh", "desc": "Transactions list with filtering panel, facets and two-line rows.", "accept": "Delivery failure filter returns the scenario transactions." },
+        { "key": "TGCS-203", "title": "Transaction detail page", "status": "Done", "size": "M", "source": "Guide: Transaction detail page", "desc": "Details, Flow, Related transactions and Payloads tabs.", "accept": "Analyze with Aviator and Ask Aviator open the right agent." },
+        { "key": "TGCS-204", "title": "Agent access administration", "status": "Done", "size": "M", "source": "Brief: Trading Grid Online control point", "desc": "Grant scope, connected agent applications, suspend and restore.", "accept": "Suspended client fails closed on the next call." },
+        { "key": "TGCS-205", "title": "Agent access: connect and authorize flow", "status": "Proposed", "size": "M", "source": "Brief: Connect, Authorize, Activate, Manage", "desc": "Register an application, choose delegated or service identity, select BUIDs, solutions and operations, set duration.", "accept": "A new client appears in Context Services with the chosen scope." },
+        { "key": "TGCS-206", "title": "Narrow-by facets: acknowledgment, redelivery, error type", "status": "Proposed", "size": "S", "source": "Guide: Transaction search", "desc": "Facets for FA status, redelivered status and error type.", "accept": "Facet counts match search results." },
+        { "key": "TGCS-207", "title": "Bulk redelivery and reprocess", "status": "Proposed", "size": "M", "source": "Guide: Bulk redelivery, Reprocess", "desc": "Redeliver up to 30 failed transactions and reprocess failed files from search, with confirmation.", "accept": "Redelivered status appears as a facet." },
+        { "key": "TGCS-208", "title": "Automated redelivery rules", "status": "Proposed", "size": "M", "source": "Guide: Automated redelivery, powered by Aviator", "desc": "Aviator matches failed delivery errors to client rules and redelivers.", "accept": "Atlas Toy endpoint outage scenario recovers automatically." },
+        { "key": "TGCS-209", "title": "Inline details and business document viewer", "status": "Proposed", "size": "M", "source": "Guide: Inline details, Business document viewer", "desc": "Expand a transaction in place; read EDI as a business document or element by element.", "accept": "856 and 810 render as business documents." },
+        { "key": "TGCS-210", "title": "Configurable dashboards, alerts and reports", "status": "Proposed", "size": "L", "source": "Guide: TG Insights GA features", "desc": "Team dashboards, saved-search alerts and scheduled reports.", "accept": "Alert fires for the Summit missing-997 condition." },
+        { "key": "TGCS-211", "title": "Light and dark mode", "status": "Proposed", "size": "S", "source": "Guide: JATO refresh", "desc": "JATO color system modes for TG Insights screens.", "accept": "Mode toggle persists per viewer." },
+        { "key": "TGCS-212", "title": "Community Manager and Community Projects screens", "status": "Proposed", "size": "L", "source": "Guide: Community Manager, Community Projects", "desc": "Trading community list and request tracking used by onboarding and request scenarios.", "accept": "Requests submitted by agents appear in Community Projects." },
+        { "key": "TGCS-213", "title": "Core Collaboration Access entry", "status": "Proposed", "size": "S", "source": "Guide: Core Collaboration Access", "desc": "Partner front door into Trading Grid applications for partner-side scenarios.", "accept": "Partner persona reaches Partner Hub from one sign-in." }
+      ]
+    },
+    {
+      "key": "TGCS-E3", "title": "Trading Grid Aviator live agents in app", "goal": "Every agent the Aviator portfolio lists as live today, inside the product it ships in.",
+      "items": [
+        { "key": "TGCS-301", "title": "Error Analysis Agent in TG Insights", "status": "Done", "size": "M", "source": "Guide: Aviator portfolio, live today", "desc": "Analyze with Aviator on a failed transaction: cause, owning side, checks and numbered next steps.", "accept": "Matches the shipped panel, including disclaimer." },
+        { "key": "TGCS-302", "title": "Payload Analysis Agent in the payload viewer", "status": "Done", "size": "M", "source": "Guide: Aviator portfolio, live today", "desc": "Tabulated view, parse and summarize actions on the loaded payload.", "accept": "Follow-ups stay scoped to the payload." },
+        { "key": "TGCS-303", "title": "Transaction Finder Agent", "status": "Proposed", "size": "M", "source": "Guide: Aviator portfolio, live today", "desc": "Find transactions from a question on the Transactions page and apply the filters.", "accept": "Question sets facets and returns matching rows." },
+        { "key": "TGCS-304", "title": "Knowledge Agent with client procedures", "status": "Proposed", "size": "M", "source": "Guide: Knowledge agent", "desc": "General Trading Grid knowledge plus Harborview procedures, client rules first.", "accept": "Answers how to request a new map with Community Projects steps." },
+        { "key": "TGCS-305", "title": "Support Ticket Agent", "status": "Proposed", "size": "S", "source": "Guide: Auto create support ticket", "desc": "Turn a conversation into a support ticket with full context.", "accept": "Ticket summary lists transaction IDs and checks performed." },
+        { "key": "TGCS-306", "title": "Community Insights Agent in CCIM Ask Aviator", "status": "Proposed", "size": "M", "source": "Guide: Ask Aviator in CCIM", "desc": "Questions on the data on screen, answered as a table or chart.", "accept": "Dormant document types over 180 days answered by partner and direction." },
+        { "key": "TGCS-307", "title": "Daily Summarizer and Explainer agents in CCIM", "status": "Proposed", "size": "M", "source": "Guide: Daily digest, Explain with Aviator", "desc": "Daily digest of volume, errors, onboarding and anomalies; one-click findings on projections.", "accept": "Digest flags the Brightwell 856 anomaly and Summit 997 gap." },
+        { "key": "TGCS-308", "title": "Map Inventory and Map-level Intelligence agents", "status": "Proposed", "size": "M", "source": "Guide: Cartographer agents", "desc": "Inventory questions across maps and quick facts on the selected map, with links to source.", "accept": "Answers maps modified in 12 months and who owns BWHG_856." },
+        { "key": "TGCS-309", "title": "Mapping Rule Explorer Agent", "status": "Proposed", "size": "M", "source": "Guide: Mapping rule explorer, built for Contivo", "desc": "Explain a target field's rule condition by condition with a sample.", "accept": "Explains how ship-to resolves through STORE_TO_GLN in map v7." }
+      ]
+    },
+    {
+      "key": "TGCS-E4", "title": "Command Center Integration Monitor surface", "goal": "CCIM screens that host the Daily Summarizer and Community Insights agents.",
+      "items": [
+        { "key": "TGCS-401", "title": "CCIM dashboard and daily digest", "status": "Proposed", "size": "M", "source": "Guide: Daily digest", "desc": "Top-10 partner volume and errors, partners onboarded, anomalies detected.", "accept": "Digest uses seeded data and links to TG Insights." },
+        { "key": "TGCS-402", "title": "Projections, anomalies and failed-transaction anomalies", "status": "Proposed", "size": "M", "source": "Guide: CCIM GA features", "desc": "Projected range with spikes, drops and failure anomalies per watchlist.", "accept": "Atlas Toy drop and Brightwell failures flagged." },
+        { "key": "TGCS-403", "title": "Trading community, partner details and integration analysis", "status": "Proposed", "size": "L", "source": "Guide: CCIM GA features", "desc": "Partner list, details panel, document type and protocol analysis.", "accept": "Configured-but-unused flows visible per partner." },
+        { "key": "TGCS-404", "title": "CCIM data product in Data Explorer", "status": "Ready", "size": "S", "source": "Brief: CCIM missing from TGDP list", "desc": "tgdp.ccim_integration_events is seeded; expand events and expose in Data Explorer screens.", "accept": "Agents query anomalies through Context Services." }
+      ]
+    },
+    {
+      "key": "TGCS-E5", "title": "Trading Grid Cartographer surface", "goal": "Cartographer screens that host the map agents and the cross-reference fix.",
+      "items": [
+        { "key": "TGCS-501", "title": "Map list, metadata and trading relationships", "status": "Proposed", "size": "M", "source": "Guide: Cartographer GA features", "desc": "Map search, General tab and the Transactions tab per partner flow.", "accept": "BWHG_856_4010_IN shows v7 and its partners." },
+        { "key": "TGCS-502", "title": "Cross-reference table view with reservation", "status": "Proposed", "size": "S", "source": "Guide: Cross-reference table view", "desc": "Reference data tab with lock state and change history.", "accept": "Agent-applied 0412 entry appears with author and time." },
+        { "key": "TGCS-503", "title": "Map testing and annotations", "status": "Proposed", "size": "M", "source": "Guide: Map testing, Map annotations", "desc": "Run a file through a map; mark up changes for Professional Services.", "accept": "Rerun of SH-77155 passes after the fix." }
+      ]
+    },
+    {
+      "key": "TGCS-E6", "title": "Roadmap agents", "goal": "Agents the Aviator portfolio lists as on the roadmap, labeled as roadmap.",
+      "items": [
+        { "key": "TGCS-601", "title": "Onboarding Guide Agent in Partner Hub", "status": "In progress", "size": "M", "source": "Guide: Aviator portfolio, roadmap", "desc": "Aviator Studio agent exists; add the Partner Hub partner-side experience.", "accept": "Pinegate sees its own tasks and next step only." },
+        { "key": "TGCS-602", "title": "Configuration Resolution Agent", "status": "Proposed", "size": "M", "source": "Guide: Aviator portfolio, roadmap", "desc": "Resolve unknown sender or receiver and delivery issues against addresses, qualifiers and map assignment.", "accept": "Explains a misrouted Coastline 810 through the VAN interconnect." },
+        { "key": "TGCS-603", "title": "EDI Document Analyzer Agent", "status": "Proposed", "size": "M", "source": "Guide: Aviator portfolio, roadmap", "desc": "Validate missing or invalid elements against document rules and the payload.", "accept": "Identifies IT104 decimal separator issue on Northfield invoices." }
+      ]
+    },
+    {
+      "key": "TGCS-E7", "title": "Incubating agents", "goal": "Agents the Aviator portfolio lists as incubating, each anchored to a guide scenario.",
+      "items": [
+        { "key": "TGCS-701", "title": "FA Reconciliation Agent", "status": "In progress", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Aviator Studio agent exists; add CCPM finding output and late-ack SLA rules.", "accept": "Summit overdue 997s become findings." },
+        { "key": "TGCS-702", "title": "Xref Checker Agent", "status": "Proposed", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Check cross-reference tables used by a failing map; propose the missing entry.", "accept": "Finds STORE_TO_GLN 0412 gap without a hint." },
+        { "key": "TGCS-703", "title": "Error Triage Agent", "status": "Proposed", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Classify each failed transaction and save the triage result.", "accept": "Overnight failures tagged by error family." },
+        { "key": "TGCS-704", "title": "Correlation Agent", "status": "Proposed", "size": "M", "source": "Guide: Aviator portfolio, incubating", "desc": "Link failures by correlation ID, document lifecycle and error class.", "accept": "Groups failures that share a cause across partners." },
+        { "key": "TGCS-705", "title": "Consolidated Root Cause Agent", "status": "Proposed", "size": "M", "source": "Guide: Aviator portfolio, incubating", "desc": "Check map changes, completed work orders and audit log for the change behind many failures.", "accept": "Ties failures to map v7 promotion and WO-5488." },
+        { "key": "TGCS-706", "title": "Connection Health Agent", "status": "Proposed", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Read timeouts and delivery errors against connection status and reprocess history.", "accept": "Explains the Atlas Toy AS2 MDN timeout." },
+        { "key": "TGCS-707", "title": "Flow Resolver Agent", "status": "Proposed", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Resolve which flow, map and relationship a document took.", "accept": "Returns the flow for any transaction ID." },
+        { "key": "TGCS-708", "title": "Remediation Advisor Agent", "status": "Proposed", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Recommend the corrective action per error family.", "accept": "Each finding has an owner and next step." },
+        { "key": "TGCS-709", "title": "Translation Test Agent", "status": "Proposed", "size": "M", "source": "Guide: Aviator portfolio, incubating", "desc": "Run a payload through a map test before resend.", "accept": "SH-77155 test passes after the cross-reference fix." },
+        { "key": "TGCS-710", "title": "Contact Gap Finder Agent", "status": "Proposed", "size": "S", "source": "Guide: Aviator portfolio, incubating", "desc": "Find partners missing technical or business contacts for notices.", "accept": "Lists partners with no technical contact." },
+        { "key": "TGCS-711", "title": "Audience Message Composer Agent", "status": "Proposed", "size": "S", "source": "Guide: Telling a supplier exactly what to fix", "desc": "Write supplier notices by contact type and preferred language.", "accept": "Hollanda notice drafted in Dutch and English." }
+      ]
+    },
+    {
+      "key": "TGCS-E8", "title": "Guide scenarios end to end", "goal": "Each Innovation Guide scenario as a guided, recordable run across surfaces.",
+      "items": [
+        { "key": "TGCS-801", "title": "Where are my ASNs?", "status": "Done", "size": "M", "source": "Guide: Featured scenario", "desc": "TG Insights, Error Analysis, ASN Exception Agent, cross-reference fix with approval.", "accept": "Recorded run from TGO to approval." },
+        { "key": "TGCS-802", "title": "Morning operations triage", "status": "Ready", "size": "M", "source": "Guide: Featured scenario", "desc": "CCIM digest to anomaly to TG Insights failures to Aviator analysis.", "accept": "Depends on TGCS-401 and TGCS-307." },
+        { "key": "TGCS-803", "title": "A vendor says last week's invoices aren't being processed", "status": "Ready", "size": "S", "source": "Guide: Featured scenario", "desc": "Northfield 810 failures traced to IT104 and BIG04 issues with supplier notice.", "accept": "Uses Error Analysis and Payload Analysis agents." },
+        { "key": "TGCS-804", "title": "Partner endpoint outage and recovery", "status": "Ready", "size": "M", "source": "Guide: Featured scenario", "desc": "Atlas Toy AS2 timeout, connection health, bulk redelivery after recovery.", "accept": "Depends on TGCS-207." },
+        { "key": "TGCS-805", "title": "First days of a new trading partner", "status": "Ready", "size": "S", "source": "Guide: Featured scenario", "desc": "Pinegate onboarding status, test 810, first production document.", "accept": "Onboarding Guide Agent run with Partner Hub view." },
+        { "key": "TGCS-806", "title": "Finding dormant or inactive partner relationships", "status": "Ready", "size": "S", "source": "Guide: Featured scenario", "desc": "Configured-but-unused flows and silent partners.", "accept": "Community Insights Agent run." },
+        { "key": "TGCS-807", "title": "Shared incident across multiple partners", "status": "Proposed", "size": "M", "source": "Guide: More scenarios", "desc": "Correlation and root cause across partners.", "accept": "Depends on TGCS-704 and TGCS-705." },
+        { "key": "TGCS-808", "title": "Peak-period readiness", "status": "Proposed", "size": "M", "source": "Guide: More scenarios", "desc": "Projections and capacity checks ahead of peak.", "accept": "Depends on TGCS-402." },
+        { "key": "TGCS-809", "title": "Acknowledgment backlog", "status": "Ready", "size": "S", "source": "Guide: More scenarios", "desc": "FA Reconciliation across Summit, Meridian and Hollanda.", "accept": "Missing versus rejected separated." },
+        { "key": "TGCS-810", "title": "From support case to shareable evidence", "status": "Proposed", "size": "S", "source": "Guide: More scenarios", "desc": "Export transaction detail and analysis as a shareable record; open a ticket.", "accept": "Depends on TGCS-305." },
+        { "key": "TGCS-811", "title": "Payload problem without reading raw EDI", "status": "Ready", "size": "S", "source": "Guide: More scenarios", "desc": "Payload Analysis Agent on the failed Northfield invoice.", "accept": "Names the faulty element and correction." },
+        { "key": "TGCS-812", "title": "One order across EDI, non-EDI suppliers and a 3PL", "status": "Proposed", "size": "L", "source": "Guide: Supply chain scenarios", "desc": "Supplier Hub web EDI, Redline 214s and order lifecycle.", "accept": "Depends on TGCS-110." },
+        { "key": "TGCS-813", "title": "Returnable containers that stop coming back", "status": "Proposed", "size": "L", "source": "Guide: Supply chain scenarios", "desc": "Aviator IoT returnable asset tracking and chat.", "accept": "Depends on TGCS-110 and TGCS-1207." },
+        { "key": "TGCS-814", "title": "A partner keeps breaking the agreed rules", "status": "Proposed", "size": "M", "source": "Guide: Supply chain scenarios", "desc": "CCPM rule and findings for repeated conformance breaks.", "accept": "Depends on TGCS-1201." },
+        { "key": "TGCS-815", "title": "The same chargebacks keep coming back", "status": "Proposed", "size": "M", "source": "Guide: Supply chain scenarios", "desc": "Trading Grid Intelligence deductions and compliance.", "accept": "Depends on TGCS-110." },
+        { "key": "TGCS-816", "title": "A new e-invoicing mandate takes effect", "status": "Proposed", "size": "M", "source": "Guide: Supply chain scenarios", "desc": "Trading Grid e-Invoicing readiness and status.", "accept": "Depends on TGCS-1206." },
+        { "key": "TGCS-817", "title": "Any EDI error, read and routed to its fix", "status": "Proposed", "size": "L", "source": "Guide: Aviator scenario", "desc": "Error families routed to live, roadmap and incubating agents.", "accept": "Each family ends in a next step." },
+        { "key": "TGCS-818", "title": "Telling a supplier exactly what to fix", "status": "Ready", "size": "M", "source": "Guide: Aviator scenario", "desc": "Diagnosis, contact rules and composed notice.", "accept": "Depends on TGCS-710 and TGCS-711 for full flow." },
+        { "key": "TGCS-819", "title": "One root cause behind many failures", "status": "Proposed", "size": "M", "source": "Guide: Aviator scenario", "desc": "Triage, correlate, root cause, share.", "accept": "Depends on TGCS-703 to TGCS-705." },
+        { "key": "TGCS-820", "title": "Answers without a support ticket", "status": "Proposed", "size": "M", "source": "Guide: Aviator scenario", "desc": "Client users, partners and client agents served by the same agents.", "accept": "Includes agent-to-agent call through Context Services." },
+        { "key": "TGCS-821", "title": "Every late PO acknowledgment caught and explained", "status": "Proposed", "size": "M", "source": "Guide: Aviator scenario (CCPM)", "desc": "Lex timing rule, findings and chain of reasoning.", "accept": "Depends on TGCS-1201." },
+        { "key": "TGCS-822", "title": "Which suppliers pull performance down, and why", "status": "Proposed", "size": "M", "source": "Guide: Aviator scenario (CCPM)", "desc": "Weighted scorecard and Aviator root cause.", "accept": "Depends on TGCS-1201." }
+      ]
+    },
+    {
+      "key": "TGCS-E9", "title": "Aviator Studio", "goal": "Where Business Network agents are built, tested and published.",
+      "items": [
+        { "key": "TGCS-901", "title": "Agent list, definition and simulate", "status": "Done", "size": "M", "source": "Omar screenshot", "desc": "Definition, resources panel, live tool trace and approvals.", "accept": "Matches the Aviator Studio layout." },
+        { "key": "TGCS-902", "title": "Portfolio status on agents", "status": "Done", "size": "S", "source": "Guide: Aviator portfolio", "desc": "Live today, on the roadmap, incubating or prototype on every agent.", "accept": "Labels match the portfolio slide." },
+        { "key": "TGCS-903", "title": "Simulation results table", "status": "Proposed", "size": "M", "source": "Omar screenshot", "desc": "Simulation over a time window with an exceptions table and Review and approve.", "accept": "ASN agent returns status, ASN, supplier, cause, action rows." },
+        { "key": "TGCS-904", "title": "Describe the job in plain language", "status": "Proposed", "size": "M", "source": "Guide: Aviator Studio incubation", "desc": "Create an agent from a description; Studio proposes instructions, tools and outputs.", "accept": "New agent runs without code changes." },
+        { "key": "TGCS-905", "title": "Triggers and schedules", "status": "Proposed", "size": "M", "source": "Omar screenshot: Triggers tab", "desc": "Run agents every morning or on events such as a failed 856.", "accept": "Scheduled run appears in the run history." },
+        { "key": "TGCS-906", "title": "Deployments and publishing to ecosystems", "status": "Proposed", "size": "M", "source": "Guide: Use agents where people already work", "desc": "Publish an agent through the AKS gateway to Copilot Studio, Gemini, Joule and Claude.", "accept": "Published agent appears as an MCP prompt for each client." },
+        { "key": "TGCS-907", "title": "Convert to a team", "status": "Proposed", "size": "M", "source": "Omar screenshot", "desc": "Compose agents into a team, such as triage, root cause and notice.", "accept": "Team run shows hand-offs between agents." },
+        { "key": "TGCS-908", "title": "Knowledge, models and tools registries", "status": "Proposed", "size": "M", "source": "Omar screenshot: Registries", "desc": "Registries for knowledge sources, models and MCP tools.", "accept": "Agent resources reference registry items." }
+      ]
+    },
+    {
+      "key": "TGCS-E10", "title": "Trading Grid Context Services layer", "goal": "The governed externalization layer behind the Aviator AKS gateway.",
+      "items": [
+        { "key": "TGCS-1001", "title": "Service console: tools, clients, access, audit, approvals", "status": "Done", "size": "M", "source": "Omar request", "desc": "Plain service-layer console with live audit.", "accept": "Every call shows route, principal and decision." },
+        { "key": "TGCS-1002", "title": "Remote MCP endpoint", "status": "Done", "size": "M", "source": "Brief", "desc": "Streamable HTTP, per-client tokens, filtered discovery, agent prompts.", "accept": "MCP client test passes for three clients." },
+        { "key": "TGCS-1003", "title": "Live Claude connector proof", "status": "In progress", "size": "S", "source": "Brief: second ecosystem reuse", "desc": "Connect Claude through the connector URL and record a run.", "accept": "Calls from Claude appear in the audit log." },
+        { "key": "TGCS-1004", "title": "OAuth with PKCE and dynamic registration", "status": "Proposed", "size": "L", "source": "Brief: authorization patterns", "desc": "Replace prototype tokens for Copilot Studio and Gemini Enterprise connections.", "accept": "A real Copilot Studio agent connects with user consent." },
+        { "key": "TGCS-1005", "title": "AKS gateway behavior", "status": "Proposed", "size": "M", "source": "Omar: central Aviator gateway", "desc": "Token exchange, rate and cost limits and gateway request IDs in the trace.", "accept": "Gateway rejects over-limit calls with a clear message." },
+        { "key": "TGCS-1006", "title": "Operation tracking view", "status": "Proposed", "size": "S", "source": "Brief: get_operation_status", "desc": "Change requests, provisioning, queries and exports in one list.", "accept": "Asynchronous states progress visibly." },
+        { "key": "TGCS-1007", "title": "Usage metering for packaging", "status": "Proposed", "size": "M", "source": "Brief: commercial shape", "desc": "Count calls, workflows and data product queries per client for pricing discussions.", "accept": "Usage summary by client and capability." },
+        { "key": "TGCS-1008", "title": "Field contracts for Insights, Cartographer, Projects and TGDP", "status": "Proposed", "size": "M", "source": "Open issue", "desc": "Replace modeled shapes with official contracts when supplied.", "accept": "Contract basis shows source specification." }
+      ]
+    },
+    {
+      "key": "TGCS-E11", "title": "External ecosystem experiences", "goal": "Each target ecosystem shown in a client surface styled after the real product.",
+      "note": "Styled after each product's layout and interaction pattern, labeled as simulated, without vendor logos.",
+      "items": [
+        { "key": "TGCS-1101", "title": "Generic simulated client with gateway route", "status": "Done", "size": "M", "source": "Omar request", "desc": "One client surface for four ecosystems with route and principal.", "accept": "SAP payload denial and suspension shown." },
+        { "key": "TGCS-1102", "title": "Microsoft Copilot Studio style client", "status": "Proposed", "size": "M", "source": "Omar request", "desc": "Copilot Studio test pane layout with agent topics and MCP tool activity.", "accept": "Recognizable layout; labeled simulated." },
+        { "key": "TGCS-1103", "title": "Claude style client", "status": "Proposed", "size": "M", "source": "Omar request", "desc": "Claude chat layout with connector tool-use blocks.", "accept": "Mirrors a live Claude connector run." },
+        { "key": "TGCS-1104", "title": "Google Gemini Enterprise style client", "status": "Proposed", "size": "M", "source": "Omar request", "desc": "Gemini Enterprise assistant layout with custom MCP connector.", "accept": "Recognizable layout; labeled simulated." },
+        { "key": "TGCS-1105", "title": "SAP Joule style client", "status": "Proposed", "size": "M", "source": "Omar request", "desc": "Joule side panel over an S/4HANA-style inbound delivery screen.", "accept": "Shows service identity and payload denial." },
+        { "key": "TGCS-1106", "title": "Additional ecosystems from the brief", "status": "Proposed", "size": "L", "source": "Brief: nine ecosystems", "desc": "Oracle Fusion AI Agent Studio, Salesforce Agentforce, ServiceNow, Amazon Bedrock AgentCore, IBM watsonx Orchestrate, UiPath.", "accept": "Each registered as a client with its documented auth pattern." }
+      ]
+    },
+    {
+      "key": "TGCS-E12", "title": "Looking ahead products", "goal": "Products in active incubation and development, shown as directional.",
+      "items": [
+        { "key": "TGCS-1201", "title": "Command Center Performance Monitor", "status": "Proposed", "size": "L", "source": "Guide: Active incubation", "desc": "Nora, Lex, Liz and Reese agents; rules, findings, chain of reasoning, scorecards.", "accept": "Link or embed the existing clickable prototype." },
+        { "key": "TGCS-1202", "title": "Trading Grid ASN Intelligence", "status": "Proposed", "size": "M", "source": "Guide: In development", "desc": "ASN health, supplier risk, remediation guidance and payload visibility.", "accept": "Brightwell ASN risk visible with remediation." },
+        { "key": "TGCS-1203", "title": "Trading Grid Partner Hub", "status": "Proposed", "size": "M", "source": "Guide: Active incubation", "desc": "Partner view, program dashboard, SLO tracking and Onboarding Guide Agent.", "accept": "Pinegate onboarding shown from partner side." },
+        { "key": "TGCS-1204", "title": "Trading Grid Decisions Intelligence", "status": "Proposed", "size": "M", "source": "Guide: In development", "desc": "Support Operations Intelligence, Inbound Shipment Assurance, Payments Intelligence.", "accept": "Inbound Shipment Assurance answers late, missing or short shipments." },
+        { "key": "TGCS-1205", "title": "Trading Grid Data Explorer", "status": "Proposed", "size": "M", "source": "Guide: In development", "desc": "Visual query builder, data products, preview results and MCP access.", "accept": "Query built visually returns the same rows agents see." },
+        { "key": "TGCS-1206", "title": "Trading Grid e-Invoicing", "status": "Proposed", "size": "M", "source": "Guide: Generally available", "desc": "Invoice status, compliance by country and legal archive.", "accept": "Supports TGCS-816." },
+        { "key": "TGCS-1207", "title": "OpenText Aviator IoT", "status": "Proposed", "size": "M", "source": "Guide: Generally available", "desc": "Returnable asset tracking, batch scanning and Aviator chat.", "accept": "Supports TGCS-813." },
+        { "key": "TGCS-1208", "title": "Supplier Hub packing visibility", "status": "Proposed", "size": "M", "source": "Guide: Looking ahead", "desc": "Packing hierarchy and line views with missing-attribute filters.", "accept": "ASN SSCC hierarchy for Brightwell shipments." }
+      ]
+    },
+    {
+      "key": "TGCS-E13", "title": "Recording and presenter support", "goal": "Make funding demos repeatable and clear.",
+      "items": [
+        { "key": "TGCS-1301", "title": "Presenter notes per scene", "status": "Proposed", "size": "S", "source": "Recording readiness", "desc": "Talk track, prompt to type and expected outcome for each scene.", "accept": "Notes toggle on the journey page." },
+        { "key": "TGCS-1302", "title": "Recording mode", "status": "Proposed", "size": "S", "source": "Recording readiness", "desc": "Larger type, hidden backlog footer and calmer trace for video.", "accept": "One toggle; persists per viewer." },
+        { "key": "TGCS-1303", "title": "Investment narrative page", "status": "Proposed", "size": "M", "source": "Funding goal", "desc": "Problem, what the demo proves, graduation criteria and asks, linked from the journey.", "accept": "Aligned with the incubation brief validation table." }
+      ]
+    }
+  ]
+}
