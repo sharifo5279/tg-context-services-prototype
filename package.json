@@ -1,0 +1,24 @@
+{
+  "name": "tg-context-services-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trading Grid Context Services Prototype: seeded MCP runtime and agent console",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "node dist/server.js",
+    "dev": "tsc -p . && node dist/server.js",
+    "test": "tsc -p . && node dist/selftest.js"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0"
+  }
+}
