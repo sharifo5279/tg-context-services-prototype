@@ -21,7 +21,22 @@ const prod = () => transactions.filter((t) => t.environment === "PRODUCTION" && 
 const within = (ms: number) => { const from = Date.now() - ms; return prod().filter((t) => t._t >= from); };
 const partnerName = (id: string) => companyById(id)?.companyName ?? id;
 const isAck = (t: Tx) => t.documentType === "997" || t.documentType === "CONTRL";
-const ackOf = (t: Tx) => transactions.find((x) => x.refs.ackForTransactionId === t.transactionId);
+// Lookup indexes over the transaction store, rebuilt when the store size changes.
+let IX = { n: -1, ack: new Map<string, Tx>(), docPo: new Map<string, Tx[]>() };
+function ix() {
+  if (IX.n === transactions.length) return IX;
+  const ack = new Map<string, Tx>(), docPo = new Map<string, Tx[]>();
+  for (const t of transactions) {
+    if (t.refs.ackForTransactionId && !ack.has(t.refs.ackForTransactionId)) ack.set(t.refs.ackForTransactionId, t);
+    if (t.refs.poNumber) { const k = `${t.documentType}|${t.refs.poNumber}`; (docPo.get(k) ?? docPo.set(k, []).get(k)!).push(t); }
+  }
+  IX = { n: transactions.length, ack, docPo };
+  return IX;
+}
+const ackOf = (t: Tx) => ix().ack.get(t.transactionId);
+/** Latest transaction of a document type for a PO (store order is newest first). */
+const docFor = (type: string, po?: string) => (po ? ix().docPo.get(`${type}|${po}`)?.[0] : undefined);
+const docsFor = (type: string, po?: string) => (po ? ix().docPo.get(`${type}|${po}`) ?? [] : []);
 const round = (n: number, d = 1) => Math.round(n * 10 ** d) / 10 ** d;
 const count = <T>(list: T[], key: (x: T) => string) => list.reduce((m: Record<string, number>, x) => ((m[key(x)] = (m[key(x)] ?? 0) + 1), m), {});
 const top = (m: Record<string, number>, n = 10) => Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n);
@@ -116,7 +131,7 @@ function evaluateRule(rule: any, windowMs = 7 * D) {
   if (rule.type === "ACK_WITHIN_HOURS") {
     for (const t of list.filter((x) => x.documentType === rule.params.documentType && x.direction === "OUTBOUND")) {
       const hours = rule.params.gracePartners?.[t.partnerCompanyId] != null ? rule.params.hours + rule.params.gracePartners[t.partnerCompanyId] : rule.params.hours;
-      const resp = rule.params.ackType === "997" ? ackOf(t) : transactions.find((x) => x.documentType === rule.params.ackType && x.refs.poNumber === t.refs.poNumber);
+      const resp = rule.params.ackType === "997" ? ackOf(t) : docFor(rule.params.ackType, t.refs.poNumber);
       const late = resp ? (resp._t - t._t) / H > hours : (now - t._t) / H > hours;
       if (late) out.push({ t, evidence: resp ? `${rule.params.ackType} received after ${round((resp._t - t._t) / H)} hours (limit ${hours})` : `No ${rule.params.ackType} after ${round((now - t._t) / H)} hours (limit ${hours})`, refData: rule.params.gracePartners?.[t.partnerCompanyId] ? `Grace period ${rule.params.gracePartners[t.partnerCompanyId]} hours applied` : "No grace period for this partner" });
     }
@@ -129,12 +144,12 @@ function evaluateRule(rule: any, windowMs = 7 * D) {
     for (const t of list.filter((x) => x.documentType === rule.params.documentType && x.errors[0]?.code === rule.params.code)) out.push({ t, evidence: t.errors[0].message, refData: "HRG 810 guide v5: IT104 uses a period separator" });
   } else if (rule.type === "SEQUENCE") {
     for (const inv of list.filter((x) => x.documentType === rule.params.then)) {
-      const first = transactions.filter((x) => x.documentType === rule.params.first && x.refs.poNumber === inv.refs.poNumber).sort((a, b) => a._t - b._t)[0];
+      const first = [...docsFor(rule.params.first, inv.refs.poNumber)].sort((a, b) => a._t - b._t)[0];
       if (first && first._t > inv._t) out.push({ t: inv, evidence: `${rule.params.then} arrived ${round((first._t - inv._t) / H)} hours before its ${rule.params.first} (PO ${inv.refs.poNumber})`, refData: "Supplier profile: ASN required before receipt" });
     }
   } else if (rule.type === "REFERENCE") {
     for (const inv of list.filter((x) => x.documentType === rule.params.documentType)) {
-      if (!transactions.some((x) => x.documentType === rule.params.references && x.refs.poNumber === inv.refs.poNumber)) out.push({ t: inv, evidence: `PO ${inv.refs.poNumber} has no matching ${rule.params.references}`, refData: "Purchase order history, 6 months" });
+      if (!docFor(rule.params.references, inv.refs.poNumber)) out.push({ t: inv, evidence: `PO ${inv.refs.poNumber} has no matching ${rule.params.references}`, refData: "Purchase order history, 6 months" });
     }
   }
   return out;
@@ -170,11 +185,11 @@ function scorecard(id: string) {
   const pos = list.filter((t) => t.direction === "OUTBOUND" && (t.documentType === "850" || t.documentType === "ORDERS"));
   const ackHours = pos.map((p) => { const a = ackOf(p); return a ? (a._t - p._t) / H : null; }).filter((x) => x != null) as number[];
   const missingAck = pos.filter((p) => !ackOf(p) && Date.now() - p._t > 24 * H).length;
-  const respHours = pos.map((p) => { const r = transactions.find((x) => x.documentType === "855" && x.refs.poNumber === p.refs.poNumber); return r ? (r._t - p._t) / H : null; }).filter((x) => x != null) as number[];
+  const respHours = pos.map((p) => { const r = docFor("855", p.refs.poNumber); return r ? (r._t - p._t) / H : null; }).filter((x) => x != null) as number[];
   const inbound = list.filter((t) => t.direction === "INBOUND" && !isAck(t));
   const errRate = inbound.length ? inbound.filter((t) => t.sourceStatus === "FAIL").length / inbound.length : 0;
   const invoices = inbound.filter((t) => t.documentType === "810");
-  const invBeforeAsn = invoices.filter((inv) => { const asn = transactions.find((x) => x.documentType === "856" && x.refs.poNumber === inv.refs.poNumber); return asn && asn._t > inv._t; }).length;
+  const invBeforeAsn = invoices.filter((inv) => { const asn = docFor("856", inv.refs.poNumber); return asn && asn._t > inv._t; }).length;
   const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
   const score = (actual: number | null, target: number, worse: "higher" | "lower") => actual == null ? null : Math.max(0, Math.min(100, Math.round(worse === "higher" ? 100 - Math.max(0, (actual - target) / target) * 100 : 100 - Math.max(0, (target - actual) / target) * 100)));
   const ackAvg = avg(ackHours); const respAvg = avg(respHours);
