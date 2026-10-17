@@ -1200,7 +1200,7 @@
           "desc": "Copilot Studio test pane layout with agent topics and MCP tool activity.",
           "accept": "Recognizable layout; labeled simulated.",
           "reality": "Demo construct",
-          "note": "Copilot Studio style client at /ext?eco=copilot-studio: agent overview, tools, connected agents, activity, test pane with adaptive-card approvals. Responsive for phone and laptop. Labeled Simulated; no vendor logos."
+          "note": "Copilot app style client at /ext?eco=copilot-studio: chat-first layout with agent picker, suggested prompts, approval cards, sidebar of Aviator agents; phone layout with bottom navigation. Labeled simulated; no vendor logos."
         },
         {
           "key": "TGCS-1103",

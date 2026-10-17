@@ -34,6 +34,16 @@
     plus: '<path d="M12 5v14M5 12h14"/>',
     thumbup: '<path d="M7 11v9H4v-9zM7 11l4-7a2 2 0 0 1 3 2l-1 4h5a2 2 0 0 1 2 2l-2 6a2 2 0 0 1-2 2H7"/>',
     thumbdown: '<path d="M17 13V4h3v9zM17 13l-4 7a2 2 0 0 1-3-2l1-4H6a2 2 0 0 1-2-2l2-6a2 2 0 0 1 2-2h9"/>',
+    menu: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+    more: '<circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/>',
+    chev: '<path d="M7 10l5 5 5-5"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    speaker: '<path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6"/>',
+    share: '<path d="M12 3v12M8 7l4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+    chat: '<path d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.2-3.6A8 8 0 0 1 4 12z"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/>',
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
   };
   const ic = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${I[n] ?? ""}</svg>`;
@@ -162,7 +172,7 @@
       raf[key] = 0;
       const el = document.querySelector(`[data-conv="${key}"]`);
       if (!el || !mounts[key]) return;
-      const find = () => el.querySelector(".chatframe.max .chatscroll") ?? el.querySelector(".cps-msgs") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
+      const find = () => el.querySelector(".chatframe.max .chatscroll") ?? el.querySelector(".cop-msgs") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
       const old = find();
       const near = old.scrollTop + old.clientHeight >= old.scrollHeight - 160, top = old.scrollTop;
       const focused = document.activeElement === el.querySelector("textarea");
@@ -706,79 +716,62 @@
       </div><div class="content" data-conv="${key}">${mounts[key](c)}</div></main></div>`;
   }
 
-  // ---------- Copilot Studio style client (simulated) ----------
-  S.cps = { view: "test", tab: "overview" };
+  // ---------- Copilot style client (simulated) ----------
+  S.cps = { side: false };
   const CPS_AGENT = "Harborview B2B Operations";
   function cpsCard(p) {
     const st = S.plans.find((x) => x.planId === p.planId)?.status ?? p.planStatus ?? p.status;
     const cks = p.validation?.checks ?? [];
     const pending = st === "PENDING_APPROVAL";
     const fact = (k, v) => `<div class="k">${esc(k)}</div><div class="v">${v}</div>`;
-    return `<div class="cps-card"><div class="cps-card-h">${ic("check")}<span>Approval required</span><span class="cps-st ${pending ? "p" : st === "REJECTED" ? "r" : "a"}">${pending ? "Pending" : esc(String(st).replace("_", " ").toLowerCase())}</span></div>
-      <div class="cps-card-t">${esc(p.summary)}</div>
-      <div class="cps-facts">${fact("Target", `<span class="mono">${esc(p.target)}</span>`)}${cks.length ? fact("Checks", `${cks.filter((c) => c.result === "PASS").length} of ${cks.length} passed`) : ""}${fact("Plan", `<span class="mono">${esc(p.planId)}</span>`)}${fact("Expires", esc(new Date(p.expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })))}</div>
-      ${pending ? `<div class="cps-card-a"><button class="cps-btn primary" data-approve="${p.planId}">Approve</button><button class="cps-btn" data-reject="${p.planId}">Reject</button></div>` : ""}</div>`;
+    return `<div class="cop-card"><div class="cop-card-h"><span>Approval required</span><span class="cop-st ${pending ? "p" : st === "REJECTED" ? "r" : "a"}">${pending ? "Pending" : esc(String(st).replace("_", " ").toLowerCase())}</span></div>
+      <div class="cop-card-t">${esc(p.summary)}</div>
+      <div class="cop-facts">${fact("Target", `<span class="mono">${esc(p.target)}</span>`)}${cks.length ? fact("Checks", `${cks.filter((c) => c.result === "PASS").length} of ${cks.length} passed`) : ""}${fact("Plan", `<span class="mono">${esc(p.planId)}</span>`)}${fact("Expires", esc(new Date(p.expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })))}</div>
+      ${pending ? `<div class="cop-card-a"><button class="cop-btn dark" data-approve="${p.planId}">Approve</button><button class="cop-btn" data-reject="${p.planId}">Reject</button></div>` : ""}</div>`;
   }
   function cpsItem(c, m, mi) {
-    if (m.role === "user") return `<div class="cps-row u"><div class="cps-bub u">${esc(m.text)}</div></div>`;
-    const a = agent(m.agentId);
+    if (m.role === "user") return `<div class="cop-u"><div class="cop-ub">${esc(m.text)}</div></div>`;
     const done = !m.thinking && (m.text || m.error);
-    return `<div class="cps-row b"><div class="cps-av">${ic("spark")}</div><div class="cps-col">
-      <div class="cps-who">${esc(CPS_AGENT)}${m.steps.length || m.thinking ? ` <span class="cps-via">via ${esc(a?.name ?? "Aviator agent")}</span>` : ""}</div>
-      ${activity(m, mi, m.route)}
-      ${m.error ? `<div class="cps-bub b err">${esc(m.error)}</div>` : ""}
-      ${m.text ? `<div class="cps-bub b md">${md(m.text)}</div>` : ""}
+    const last = mi === c.items.length - 1;
+    const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
+    return `<div class="cop-b">${activity(m, mi, m.route)}
+      ${m.error ? `<div class="cop-err">${esc(m.error)}</div>` : ""}
+      ${m.text ? `<div class="cop-md md">${md(m.text)}</div>` : ""}
       ${m.plans.map(cpsCard).join("")}
-      ${done ? `<div class="cps-meta"><span>AI-generated content may be incorrect</span><span class="cps-fb">${ic("thumbup")}${ic("thumbdown")}</span></div>` : ""}</div></div>`;
+      ${done ? `<div class="cop-acts"><button title="Copy" data-copy="${esc(m.text)}">${ic("copy")}</button><button title="Regenerate" data-prompt="${esc(prevUser)}">${ic("refresh")}</button><button title="Read aloud">${ic("speaker")}</button><button title="Share">${ic("share")}</button></div>${last ? `<div class="cop-disc">AI can make mistakes. Check important information.</div>` : ""}` : ""}</div>`;
   }
   function cpsChat(c, agentId, avail, blocked) {
     const a = agent(agentId);
-    const starters = !c.items.length && a?.starters?.length ? `<div class="cps-chips">${a.starters.slice(0, 4).map((n) => `<button class="cps-chip" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div>` : "";
-    return `<div class="cps-th"><button class="cps-icon cps-back" data-cpsview="main" title="Agent overview">${ic("back")}</button><div class="cps-tt">Test your agent</div><button class="cps-icon" data-newconv="${c.key}" title="Start new test session">${ic("refresh")}</button></div>
-      <div class="cps-sel"><label>Connected agent</label><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "All Trading Grid tools" : x.name)}</option>`).join("")}</select></div>
-      ${blocked ? `<div class="cps-bar err">${ic("shield")}<span>Access to Trading Grid is suspended by the Harborview administrator. Requests return no data.</span></div>` : ""}
-      <div class="cps-msgs">
-        <div class="cps-row b"><div class="cps-av">${ic("spark")}</div><div class="cps-col"><div class="cps-who">${esc(CPS_AGENT)}</div><div class="cps-bub b">Hello. I can find transactions, explain failures, check partner connections and prepare Trading Grid changes for your approval.</div>${starters}</div></div>
-        ${c.items.map((m, mi) => cpsItem(c, m, mi)).join("")}
-      </div>
-      <form class="cps-comp" data-compose><textarea rows="1" placeholder="Ask a question or describe what you need" ${c.busy ? "disabled" : ""}></textarea><button class="cps-send" ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>`;
+    const first = (S.meta.persona.name || "").split(" ")[0];
+    const empty = !c.items.length ? `<div class="cop-hello"><h1>Hello, ${esc(first)}. What do you need from Trading Grid today?</h1>
+      <div class="cop-starters">${(a?.starters ?? []).slice(0, 4).map((n) => `<button class="cop-starter" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div></div>` : "";
+    return `<header class="cop-top"><button class="cop-round cop-menu" data-copside="1" title="Menu">${ic("menu")}</button>
+        <label class="cop-pick"><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "Auto" : x.name)}</option>`).join("")}</select><span>${esc(agentId === "context-assistant" ? "Auto" : a?.name ?? "Auto")}</span>${ic("chev")}</label>
+        <button class="cop-round" data-newconv="${c.key}" title="New chat">${ic("more")}</button></header>
+      ${blocked ? `<div class="cop-warn">Trading Grid access for this client is suspended by the Harborview administrator.</div>` : ""}
+      <div class="cop-msgs"><div class="cop-col">${empty}${c.items.map((m, mi) => cpsItem(c, m, mi)).join("")}</div></div>
+      <div class="cop-foot"><form class="cop-comp" data-compose><button type="button" class="cop-plus" title="Add">${ic("plus")}</button><textarea rows="1" placeholder="Message Copilot" ${c.busy ? "disabled" : ""}></textarea><button type="button" class="cop-mic" title="Voice">${ic("mic")}</button><button class="cop-send" ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
+        <nav class="cop-tabs"><div class="cop-tabset"><button class="on">${ic("chat")}<span>Chat</span></button><button data-copside="1">${ic("agent")}<span>Agents</span></button><button>${ic("compass")}<span>Discover</span></button><button>${ic("chev")}<span>More</span></button></div><button class="cop-round lg" data-newconv="${c.key}" title="New chat">${ic("edit")}</button></nav>
+        <div class="cop-sim">Simulated client · Trading Grid via Aviator AKS gateway</div></div>`;
   }
   function pageCopilot() {
     const eco = "copilot-studio";
     const avail = studioAgents().filter((a) => S.deploy?.agents.find((x) => x.agentId === a.id)?.clients[eco]?.published && !S.deploy.agents.find((x) => x.agentId === a.id).clients[eco].blocked);
     const agentId = avail.some((a) => a.id === qs().get("agent")) ? qs().get("agent") : (avail.find((a) => a.id === "context-assistant") ?? avail[0])?.id;
-    const h = hostBy(eco);
     const key = `ext:${eco}:${agentId}`;
     const c = conv(key, agentId, eco);
     const blocked = (S.meta.clientStatus[eco] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => cpsChat(cc, agentId, avail, blocked);
-    const rail = [["home", "Home"], ["plus", "Create"], ["agent", "Agents"], ["swap", "Flows"], ["wrench", "Tools"], ["list", "Library"]].map(([i, l]) => `<div class="cps-ri ${l === "Agents" ? "on" : ""}">${ic(i)}<span>${l}</span></div>`).join("");
-    const tabs = [["overview", "Overview"], ["tools", "Tools"], ["agents", "Agents"], ["activity", "Activity"]];
-    const tab = S.cps.tab;
-    const mine = (S.audit ?? []).filter((x) => x.host === eco).slice(0, 12);
-    const toolsByDomain = Object.entries(S.tools.reduce((m, t) => ((m[t.domain] = (m[t.domain] ?? 0) + 1), m), {}));
-    const agentRow = (x) => `<div class="cps-li"><div class="cps-li-i">${ic("agent")}</div><div class="cps-li-b"><div class="t">${esc(x.name)}</div><div class="d">${esc(x.role)}</div></div><button class="cps-btn sm" data-cpsuse="${x.id}">Test</button></div>`;
-    let body;
-    if (tab === "tools") body = `<section class="cps-sec"><div class="cps-sh"><h3>Tools</h3><span class="cps-pill ok">Connected</span></div>
-        <div class="cps-li"><div class="cps-li-i">${ic("server")}</div><div class="cps-li-b"><div class="t">Trading Grid Context Services</div><div class="d">Model Context Protocol server · ${S.meta.toolCount} tools · ${esc(h.authPattern)}</div></div></div>
-        <table class="cps-t"><thead><tr><th>Capability area</th><th>Tools</th></tr></thead><tbody>${toolsByDomain.map(([d, n]) => `<tr><td>${esc(d)}</td><td>${n}</td></tr>`).join("")}</tbody></table></section>`;
-    else if (tab === "agents") body = `<section class="cps-sec"><div class="cps-sh"><h3>Connected agents</h3><span class="cps-sub">${avail.length} Trading Grid Aviator agents published to this client</span></div>${avail.map(agentRow).join("")}</section>`;
-    else if (tab === "activity") body = `<section class="cps-sec"><div class="cps-sh"><h3>Activity</h3><span class="cps-sub">Recent Trading Grid calls from this agent</span></div>${mine.length ? `<table class="cps-t"><thead><tr><th>Time</th><th>Tool</th><th>Decision</th></tr></thead><tbody>${mine.map((x) => `<tr><td>${esc(new Date(x.at).toLocaleTimeString())}</td><td class="mono">${esc(x.tool)}</td><td>${esc(x.decision)}</td></tr>`).join("")}</tbody></table>` : `<div class="cps-empty">No activity yet. Ask a question in the test pane.</div>`}</section>`;
-    else body = `<section class="cps-sec"><div class="cps-sh"><h3>Details</h3></div><div class="cps-facts wide">
-        <div class="k">Description</div><div class="v">B2B operations assistant for Harborview Retail Group. Answers from Trading Grid through Trading Grid Context Services.</div>
-        <div class="k">Orchestration</div><div class="v">Generative</div>
-        <div class="k">Connection</div><div class="v">${esc(h.route.join(" › "))}</div>
-        <div class="k">Signed in as</div><div class="v">${esc(h.principal)}</div></div></section>
-      <section class="cps-sec"><div class="cps-sh"><h3>Tools</h3><button class="cps-link" data-cpstab="tools">See all</button></div><div class="cps-li"><div class="cps-li-i">${ic("server")}</div><div class="cps-li-b"><div class="t">Trading Grid Context Services</div><div class="d">${S.meta.toolCount} tools · Connected</div></div><span class="cps-pill ok">On</span></div></section>
-      <section class="cps-sec"><div class="cps-sh"><h3>Agents</h3><button class="cps-link" data-cpstab="agents">See all ${avail.length}</button></div>${avail.filter((x) => x.id !== "context-assistant").slice(0, 4).map(agentRow).join("")}</section>`;
-    return `<div class="cps"><header class="cps-top"><span class="cps-waffle">${ic("grid")}</span><span class="cps-prod">Copilot Studio</span><span class="cps-sim">Simulated</span><div class="spacer"></div><span class="cps-env">Environment: Harborview Production</span><button class="cps-icon light" data-href="/" title="Demo journey">${ic("route")}</button></header>
-      <div class="cps-body v-${S.cps.view}"><nav class="cps-rail">${rail}</nav>
-        <main class="cps-main"><div class="cps-crumb">Agents › ${esc(CPS_AGENT)}</div>
-          <div class="cps-ah"><div class="cps-tile">${ic("spark")}</div><div><div class="cps-an">${esc(CPS_AGENT)}</div><div class="cps-sub">Published · Microsoft Teams, web</div></div><div class="spacer"></div><button class="cps-btn primary cps-testbtn" data-cpsview="test">Test</button></div>
-          <div class="cps-tabs">${tabs.map(([k, l]) => `<button class="${tab === k ? "on" : ""}" data-cpstab="${k}">${l}</button>`).join("")}</div>
-          ${blocked ? `<div class="cps-bar err">${ic("shield")}<span>Trading Grid access for this client is suspended in Trading Grid Online.</span></div>` : ""}
-          ${body}</main>
-        <aside class="cps-test" data-conv="${key}">${mounts[key](c)}</aside></div></div>`;
+    const chats = Object.values(S.convs).filter((x) => x.host === eco && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
+    const nav = [["chat", "Chat", "/ext?eco=copilot-studio&agent=context-assistant"], ["compass", "Discover", ""], ["search", "Search", ""]];
+    return `<div class="cop ${S.cps.side ? "side-open" : ""}">
+      <aside class="cop-side"><div class="cop-brand"><span>Copilot</span><span class="cop-tiny">simulated</span><button class="cop-round sm" data-copside="0" title="Close">${ic("x")}</button></div>
+        ${nav.map(([i, l, h]) => `<button class="cop-nav" ${h ? `data-cpsuse="context-assistant"` : ""}>${ic(i)}<span>${l}</span></button>`).join("")}
+        <div class="cop-sec">Agents</div><div class="cop-agents">${avail.filter((x) => x.id !== "context-assistant").map((x) => `<button class="cop-chatlink ${x.id === agentId ? "on" : ""}" data-cpsuse="${x.id}">${esc(x.name)}</button>`).join("")}</div>
+        ${chats.length ? `<div class="cop-sec">Chats</div>${chats.map(([id, t]) => `<button class="cop-chatlink" data-cpsuse="${id}">${esc(t.slice(0, 48))}</button>`).join("")}` : ""}
+        <div class="cop-prof"><div class="avatar sm">JL</div><div><div class="n">${esc(S.meta.persona.name)}</div><div class="s">Harborview Retail Group</div></div></div></aside>
+      <div class="cop-scrim" data-copside="0"></div>
+      <main class="cop-main" data-conv="${key}">${mounts[key](c)}</main></div>`;
   }
 
   // ---------- router ----------
@@ -821,12 +814,11 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-cpsview],[data-cpstab],[data-cpsuse]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse]");
     if (!t || t.disabled) return;
     const d = t.dataset;
-    if (d.cpsview) { S.cps.view = d.cpsview; return render(); }
-    if (d.cpstab) { S.cps.tab = d.cpstab; return render(); }
-    if (d.cpsuse) { S.cps.view = "test"; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`/ext?${u}`); }
+    if (d.copside) { S.cps.side = d.copside === "1"; return render(); }
+    if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`/ext?${u}`); }
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }
     if (d.scall != null) { if (!confirm(`Run all ${S.sc.catalog.length} scenarios? Demo data is reset before each scenario and restored afterwards.`)) return; S.sc.running = true; render(); const r = await api("/api/scenarios/run", { method: "POST", body: { all: true } }); S.sc.running = false; for (const x of r.results ?? []) S.sc.results[x.id] = x; S.plans = await api("/api/plans"); return render(); }
     if (d.scrow) { S.sc.open[d.scrow] = !S.sc.open[d.scrow]; return render(); }
