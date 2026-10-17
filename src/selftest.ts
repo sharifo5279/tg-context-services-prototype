@@ -111,8 +111,8 @@ check("Map rule: ship-to lookup", r(call("get_map_rule", { map: "BWHG_856_4010_I
 check("Connection health: Atlas down", r(call("get_connection_status", { partner: "Atlas Toy" })).status === "DOWN");
 check("Support ticket created", r(call("create_support_ticket", { summary: "Atlas AS2 outage", details: "MDN timeouts" })).ticketId.startsWith("CS-"));
 const dep = await import("./deployments.js");
-check("Live agents published to Claude", dep.agentsFor("claude-ui").some((a: any) => a.id === "error-resolution") && dep.agentsFor("claude-ui").every((a: any) => a.status === "Live today"));
-check("Incubating agents not published by default", !dep.agentsFor("copilot-studio").some((a: any) => a.id === "xref-checker"));
+check("Every Studio agent published to Claude UI", dep.publishable().every((a: any) => dep.agentsFor("claude-ui").some((b: any) => b.id === a.id)));
+check("Every Studio agent published to every client", dep.CLIENT_KEYS.every((h: any) => dep.agentsFor(h).length === dep.publishable().length));
 check("Agent tool names", dep.toolNameFor("xref-checker") === "xref_checker_agent" && dep.toolNameFor("error-resolution") === "error_analysis_agent");
 dep.blocked["sap-joule"].add("error-resolution");
 check("Admin block removes agent", !dep.agentsFor("sap-joule").some((a: any) => a.id === "error-resolution"));

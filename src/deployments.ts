@@ -3,7 +3,9 @@ import { AGENTS } from "./agents.js";
 import { HOSTS, HostKey } from "./runtime.js";
 
 export const CLIENT_KEYS = (Object.keys(HOSTS) as HostKey[]).filter((h) => h !== "tg-aviator");
-const NOT_PUBLISHABLE = new Set(["tg-aviator", "context-assistant"]);
+// TG Aviator is embedded in Trading Grid Online. Every Aviator Studio agent is published to every client by default,
+// so the MCP tool list always matches Studio; Unpublish in Deployments is the explicit exception.
+const NOT_PUBLISHABLE = new Set(["tg-aviator"]);
 
 export const published: Record<string, Set<HostKey>> = {};
 export const blocked: Record<string, Set<string>> = {};
@@ -11,7 +13,7 @@ export const blocked: Record<string, Set<string>> = {};
 export function resetDeployments() {
   for (const a of AGENTS) {
     if (NOT_PUBLISHABLE.has(a.id)) continue;
-    published[a.id] = new Set(a.status === "Live today" ? CLIENT_KEYS : []);
+    published[a.id] = new Set(CLIENT_KEYS);
   }
   for (const h of CLIENT_KEYS) blocked[h] = new Set();
 }
