@@ -11,13 +11,14 @@ import { runAgentForCaller } from "./agent.js";
 import { audit } from "./tools/index.js";
 
 // Aviator AKS gateway: per-client agent call limit (demo value).
-const LIMIT = Number(process.env.AGENT_CALLS_PER_HOUR || 40);
+const LIMIT = Number(process.env.AGENT_CALLS_PER_MINUTE || 60);
+const WINDOW_MS = 60_000;
 const calls = new Map<string, number[]>();
 export const resetGateway = () => calls.clear();
 function gatewayAllow(host: string) {
   const now = Date.now();
-  const list = (calls.get(host) ?? []).filter((t) => now - t < 3600_000);
-  if (list.length >= LIMIT) { calls.set(host, list); return new Date(list[0] + 3600_000); }
+  const list = (calls.get(host) ?? []).filter((t) => now - t < WINDOW_MS);
+  if (list.length >= LIMIT) { calls.set(host, list); return new Date(list[0] + WINDOW_MS); }
   list.push(now); calls.set(host, list); return null;
 }
 
@@ -73,7 +74,7 @@ function buildServer(ctx: Ctx) {
       const rec = (decision: string, status: string, ms: number) => { audit.unshift({ at: new Date().toISOString(), route: HOSTS[ctx.host].route.join(" > "), host: ctx.host, principal: HOSTS[ctx.host].principal, sessionId: ctx.sessionId, channel: "mcp", tool: req.params.name, operation: "agent.invoke", decision, status, ms, args: { request: String((req.params.arguments as any)?.request ?? "").slice(0, 200) } }); };
       if (denial || !allowed) { rec("DENY", "DENIED", 5); return { content: [{ type: "text", text: denial ?? `${ag.name} is not published to ${HOSTS[ctx.host].name}, or the customer administrator has blocked it in Trading Grid Online.` }], isError: true }; }
       const retry = gatewayAllow(ctx.host);
-      if (retry) { rec("DENY", "RATE_LIMITED", 2); return { content: [{ type: "text", text: `Aviator AKS gateway: agent call limit reached for ${HOSTS[ctx.host].name} (${LIMIT} per hour). Retry after ${retry.toISOString()}.` }], isError: true }; }
+      if (retry) { rec("DENY", "RATE_LIMITED", 2); return { content: [{ type: "text", text: `Aviator AKS gateway: agent call limit reached for ${HOSTS[ctx.host].name} (${LIMIT} per minute). Retry after ${retry.toISOString()}.` }], isError: true }; }
       const args: any = req.params.arguments ?? {};
       const r = await runAgentForCaller({ host: ctx.host, agentId: ag.id, request: String(args.request ?? ""), conversationId: args.conversation_id, baseUrl: ctx.baseUrl });
       rec("PERMIT", r.error ? "ERROR" : "OK", Date.now() - t0);
