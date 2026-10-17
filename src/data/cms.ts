@@ -37,6 +37,8 @@ const CO: Co[] = [
   { id: "C20010", name: "Redline Logistics Inc", city: "Memphis", state: "TN", country: "US", industry: "Third-party logistics", buid: "BU-RDL", orgId: "ORG-RDL", participation: "SPOKE", created: 90 },
   { id: "C20011", name: "Evergreen Paper Products", city: "Portland", state: "OR", country: "US", industry: "Paper products", buid: "BU-EVP", orgId: "ORG-EVP", participation: "SPOKE", created: 21 },
   { id: "C20012", name: "Willow Creek Candle Co", city: "Burlington", state: "VT", country: "US", industry: "Home fragrance", buid: "BU-WCC", orgId: "ORG-WCC", participation: "NONE", created: 2, status: "PENDING_REGISTRATION" },
+  { id: "C20013", name: "Crestline Logistics LLC", city: "Reno", state: "NV", country: "US", industry: "Third-party logistics", buid: "BU-CRL", orgId: "ORG-CRL", participation: "SPOKE", created: 420, duns: "117420938" },
+  { id: "C20014", name: "Maple Ridge Crafts", city: "Bend", state: "OR", country: "US", industry: "Home decor", buid: "BU-MRC", orgId: "ORG-MRC", participation: "SPOKE", created: 160 },
   { id: "C40001", name: "Keystone VAN Services", city: "Pittsburgh", state: "PA", country: "US", industry: "Value-added network", buid: "BU-KVAN", orgId: "ORG-KVAN", participation: "VAN", created: 3000 },
   { id: "C30090001", name: "Lakeshore Market Co", city: "Cleveland", state: "OH", country: "US", industry: "Retail", buid: "BU-LKS", orgId: "ORG-LKS", participation: "HUB", created: 1800 },
 ];
@@ -77,6 +79,7 @@ export const hierarchy = {
 
 export const legalEntities = [
   { legalEntityId: "LE-HRG-US-01", companyId: HUB_ID, legalProfileName: "Harborview Retail Group LLC", legalProfileType: "SELLER_BUYER", legalEntityHubBuId: HUB_BUID, legalEntitySolutionId: SOLUTION_ID, legalEntityGLN: "0614141000012", legalEntityTaxId: "On file (masked)", legalEntityVatId: null, legalEntityTimeZoneCode: "America/New_York", legalEntityAddress: { addressLine1: "On file", city: "Charlotte", state: "NC", countryCode: "US", postalCode: "On file" }, creationDate: dAgo(2000), lastModifiedDate: dAgo(120), pocId: "POC-HRG-01" },
+  { legalEntityId: "LE-CRL-01", companyId: "C20013", legalProfileName: "Crestline Logistics LLC", legalProfileType: "SERVICE_PROVIDER", legalEntityHubBuId: HUB_BUID, legalEntitySolutionId: SOLUTION_ID, legalEntityGLN: "0614141000135", legalEntityTaxId: "On file (masked)", legalEntityVatId: null, legalEntityTimeZoneCode: "America/Los_Angeles", legalEntityAddress: { addressLine1: "On file", city: "Reno", state: "NV", countryCode: "US", postalCode: "On file" }, creationDate: dAgo(410), lastModifiedDate: dAgo(40), pocId: "POC-CRL-01" },
   { legalEntityId: "LE-HOL-01", companyId: "C20006", legalProfileName: "Hollanda Trading B.V.", legalProfileType: "SUPPLIER", legalEntityHubBuId: HUB_BUID, legalEntitySolutionId: SOLUTION_ID, legalEntityGLN: "8712345000011", legalEntityTaxId: null, legalEntityVatId: "NL-on file (masked)", legalEntityTimeZoneCode: "Europe/Amsterdam", legalEntityAddress: { addressLine1: "On file", city: "Rotterdam", state: "ZH", countryCode: "NL", postalCode: "On file" }, creationDate: dAgo(1100), lastModifiedDate: dAgo(300), pocId: "POC-HOL-01" },
 ];
 
@@ -99,6 +102,8 @@ export const addresses: Addr[] = [
   { companyId: "C20008", mailboxId: "MB-ATL-01", qualifier: "ZZ", address: "ATLASTOY", alias: "Atlas Toy", deliveryMethod: "AS2", system: "TGMS", created: 1450 },
   { companyId: "C20009", mailboxId: "MB-MPC-01", qualifier: "ZZ", address: "MERIDIANPC", alias: "Meridian Personal Care", deliveryMethod: "AS2", system: "TGMS", created: 980 },
   { companyId: "C20010", mailboxId: "MB-RDL-01", qualifier: "02", address: "RDLN", alias: "Redline Logistics (SCAC)", deliveryMethod: "AS2", system: "TGMS", created: 90 },
+  { companyId: "C20013", mailboxId: "MB-CRL-01", qualifier: "ZZ", address: "CRESTLINE3PL", alias: "Crestline Logistics", deliveryMethod: "AS2", system: "TGMS", created: 420 },
+  { companyId: "C20014", mailboxId: "MB-HRG-WEBEDI-01", qualifier: "ZZ", address: "MAPLERIDGEWEB", alias: "Maple Ridge Crafts (web EDI)", deliveryMethod: "WEB_EDI", system: "TGMS", created: 160 },
   { companyId: "C20011", mailboxId: "MB-EVP-01", qualifier: "ZZ", address: "EVERGREENPP", alias: "Evergreen Paper", deliveryMethod: "SFTP", system: "TGMS", created: 21 },
 ];
 
@@ -131,6 +136,9 @@ const sub = (id: string, name: string, map: string, type = "MANDATORY") => ({ su
 export const mailboxes = [
   { mailboxId: "MB-HRG-PROD-01", mailboxAlias: "Harborview production", mailboxOwnerCompanyId: HUB_ID, mailboxOwnerCompanyName: "Harborview Retail Group", mailboxType: "PRODUCTION", status: "ACTIVE", system: "TGMS", provider: "OPENTEXT", nodeId: "NODE-US-EAST-04", numOfTradingAddresses: 3, receiverRetentionPeriod: 90, senderRetentionPeriod: 90, isBillable: "YES", tradingPartnerReportFlag: "YES", vanProvider: null, mailboxSubscription: [sub("PKG-EDI-STD", "EDI messaging standard", "EDI_MSG_STD"), sub("PKG-AS2", "AS2 connectivity", "DM_AS2"), sub("PKG-TGI", "TG Insights visibility", "VIS_TGI", "OPTIONAL")], activityLog: log(2300, 40) },
   { mailboxId: "MB-HRG-TEST-01", mailboxAlias: "Harborview test", mailboxOwnerCompanyId: HUB_ID, mailboxOwnerCompanyName: "Harborview Retail Group", mailboxType: "TEST", status: "ACTIVE", system: "TGMS", provider: "OPENTEXT", nodeId: "NODE-US-EAST-04", numOfTradingAddresses: 1, receiverRetentionPeriod: 30, senderRetentionPeriod: 30, isBillable: "NO", tradingPartnerReportFlag: "NO", vanProvider: null, mailboxSubscription: [sub("PKG-EDI-STD", "EDI messaging standard", "EDI_MSG_STD")], activityLog: log(2300, 200) },
+  { mailboxId: "MB-HRG-WEBEDI-01", mailboxAlias: "Harborview supplier web EDI", mailboxOwnerCompanyId: HUB_ID, mailboxOwnerCompanyName: "Harborview Retail Group", mailboxType: "PRODUCTION", status: "ACTIVE", system: "TGMS", provider: "OPENTEXT", nodeId: "NODE-US-EAST-04", numOfTradingAddresses: 1, receiverRetentionPeriod: 60, senderRetentionPeriod: 60, isBillable: "YES", tradingPartnerReportFlag: "YES", vanProvider: null, mailboxSubscription: [sub("PKG-WEBEDI", "Supplier web EDI forms", "WEBFORMS_850_810")], activityLog: log(600, 30) },
+  { mailboxId: "MB-CRL-01", mailboxAlias: "Crestline", mailboxOwnerCompanyId: "C20013", mailboxOwnerCompanyName: "Crestline Logistics LLC", mailboxType: "PRODUCTION", status: "ACTIVE", system: "TGMS", provider: "OPENTEXT", nodeId: "NODE-US-WEST-01", numOfTradingAddresses: 1, mailboxSubscription: [], vanProvider: null, activityLog: log(420) },
+  { mailboxId: "MB-EVP-01", mailboxAlias: "Evergreen Paper", mailboxOwnerCompanyId: "C20011", mailboxOwnerCompanyName: "Evergreen Paper Products", mailboxType: "PRODUCTION", status: "SUSPENDED", system: "TGMS", provider: "OPENTEXT", nodeId: "NODE-US-WEST-01", numOfTradingAddresses: 1, mailboxSubscription: [], vanProvider: null, activityLog: log(21, 6) },
   { mailboxId: "MB-BWHG-01", mailboxAlias: "Brightwell", mailboxOwnerCompanyId: "C20004", mailboxOwnerCompanyName: "Brightwell Home Goods", mailboxType: "PRODUCTION", status: "ACTIVE", system: "TGMS", provider: "OPENTEXT", nodeId: "NODE-US-EAST-02", numOfTradingAddresses: 1, mailboxSubscription: [], vanProvider: null, activityLog: log(1300) },
 ];
 
@@ -159,6 +167,8 @@ export const bprs = [
   BPR(4109, "C20009", "ACTIVE", 970, "Health and beauty supplier"),
   BPR(4110, "C20010", "ACTIVE", 85, "3PL carrier, shipment status"),
   BPR(4111, "C20011", "PENDING", 20, "Paper supplier, relationship awaiting partner approval"),
+  BPR(4112, "C20013", "ACTIVE", 410, "3PL warehouse: shipping orders, shipping advice and shipment status"),
+  BPR(4113, "C20014", "ACTIVE", 150, "Small supplier on Harborview web EDI"),
 ];
 
 export const partnerDirectory = bprs.map((b) => {
@@ -182,9 +192,9 @@ type TprSeed = { id: string; bpr: string; partner: string; status: string; type:
 const X12_SUPPLIER: [string, "SENDER" | "RECEIVER"][] = [["850", "SENDER"], ["860", "SENDER"], ["855", "RECEIVER"], ["856", "RECEIVER"], ["810", "RECEIVER"], ["997", "SENDER"], ["997", "RECEIVER"]];
 
 const TPRS: TprSeed[] = [
-  { id: "TPR-70011", bpr: "BPR-4101", partner: "C20001", status: "ACTIVE", type: "PRODUCTION", created: 1870, docs: X12_SUPPLIER },
+  { id: "TPR-70011", bpr: "BPR-4101", partner: "C20001", status: "ACTIVE", type: "PRODUCTION", created: 1870, docs: [...X12_SUPPLIER, ["812", "SENDER"]] },
   { id: "TPR-70021", bpr: "BPR-4102", partner: "C20002", status: "ACTIVE", type: "PRODUCTION", created: 680, docs: [["850", "SENDER"], ["856", "RECEIVER"], ["810", "RECEIVER"], ["997", "SENDER"], ["997", "RECEIVER"]] },
-  { id: "TPR-70031", bpr: "BPR-4103", partner: "C20003", status: "ACTIVE", type: "PRODUCTION", created: 1580, docs: X12_SUPPLIER },
+  { id: "TPR-70031", bpr: "BPR-4103", partner: "C20003", status: "ACTIVE", type: "PRODUCTION", created: 1580, docs: [...X12_SUPPLIER, ["820", "SENDER"]] },
   { id: "TPR-70041", bpr: "BPR-4104", partner: "C20004", status: "ACTIVE", type: "PRODUCTION", created: 1280, docs: X12_SUPPLIER },
   { id: "TPR-70051", bpr: "BPR-4105", partner: "C20005", status: "ACTIVE", type: "PRODUCTION", created: 3, docs: [["850", "SENDER"], ["855", "RECEIVER"], ["856", "RECEIVER"], ["810", "RECEIVER"], ["997", "SENDER"], ["997", "RECEIVER"]] },
   { id: "TPR-70052", bpr: "BPR-4105", partner: "C20005", status: "ACTIVE", type: "TEST", created: 4, docs: [["850", "SENDER"], ["810", "RECEIVER"]], hubAddr: "ZZ:HARBORVIEWTST" },
@@ -194,6 +204,8 @@ const TPRS: TprSeed[] = [
   { id: "TPR-70091", bpr: "BPR-4109", partner: "C20009", status: "ACTIVE", type: "PRODUCTION", created: 960, docs: X12_SUPPLIER },
   { id: "TPR-70101", bpr: "BPR-4110", partner: "C20010", status: "ACTIVE", type: "PRODUCTION", created: 80, docs: [["214", "RECEIVER"], ["997", "SENDER"]] },
   { id: "TPR-70111", bpr: "BPR-4111", partner: "C20011", status: "PENDING", type: "PRODUCTION", created: 19, docs: [["850", "SENDER"], ["810", "RECEIVER"]] },
+  { id: "TPR-70121", bpr: "BPR-4112", partner: "C20013", status: "ACTIVE", type: "PRODUCTION", created: 400, docs: [["940", "SENDER"], ["945", "RECEIVER"], ["214", "RECEIVER"], ["997", "SENDER"], ["997", "RECEIVER"]] },
+  { id: "TPR-70131", bpr: "BPR-4113", partner: "C20014", status: "ACTIVE", type: "PRODUCTION", created: 148, docs: [["850", "SENDER"], ["856", "RECEIVER"], ["810", "RECEIVER"]], hubAddr: "ZZ:HARBORVIEWUS" },
   { id: "TPR-70112", bpr: "BPR-4111", partner: "C20011", status: "REJECTED", type: "TEST", created: 20, docs: [["850", "SENDER"]], hubAddr: "ZZ:HARBORVIEWTST" },
 ];
 
@@ -270,6 +282,15 @@ export const distributionLists = [
       { dlParticipantCompanyName: "Atlas Toy Company", dlParticipantTradingAddress: { qualifier: "ZZ", address: "ATLASTOY", alias: "Atlas Toy", system: "TGMS" } },
     ],
   },
+  {
+    mailboxId: "MB-HRG-PROD-01",
+    dlTradingAddress: { qualifier: "ZZ", address: "HRGDL-ROUTING", alias: "Harborview routing guide notices", system: "TGMS" },
+    dlPrimaryTradingAddress: [{ qualifier: "ZZ", address: "HARBORVIEWUS", alias: "Harborview US production", system: "TGMS" }],
+    dlParticipant: [
+      { dlParticipantCompanyName: "Crestline Logistics LLC", dlParticipantTradingAddress: { qualifier: "ZZ", address: "CRESTLINE3PL", alias: "Crestline Logistics", system: "TGMS" } },
+      { dlParticipantCompanyName: "Redline Logistics Inc", dlParticipantTradingAddress: { qualifier: "02", address: "RDLN", alias: "Redline Logistics (SCAC)", system: "TGMS" } },
+    ],
+  },
 ];
 
 export const deliveryMethodPackages = (a: Addr) => ({
@@ -282,7 +303,7 @@ export const deliveryMethodPackages = (a: Addr) => ({
       subscriptionPackageSubscription: {
         subPackageSubscriptionId: `SPS-${a.address.slice(0, 6)}`,
         subscriptionPackageId: `PKG-DM-${a.deliveryMethod}`,
-        subscriptionPackageName: { AS2: "AS2 delivery", SFTP: "SFTP delivery", VAN_INTERCONNECT: "VAN interconnect delivery" }[a.deliveryMethod] ?? a.deliveryMethod,
+        subscriptionPackageName: { AS2: "AS2 delivery", SFTP: "SFTP delivery", VAN_INTERCONNECT: "VAN interconnect delivery", WEB_EDI: "Web EDI forms" }[a.deliveryMethod] ?? a.deliveryMethod,
         subscriptionPackageMap: `DM_${a.deliveryMethod}`,
       },
     },
@@ -319,6 +340,8 @@ export const partnerPrimaryServices: Record<string, any[]> = {
   C20009: [{ primaryService: "EDI messaging (AS2)", subscriptionType: "DIRECT" }],
   C20010: [{ primaryService: "EDI messaging (AS2)", subscriptionType: "DIRECT" }],
   C20011: [{ primaryService: "Supplier web EDI", subscriptionType: "SPONSORED" }],
+  C20013: [{ primaryService: "EDI messaging (AS2)", subscriptionType: "DIRECT" }],
+  C20014: [{ primaryService: "Supplier web EDI", subscriptionType: "SPONSORED" }],
 };
 
 export const sponsoredServices = {
@@ -351,6 +374,10 @@ export const contacts = [
   poc("POC-SMB-01", "C20007", "Tom", "Alvarez", "SUPPORT_CONTACT", "edi.help@summitbev.example", "+1 303 555 0147", ["850", "997"], "YES"),
   poc("POC-HOL-01", "C20006", "Femke", "de Vries", "TECHNICAL_CONTACT", "edi@hollanda.example", "+31 10 555 0123", ["ORDERS", "CONTRL"], "YES"),
   poc("POC-PGH-01", "C20005", "Ava", "Collins", "TECHNICAL_CONTACT", "it@pinegatehome.example", "+1 828 555 0101", [], "YES"),
+  poc("POC-CRL-01", "C20013", "Dana", "Whitfield", "TECHNICAL_CONTACT", "edi@crestline3pl.example", "+1 775 555 0162", ["940", "945", "214"], "YES"),
+  poc("POC-CRL-02", "C20013", "Ray", "Okonkwo", "SUPPORT_CONTACT", "warehouse.ops@crestline3pl.example", "+1 775 555 0190", ["945"]),
+  poc("POC-MRC-01", "C20014", "Grace", "Lindqvist", "BUSINESS_CONTACT", "orders@mapleridgecrafts.example", "+1 541 555 0114", [], "YES"),
+  poc("POC-ATL-01", "C20008", "Owen", "Pierce", "TECHNICAL_CONTACT", "b2b@atlastoy.example", "+1 401 555 0133", ["850", "856"], "YES"),
   poc("POC-CST-01", "C20003", "Luis", "Moreno", "TECHNICAL_CONTACT", "edi@coastline.example", "+1 213 555 0177", ["856", "810"], "YES"),
 ];
 
@@ -365,6 +392,8 @@ export const privateContactRules = {
 
 export const invitations = [
   { invitationId: 7702, invitationName: "Pinegate Home supplier onboarding", invitationType: "COMPANY", inviteeType: "SUPPLIER", invitationStatus: "ACCEPTED", invitingCompanyId: HUB_ID, invitingCompanyName: "Harborview Retail Group", communityId: COMMUNITY.communityId, approvalType: "MANUAL", createdDate: dAgo(9), activationDate: dAgo(5), expirationDate: dAgo(-21), lastModifiedDate: dAgo(5), servicePaidBy: "SPONSOR", tradingAddressCreateOption: "INVITEE", requiresEDIQualifier: "YES", locale: "en_US", invitingCompanyTradingAddress: [{ qualifier: "ZZ", address: "HARBORVIEWUS", alias: "Harborview US production", system: "TGMS" }], companyServices: [{ serviceBundleId: "SB-HRG-WEBEDI", serviceBundleName: "Harborview supplier web EDI" }], _companyId: "C20005", _workflowTemplateId: 3101 },
+  { invitationId: 7720, invitationName: "Maple Ridge Crafts web EDI onboarding", invitationType: "COMPANY", inviteeType: "SUPPLIER", invitationStatus: "ACCEPTED", invitingCompanyId: HUB_ID, invitingCompanyName: "Harborview Retail Group", communityId: COMMUNITY.communityId, approvalType: "AUTO", createdDate: dAgo(165), activationDate: dAgo(160), expirationDate: dAgo(135), lastModifiedDate: dAgo(160), servicePaidBy: "SPONSOR", tradingAddressCreateOption: "INVITER", requiresEDIQualifier: "NO", locale: "en_US", invitingCompanyTradingAddress: [{ qualifier: "ZZ", address: "HARBORVIEWUS", alias: "Harborview US production", system: "TGMS" }], companyServices: [{ serviceBundleId: "SB-HRG-WEBEDI", serviceBundleName: "Harborview supplier web EDI" }], _companyId: "C20014", _workflowTemplateId: 3102 },
+  { invitationId: 7726, invitationName: "Evergreen Paper supplier onboarding", invitationType: "COMPANY", inviteeType: "SUPPLIER", invitationStatus: "EXPIRED", invitingCompanyId: HUB_ID, invitingCompanyName: "Harborview Retail Group", communityId: COMMUNITY.communityId, approvalType: "MANUAL", createdDate: dAgo(60), activationDate: null, expirationDate: dAgo(30), lastModifiedDate: dAgo(30), servicePaidBy: "SPONSOR", tradingAddressCreateOption: "INVITEE", requiresEDIQualifier: "YES", locale: "en_US", invitingCompanyTradingAddress: [{ qualifier: "ZZ", address: "HARBORVIEWUS", alias: "Harborview US production", system: "TGMS" }], companyServices: [{ serviceBundleId: "SB-HRG-WEBEDI", serviceBundleName: "Harborview supplier web EDI" }], _companyId: "C20011", _workflowTemplateId: 3102 },
   { invitationId: 7713, invitationName: "Willow Creek Candle supplier onboarding", invitationType: "COMPANY", inviteeType: "SUPPLIER", invitationStatus: "SENT", invitingCompanyId: HUB_ID, invitingCompanyName: "Harborview Retail Group", communityId: COMMUNITY.communityId, approvalType: "MANUAL", createdDate: dAgo(2), activationDate: null, expirationDate: dAgo(-28), lastModifiedDate: dAgo(2), servicePaidBy: "SPONSOR", tradingAddressCreateOption: "INVITEE", requiresEDIQualifier: "YES", locale: "en_US", invitingCompanyTradingAddress: [{ qualifier: "ZZ", address: "HARBORVIEWUS", alias: "Harborview US production", system: "TGMS" }], companyServices: [{ serviceBundleId: "SB-HRG-SPOKE-STD", serviceBundleName: "Harborview supplier bundle" }], _companyId: "C20012", _workflowTemplateId: 3101 },
 ];
 
@@ -374,6 +403,8 @@ export const userInvitations = {
 
 export const registrations = [
   { requestId: 55120, trackingId: 88120, workflowId: "WF-HRG-SUPPLIER-STD", description: "Pinegate Home company registration", createdDate: dAgo(8), modifiedDate: dAgo(5), approvedBy: "hrg.onboarding", mailboxId: "MB-PGH-01", tradingAddress: "ZZ:PINEGATEHOME", userLogin: "(masked)", userId: "(masked)", company: { id: "C20005", name: "Pinegate Home LLC", city: "Asheville", state: "NC", countryCode: "US" }, request: { type: "COMPANY_REGISTRATION", status: "APPROVED", content: "(masked: request payload withheld)" } },
+  { requestId: 55041, trackingId: 88041, workflowId: "WF-HRG-DROPSHIP", description: "Maple Ridge Crafts company registration", createdDate: dAgo(162), modifiedDate: dAgo(158), approvedBy: "hrg.onboarding", mailboxId: "MB-HRG-WEBEDI-01", tradingAddress: "ZZ:MAPLERIDGEWEB", userLogin: "(masked)", userId: "(masked)", company: { id: "C20014", name: "Maple Ridge Crafts", city: "Bend", state: "OR", countryCode: "US" }, request: { type: "COMPANY_REGISTRATION", status: "APPROVED", content: "(masked: request payload withheld)" } },
+  { requestId: 55102, trackingId: null, workflowId: "WF-HRG-SUPPLIER-STD", description: "Evergreen Paper company registration", createdDate: dAgo(25), modifiedDate: dAgo(22), approvedBy: null, mailboxId: null, tradingAddress: null, userLogin: "(masked)", userId: "(masked)", company: { id: "C20011", name: "Evergreen Paper Products", city: "Portland", state: "OR", countryCode: "US" }, request: { type: "COMPANY_REGISTRATION", status: "REJECTED", content: "(masked: request payload withheld)", rejectionReason: "Tax ID could not be verified" } },
   { requestId: 55188, trackingId: null, workflowId: "WF-HRG-SUPPLIER-STD", description: "Willow Creek Candle company registration", createdDate: dAgo(1), modifiedDate: dAgo(1), approvedBy: null, mailboxId: null, tradingAddress: null, userLogin: "(masked)", userId: "(masked)", company: { id: "C20012", name: "Willow Creek Candle Co", city: "Burlington", state: "VT", countryCode: "US" }, request: { type: "COMPANY_REGISTRATION", status: "PENDING_APPROVAL", content: "(masked: request payload withheld)" } },
 ];
 
@@ -382,12 +413,16 @@ export const processInstances = [
   { piUniqueId: 900302, processInstanceId: "PI-55120-2", processName: "HRG supplier onboarding", activityName: "Mailbox and address provisioning", processStatus: "COMPLETED", requestId: 55120, workFlowRootId: "WF-HRG-SUPPLIER-STD", retryCount: 1, httpCode: 200, createdDate: dAgo(5), modifiedDate: dAgo(5) },
   { piUniqueId: 900303, processInstanceId: "PI-55120-3", processName: "HRG supplier onboarding", activityName: "Trading relationship setup", processStatus: "COMPLETED", requestId: 55120, workFlowRootId: "WF-HRG-SUPPLIER-STD", retryCount: 0, httpCode: 200, createdDate: dAgo(4), modifiedDate: dAgo(3) },
   { piUniqueId: 900304, processInstanceId: "PI-55120-4", processName: "HRG supplier onboarding", activityName: "Partner test exchange", processStatus: "ACTIVE", requestId: 55120, workFlowRootId: "WF-HRG-SUPPLIER-STD", retryCount: 0, httpCode: 202, createdDate: dAgo(3), modifiedDate: hAgo(20) },
+  { piUniqueId: 900211, processInstanceId: "PI-55041-1", processName: "HRG drop-ship vendor onboarding", activityName: "Registration approval", processStatus: "COMPLETED", requestId: 55041, workFlowRootId: "WF-HRG-DROPSHIP", retryCount: 0, httpCode: 200, createdDate: dAgo(162), modifiedDate: dAgo(161) },
+  { piUniqueId: 900212, processInstanceId: "PI-55041-2", processName: "HRG drop-ship vendor onboarding", activityName: "Web EDI enablement", processStatus: "FAILED", requestId: 55041, workFlowRootId: "WF-HRG-DROPSHIP", retryCount: 3, httpCode: 500, createdDate: dAgo(161), modifiedDate: dAgo(160), errorMessage: "Web EDI form package WEBFORMS_856 not subscribed for mailbox MB-HRG-WEBEDI-01" },
+  { piUniqueId: 900213, processInstanceId: "PI-55041-3", processName: "HRG drop-ship vendor onboarding", activityName: "Web EDI enablement (manual retry)", processStatus: "COMPLETED", requestId: 55041, workFlowRootId: "WF-HRG-DROPSHIP", retryCount: 0, httpCode: 200, createdDate: dAgo(159), modifiedDate: dAgo(158) },
+  { piUniqueId: 900271, processInstanceId: "PI-55102-1", processName: "HRG supplier onboarding", activityName: "Registration approval", processStatus: "TERMINATED", requestId: 55102, workFlowRootId: "WF-HRG-SUPPLIER-STD", retryCount: 0, httpCode: 200, createdDate: dAgo(25), modifiedDate: dAgo(22) },
   { piUniqueId: 900351, processInstanceId: "PI-55188-1", processName: "HRG supplier onboarding", activityName: "Registration approval", processStatus: "WAITING", requestId: 55188, workFlowRootId: "WF-HRG-SUPPLIER-STD", retryCount: 0, httpCode: 202, createdDate: dAgo(1), modifiedDate: dAgo(1) },
 ];
 
 export const workflowTemplates = [
   { workflowTemplateId: 3101, ownerCompanyId: HUB_ID, invitationId: [7702, 7713], createdDate: dAgo(700), modifiedDate: dAgo(60), template: { name: "HRG_SUPPLIER_STD", type: "ONBOARDING", content: "Steps: registration approval; mailbox and address provisioning; trading relationship setup (850, 855, 856, 810, 997); partner test exchange; production activation." } },
-  { workflowTemplateId: 3102, ownerCompanyId: HUB_ID, invitationId: [], createdDate: dAgo(400), modifiedDate: dAgo(400), template: { name: "HRG_DROPSHIP_VENDOR", type: "ONBOARDING", content: "Steps: registration approval; web EDI enablement; 850 drop-ship and 856 setup; production activation." } },
+  { workflowTemplateId: 3102, ownerCompanyId: HUB_ID, invitationId: [7720, 7726], createdDate: dAgo(400), modifiedDate: dAgo(400), template: { name: "HRG_DROPSHIP_VENDOR", type: "ONBOARDING", content: "Steps: registration approval; web EDI enablement; 850 drop-ship and 856 setup; production activation." } },
 ];
 
 export const billingProfiles = {

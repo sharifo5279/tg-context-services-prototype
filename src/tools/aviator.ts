@@ -48,6 +48,8 @@ const CONN: Record<string, any> = {
   C20007: { protocol: "SFTP", endpoint: "sftp://(redacted):22/inbound", status: "UP", lastSuccess: ago(0.8), failures24h: 0, partnerPickup: { lastPickup: ago(32), note: "Files delivered to the partner mailbox have not been collected for 32 hours." } },
   C20003: { protocol: "VAN interconnect", endpoint: "Keystone VAN Services (MB-KVAN-IC-07)", status: "UP", lastSuccess: ago(2.0), failures24h: 0 },
   C20006: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "UP", lastSuccess: ago(3.5), failures24h: 0 },
+  C20013: { protocol: "AS2", endpoint: "https://(redacted)/as2", status: "UP", lastSuccess: ago(0.6), failures24h: 0, certificateExpires: "2027-04-02" },
+  C20014: { protocol: "Web EDI forms", endpoint: "Harborview supplier web EDI (MB-HRG-WEBEDI-01)", status: "UP", lastSuccess: ago(26), failures24h: 0, note: "Partner submits documents through web forms; no partner endpoint." },
 };
 
 export const tickets: any[] = [];

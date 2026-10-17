@@ -214,7 +214,11 @@ export const tgdpTools: ToolDef[] = [
     description: "Get a schedule's configuration, recent run status and next run.",
     operation: "dataproduct.read", kind: "read", binding: "Schedule contract", basis: NEW_CONTRACT,
     inputSchema: s.obj({ schedule_id: s.str("Schedule ID (omit to list all).") }),
-    handler: (a, ctx) => ok(ctx, "get_data_product_delivery_schedule", "dataproduct.read", a.schedule_id ? O.deliverySchedules.find((x) => eq(x.scheduleId, a.schedule_id)) ?? null : { schedules: O.deliverySchedules }, { sources: src("Schedules") }),
+    handler: (a, ctx) => {
+      if (!a.schedule_id) return ok(ctx, "get_data_product_delivery_schedule", "dataproduct.read", { schedules: O.deliverySchedules }, { sources: src("Schedules") });
+      const sc = O.deliverySchedules.find((x) => eq(x.scheduleId, a.schedule_id));
+      return sc ? ok(ctx, "get_data_product_delivery_schedule", "dataproduct.read", sc, { sources: src("Schedules", [sc.scheduleId]) }) : fail(ctx, "get_data_product_delivery_schedule", "dataproduct.read", "NOT_FOUND", `Schedule ${a.schedule_id} not found. List schedules by omitting schedule_id.`);
+    },
   },
   {
     name: "update_data_product_delivery_schedule", domain: "Data results and delivery", product: P, title: "Update delivery schedule",

@@ -34,7 +34,7 @@ export type Tx = {
   sizeBytes: number;
   controlNumbers: Record<string, string>;
   keys: { primary?: { name: string; value: string }; secondary?: { name: string; value: string }; tertiary?: { name: string; value: string } };
-  refs: { poNumber?: string; shipmentId?: string; invoiceNumber?: string; shipToGLN?: string; ackForTransactionId?: string; ackForControlNumber?: string; storeNumber?: string };
+  refs: { poNumber?: string; shipmentId?: string; invoiceNumber?: string; shipToGLN?: string; ackForTransactionId?: string; ackForControlNumber?: string; storeNumber?: string; shippingOrder?: string; statusCode?: string; adjustmentNumber?: string; traceNumber?: string; quantityOrdered?: number; quantityShipped?: number; amount?: number; reason?: string; channel?: string };
   sourceStatus: "DLVD" | "FAIL" | "INPR" | "RCVD";
   statusHistory: { step: string; status: string; at: string }[];
   errors: { code: string; category: string; message: string; service: string; step: string }[];
@@ -67,7 +67,7 @@ const R = rng(20261016);
 const addrOf: Record<string, string> = {
   [HUB_ID]: "ZZ:HARBORVIEWUS",
   C20001: "ZZ:NORTHFIELDFD", C20002: "ZZ:NFFARMS", C20003: "ZZ:COASTLINEAPP", C20004: "ZZ:BRIGHTWELLHG", C20005: "ZZ:PINEGATEHOME",
-  C20006: "14:8712345000011", C20007: "12:3035550147", C20008: "ZZ:ATLASTOY", C20009: "ZZ:MERIDIANPC", C20010: "02:RDLN",
+  C20006: "14:8712345000011", C20007: "12:3035550147", C20008: "ZZ:ATLASTOY", C20009: "ZZ:MERIDIANPC", C20010: "02:RDLN", C20013: "ZZ:CRESTLINE3PL", C20014: "ZZ:MAPLERIDGEWEB",
 };
 
 const party = (id: string, addrOverride?: string) => {
@@ -100,7 +100,12 @@ const KEYS: Record<string, (r: Tx["refs"]) => Tx["keys"]> = {
   "856": (r) => ({ primary: { name: "Shipment ID (BSN02)", value: r.shipmentId! }, secondary: { name: "PO number (PRF01)", value: r.poNumber! }, tertiary: r.shipToGLN ? { name: "Ship-to GLN (N104, N103=UL)", value: r.shipToGLN } : undefined }),
   "810": (r) => ({ primary: { name: "Invoice number (BIG02)", value: r.invoiceNumber! }, secondary: { name: "PO number (BIG04)", value: r.poNumber! }, tertiary: r.shipToGLN ? { name: "Ship-to GLN (N104, N103=UL)", value: r.shipToGLN } : undefined }),
   "997": (r) => ({ primary: { name: "Acknowledged group control number (AK102)", value: r.ackForControlNumber! } }),
-  "214": (r) => ({ primary: { name: "Shipment ID (B1003)", value: r.shipmentId! } }),
+  "214": (r) => ({ primary: { name: "Shipment ID (B1003)", value: r.shipmentId! }, secondary: r.statusCode ? { name: "Status code (AT701)", value: r.statusCode } : undefined }),
+  "846": (r) => ({ primary: { name: "Inventory report number (BIA03)", value: r.poNumber! } }),
+  "812": (r) => ({ primary: { name: "Adjustment number (BCD02)", value: r.adjustmentNumber! }, secondary: r.invoiceNumber ? { name: "Invoice number (BCD10)", value: r.invoiceNumber } : undefined }),
+  "820": (r) => ({ primary: { name: "Trace number (TRN02)", value: r.traceNumber! }, secondary: r.invoiceNumber ? { name: "Invoice number (RMR02)", value: r.invoiceNumber } : undefined }),
+  "940": (r) => ({ primary: { name: "Shipping order number (W0502)", value: r.shippingOrder! }, secondary: { name: "PO number (W0503)", value: r.poNumber! } }),
+  "945": (r) => ({ primary: { name: "Shipping order number (W0602)", value: r.shippingOrder! }, secondary: { name: "Shipment ID (W0603)", value: r.shipmentId! } }),
   ORDERS: (r) => ({ primary: { name: "Order number (BGM 1004)", value: r.poNumber! } }),
   DESADV: (r) => ({ primary: { name: "Despatch advice number (BGM 1004)", value: r.shipmentId! }, secondary: { name: "Order number (RFF+ON)", value: r.poNumber! } }),
   INVOIC: (r) => ({ primary: { name: "Invoice number (BGM 1004)", value: r.invoiceNumber! }, secondary: { name: "Order number (RFF+ON)", value: r.poNumber! } }),
@@ -195,6 +200,7 @@ const PARTNERS: P[] = [
   { id: "C20007", perDay: 1.0, days: 280, docs: ["855", "856", "810"], ackOutageSinceH: 32, prefix: "SMB", inMap: "M-1008" },
   { id: "C20008", perDay: 1.1, days: 280, stopHoursAgo: 216, docs: ["855", "856", "810", "846"], prefix: "ATL" },
   { id: "C20009", perDay: 0.9, days: 280, docs: ["855", "856", "810"], prefix: "MPC" },
+  { id: "C20014", perDay: 0.25, days: 150, docs: ["856", "810"], prefix: "MRC" },
 ];
 
 const storeKeys = ["0101", "0214", "0388", "0519", "0601"];
@@ -242,6 +248,32 @@ for (const p of PARTNERS) {
         });
         if (d !== "846") ackFor(tx, 0.2 + R() * 0.3, fail && e.category === "VALIDATION" ? "REJECTED" : "ACCEPTED");
       }
+    }
+  }
+}
+
+// Crestline Logistics (3PL): 940 shipping orders out, 945 shipping advice and 214 shipment status in
+const CARRIER_CODES = ["AF", "X6", "X1", "D1"];
+let wso = 30000;
+for (let day = 400; day >= 0; day--) {
+  const count = Math.floor(1.3 + R());
+  for (let k = 0; k < count; k++) {
+    const h = day * 24 + 4 + R() * 12;
+    if (h < 2) continue;
+    const order = `WSO-${wso++}`;
+    const po = String(poSeq++);
+    const o = makeTx({ hoursAgo: h, partner: "C20013", dir: "OUTBOUND", doc: "940", refs: { shippingOrder: order, poNumber: po, shipToGLN: STORES[storeKeys[k % storeKeys.length]].gln }, mapId: "M-1011" });
+    ackFor(o, 0.4 + R());
+    const shipH = h - (18 + R() * 20);
+    if (shipH < 0.5) continue;
+    const shipment = `SH-CRL-${order.slice(-5)}`;
+    const adv = makeTx({ hoursAgo: shipH, partner: "C20013", dir: "INBOUND", doc: "945", refs: { shippingOrder: order, shipmentId: shipment, poNumber: po, quantityOrdered: 24, quantityShipped: 24 }, mapId: "M-1009" });
+    ackFor(adv, 0.2);
+    let sh = shipH;
+    for (const code of CARRIER_CODES) {
+      sh -= 3 + R() * 10;
+      if (sh < 0.5) break;
+      makeTx({ hoursAgo: sh, partner: "C20013", dir: "INBOUND", doc: "214", refs: { shipmentId: shipment, statusCode: code }, mapId: "M-1010" });
     }
   }
 }
@@ -339,6 +371,46 @@ nfFail(520, "INV-NF-88102", "4500019455", { code: "MAP-TRN-118", category: "TRAN
   const n = makeTx({ hoursAgo: 10, partner: "C20001", dir: "OUTBOUND", doc: "850", refs: { poNumber: "4500019660", shipToGLN: STORES["0412"].gln }, mapId: "M-1003" }); ackFor(n, 0.7);
 }
 
+// Crestline: short shipment, late delivery, failed status code lookup, overdue shipping advice
+{
+  const o = makeTx({ hoursAgo: 70, partner: "C20013", dir: "OUTBOUND", doc: "940", refs: { shippingOrder: "WSO-30412", poNumber: "4500019905", shipToGLN: STORES["0214"].gln }, mapId: "M-1011" }); ackFor(o, 0.5);
+  const a = makeTx({ hoursAgo: 44, partner: "C20013", dir: "INBOUND", doc: "945", refs: { shippingOrder: "WSO-30412", shipmentId: "SH-CRL-30412", poNumber: "4500019905", quantityOrdered: 24, quantityShipped: 18, reason: "Short shipped: 6 units backordered (W1215)" }, mapId: "M-1009" }); ackFor(a, 0.2);
+  makeTx({ hoursAgo: 40, partner: "C20013", dir: "INBOUND", doc: "214", refs: { shipmentId: "SH-CRL-30412", statusCode: "AF" }, mapId: "M-1010" });
+  makeTx({ hoursAgo: 12, partner: "C20013", dir: "INBOUND", doc: "214", refs: { shipmentId: "SH-CRL-30412", statusCode: "SD", reason: "Delayed: weather (AT702=AJ)" }, mapId: "M-1010" });
+  const o2 = makeTx({ hoursAgo: 58, partner: "C20013", dir: "OUTBOUND", doc: "940", refs: { shippingOrder: "WSO-30420", poNumber: "4500019911", shipToGLN: STORES["0519"].gln }, mapId: "M-1011" }); ackFor(o2, 0.6);
+  makeTx({ hoursAgo: 15, partner: "C20013", dir: "INBOUND", doc: "214", refs: { shipmentId: "SH-CRL-30399", statusCode: "A9" }, status: "FAIL", failStep: "Transform", mapId: "M-1010",
+    error: { code: "XREF-404", category: "TRANSLATION", message: "Cross-reference lookup failed: entity CARRIER_STATUS_CODE, key 'A9' not found (map CRL_214_4010_IN v3, AT701)", service: "Translation" } });
+}
+
+// Northfield Foods: chargebacks (812) for ASN compliance
+{
+  const cb = (h: number, n: string, inv: string, amount: number, reason: string, status?: Tx["sourceStatus"]) => {
+    const t = makeTx({ hoursAgo: h, partner: "C20001", dir: "OUTBOUND", doc: "812", refs: { adjustmentNumber: n, invoiceNumber: inv, amount, reason }, mapId: "M-1012", status });
+    if (!status) ackFor(t, 0.8);
+  };
+  cb(2200, "CB-NF-2071", "INV-NF-87120", 180.0, "ASN received after goods receipt (H2 code 06)");
+  cb(1460, "CB-NF-2133", "INV-NF-87655", 240.0, "ASN missing for receipt (H2 code 04)");
+  cb(720, "CB-NF-2188", "INV-NF-88012", 95.5, "Label noncompliance (H2 code 11)");
+  cb(36, "CB-NF-2210", "INV-NF-88310", 210.0, "ASN received after goods receipt (H2 code 06)");
+}
+
+// Coastline: weekly remittance (820), one rejected by the VAN interconnect
+{
+  for (let w = 1; w <= 20; w++) {
+    const t = makeTx({ hoursAgo: w * 168 + 10, partner: "C20003", dir: "OUTBOUND", doc: "820", refs: { traceNumber: `TRN-CST-${8800 + w}`, amount: 12000 + w * 137 } });
+    ackFor(t, 2);
+  }
+  makeTx({ hoursAgo: 14, partner: "C20003", dir: "OUTBOUND", doc: "820", refs: { traceNumber: "TRN-CST-8800", amount: 14630.25 }, status: "FAIL", failStep: "Deliver",
+    error: { code: "VAN-IC-421", category: "DELIVERY", message: "Interconnect partner Keystone VAN rejected the interchange: receiver mailbox temporarily unavailable", service: "Communications gateway" } });
+}
+
+// Maple Ridge Crafts (web EDI): invoice submitted through the web form without an ASN
+{
+  const o = makeTx({ hoursAgo: 120, partner: "C20014", dir: "OUTBOUND", doc: "850", refs: { poNumber: "4500019940", shipToGLN: STORES["0601"].gln }, mapId: "M-1003" });
+  makeTx({ hoursAgo: 26, partner: "C20014", dir: "INBOUND", doc: "810", refs: { invoiceNumber: "MRC-INV-0117", poNumber: "4500019940", shipToGLN: STORES["0601"].gln, channel: "Web form" } });
+  void o;
+}
+
 transactions.sort((a, b) => b._t - a._t);
 
 export const txById = (id: string) => byId.get(id);
@@ -371,6 +443,17 @@ export function renderPayload(tx: Tx, variant: string) {
   } else if (tx.documentType === "997") {
     const code = tx.ack?.code?.split("=")[1] ?? "A";
     body = [st, `AK1*XX*${tx.refs.ackForControlNumber}~`, ...(tx.ack?.detail ? tx.ack.detail.split(" / ").map((x) => `${x}~`) : []), `AK9*${code}*1*1*${code === "A" ? 1 : 0}~`, "SE*4*0001~"];
+  } else if (tx.documentType === "940") {
+    body = [st, `W05*N*${tx.refs.shippingOrder}*${tx.refs.poNumber}~`, `N1*ST*Harborview*UL*${tx.refs.shipToGLN ?? ""}~`, "LX*1~", "W01*24*EA**UP*012345678905~", "W76*24*EA~", "SE*7*0001~"];
+  } else if (tx.documentType === "945") {
+    const shipped = tx.refs.quantityShipped ?? 24;
+    body = [st, `W06*N*${tx.refs.shippingOrder}*20${d}*${tx.refs.shipmentId}~`, "LX*1~", `W12*${shipped < (tx.refs.quantityOrdered ?? 24) ? "SH" : "CC"}*${tx.refs.quantityOrdered ?? 24}*${shipped}*${(tx.refs.quantityOrdered ?? 24) - shipped}*EA**UP*012345678905~`, `W03*${shipped}~`, "SE*6*0001~"];
+  } else if (tx.documentType === "214") {
+    body = [st, `B10*${tx.refs.shipmentId}*${tx.refs.shipmentId}*RDLN~`, "LX*1~", `AT7*${tx.refs.statusCode}*NS***20${d}*1000~`, "SE*5*0001~"];
+  } else if (tx.documentType === "812") {
+    body = [st, `BCD*20${d}*${tx.refs.adjustmentNumber}*D*${(tx.refs.amount ?? 0).toFixed(2)}*D******${tx.refs.invoiceNumber}~`, `CDD*06*D**${(tx.refs.amount ?? 0).toFixed(2)}~`, "SE*4*0001~"];
+  } else if (tx.documentType === "820") {
+    body = [st, `BPR*C*${(tx.refs.amount ?? 0).toFixed(2)}*C*ACH~`, `TRN*1*${tx.refs.traceNumber}~`, `RMR*IV*${tx.refs.invoiceNumber ?? "MULTIPLE"}**${(tx.refs.amount ?? 0).toFixed(2)}~`, "SE*5*0001~"];
   } else {
     body = [st, `BAK*00*AC*${tx.refs.poNumber}*20${d}~`, "SE*3*0001~"];
   }

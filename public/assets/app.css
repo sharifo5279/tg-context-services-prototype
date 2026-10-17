@@ -571,3 +571,15 @@ table.txt .st { display: flex; align-items: center; gap: 6px; color: var(--ink) 
 .avmaxbtn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); border-radius: 6px; background: #fff; padding: 4px 10px; font-size: 12.5px; font-weight: 500; color: var(--ink); cursor: pointer; }
 .avmaxbtn:hover { border-color: var(--blue); color: var(--blue); }
 .avmaxbtn svg { width: 14px; height: 14px; }
+
+/* Test scenarios */
+.scsum { margin-bottom: 12px; }
+.sct td { vertical-align: top; }
+.scdetail td { background: var(--canvas, #f6f8fb); }
+.scd { display: grid; gap: 10px; padding: 4px 0; }
+.scprompt { display: flex; gap: 10px; align-items: center; }
+.scstep { border: 1px solid var(--line); border-radius: var(--r-sm); background: #fff; padding: 8px 10px; display: grid; gap: 6px; }
+.scstep .sch { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.scstep details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.scstep pre.json { max-height: 280px; overflow: auto; }
+.sct td:first-child { white-space: nowrap; }

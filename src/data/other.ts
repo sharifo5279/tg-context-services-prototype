@@ -10,7 +10,7 @@ import { STORES } from "./insights.js";
 export const CARTO_SOLUTION = "CARTO-HRG-01";
 
 export const mappingSolutions = [
-  { solutionId: CARTO_SOLUTION, solutionName: "Harborview retail maps", sourceSolutionIds: [SOLUTION_ID], translators: ["Contivo", "AI"], mapCount: 8 },
+  { solutionId: CARTO_SOLUTION, solutionName: "Harborview retail maps", sourceSolutionIds: [SOLUTION_ID], translators: ["Contivo", "AI"], mapCount: 12 },
 ];
 
 const map = (mapId: string, mapName: string, version: number, direction: string, sourceFormat: string, targetFormat: string, status: string, prodMap: boolean, acceptanceState: string, owner: string, modifiedDaysAgo: number, promotedDaysAgo: number | null, partners: string[], extras: any = {}) => ({
@@ -32,6 +32,10 @@ export const maps = [
   map("M-1006", "PGH_810_4010_IN", 1, "INBOUND", "X12 004010 810", "SAP IDoc INVOIC", "IN_TEST", false, "PENDING", "j.patel", 3, null, ["C20005"]),
   map("M-1007", "ATL_846_4010_IN", 2, "INBOUND", "X12 004010 846", "Inventory feed CSV", "RETIRED", false, "ACCEPTED", "edi.team", 500, 700, ["C20008"]),
   map("M-1008", "SMB_855_4010_IN", 2, "INBOUND", "X12 004010 855", "SAP IDoc ORDRSP", "ACTIVE", true, "ACCEPTED", "j.patel", 220, 219, ["C20007"]),
+  map("M-1009", "CRL_945_4010_IN", 4, "INBOUND", "X12 004010 945", "SAP IDoc SHPCON", "ACTIVE", true, "ACCEPTED", "j.patel", 75, 74, ["C20013"], { lookups: [], characteristics: { targetFields: 96, unmappedTargetFields: 3, lookups: 0 } }),
+  map("M-1010", "CRL_214_4010_IN", 3, "INBOUND", "X12 004010 214", "SAP IDoc TRXSTA", "ACTIVE", true, "ACCEPTED", "j.patel", 30, 29, ["C20013"], { lookups: ["CARRIER_STATUS_CODE"], characteristics: { targetFields: 41, unmappedTargetFields: 1, lookups: 1 } }),
+  map("M-1011", "HRG_940_4010_OUT", 6, "OUTBOUND", "SAP IDoc SHPORD", "X12 004010 940", "ACTIVE", true, "ACCEPTED", "edi.team", 120, 119, ["C20013"]),
+  map("M-1012", "HRG_812_4010_OUT", 2, "OUTBOUND", "SAP FI chargeback", "X12 004010 812", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, ["C20001"]),
 ];
 
 export const mapSpecifications: Record<string, any[]> = {
@@ -81,6 +85,15 @@ export const xrefEntities: Record<string, any> = {
   },
 };
 
+xrefEntities.CARRIER_STATUS_CODE = {
+  entityName: "CARRIER_STATUS_CODE", description: "X12 214 AT701 shipment status code to Harborview receiving status", keyColumn: "statusCode", columns: ["hrgStatus", "description"],
+  state: { reserved: true, reservedBy: "j.patel" },
+  entries: { AF: { hrgStatus: "IN_TRANSIT", description: "Departed pickup location" }, X6: { hrgStatus: "IN_TRANSIT", description: "En route" }, X1: { hrgStatus: "ARRIVED", description: "Arrived at delivery location" }, D1: { hrgStatus: "DELIVERED", description: "Completed unloading" }, SD: { hrgStatus: "DELAYED", description: "Shipment delayed" } },
+  lastModifiedOn: dAgo(30), lastModifiedBy: "j.patel",
+};
+xrefEntities.VENDOR_NUMBER_BY_PARTNER.entries["ZZ:CRESTLINE3PL"] = { vendorNumber: "V-20113" };
+xrefEntities.VENDOR_NUMBER_BY_PARTNER.entries["ZZ:MAPLERIDGEWEB"] = { vendorNumber: "V-20214" };
+
 export const prexref = {
   entityName: "PREXREF_ROUTING", description: "Pre-translation routing profiles (document type, sender, receiver)",
   entries: [
@@ -88,6 +101,8 @@ export const prexref = {
     { profileId: "PX-02", documentType: "810", sender: "ZZ:NORTHFIELDFD", receiver: "ZZ:HARBORVIEWUS", mapName: "NFF_810_4010_IN" },
     { profileId: "PX-03", documentType: "856", sender: "ZZ:COASTLINEAPP", receiver: "ZZ:HARBORVIEWUS", mapName: "CST_856_4010_IN" },
     { profileId: "PX-04", documentType: "810", sender: "ZZ:PINEGATEHOME", receiver: "ZZ:HARBORVIEWTST", mapName: "PGH_810_4010_IN" },
+    { profileId: "PX-05", documentType: "945", sender: "ZZ:CRESTLINE3PL", receiver: "ZZ:HARBORVIEWUS", mapName: "CRL_945_4010_IN" },
+    { profileId: "PX-06", documentType: "214", sender: "ZZ:CRESTLINE3PL", receiver: "ZZ:HARBORVIEWUS", mapName: "CRL_214_4010_IN" },
   ],
 };
 
@@ -106,6 +121,8 @@ export const changeRequestTypes = [
 
 export const changeRequests: any[] = [
   { statusId: "ST-10421", requestId: "REQ-10421", title: "SFTP connection for Coastline Apparel test", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(9), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5521", type: "SFTP_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(8), assignedTeam: "BN connectivity", attachments: [] }] },
+  { statusId: "ST-10466", requestId: "REQ-10466", title: "AS2 certificate renewal for Brightwell Home Goods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(3), submittedBy: "s.okafor", submissionState: "REJECTED", rejectionReason: "Certificate file missing; attach the partner public certificate and resubmit.", workOrders: [{ workOrderId: "WO-5560", type: "AS2_CONNECTION", state: "REJECTED", stateSince: dAgo(2), assignedTeam: "BN connectivity", attachments: [] }] },
+  { statusId: "ST-10471", requestId: "REQ-10471", title: "New 945 map version for Crestline short-ship reasons", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(1), submittedBy: "j.patel", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5571", type: "MAP_CHANGE", state: "NEW", stateSince: dAgo(1), assignedTeam: "BN mapping", attachments: [{ fileName: "crestline_945_w12_codes.xlsx" }] }] },
   { statusId: "ST-10388", requestId: "REQ-10388", title: "Brightwell 856 ship-to store resolution", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(14), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5488", type: "MAP_CHANGE", state: "COMPLETED", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "store_resolution_spec.xlsx" }] }] },
 ];
 
@@ -115,6 +132,7 @@ export const provisioningTemplates = [
 ];
 
 export const provisionings: any[] = [
+  { trackingId: "TRK-MRC-0042", templateName: "HRG_DROPSHIP_VENDOR", invitationId: 7720, submittedAt: dAgo(160), _completeAt: Date.parse(dAgo(158)), resultRefs: { companyId: "C20014", mailboxId: "MB-HRG-WEBEDI-01", tradingAddress: "ZZ:MAPLERIDGEWEB", tradingPartnerRelationshipIds: ["TPR-70131"] } },
   { trackingId: "TRK-PGH-0091", templateName: "HRG_SUPPLIER_STD", invitationId: 7702, submittedAt: dAgo(5), _completeAt: Date.parse(dAgo(4)), resultRefs: { companyId: "C20005", mailboxId: "MB-PGH-01", tradingAddress: "ZZ:PINEGATEHOME", tradingPartnerRelationshipIds: ["TPR-70051", "TPR-70052"] } },
 ];
 
@@ -182,9 +200,12 @@ export const dataProducts = [
 export const ccimEvents = [
   { event_id: "EV-9001", detected_at: hAgo(20), watchlist: "Inbound ASN volume", partner_name: "Brightwell Home Goods", document_type: "856", event_type: "ANOMALY", detail: "Failed 856 count above expected range" },
   { event_id: "EV-9002", detected_at: hAgo(26), watchlist: "PO acknowledgment", partner_name: "Summit Beverage Co", document_type: "997", event_type: "ANOMALY", detail: "No 997 received for outbound 850s since 32 hours ago" },
+  { event_id: "EV-9004", detected_at: hAgo(15), watchlist: "Inbound document volume", partner_name: "Crestline Logistics LLC", document_type: "214", event_type: "FAILED_TRANSACTION", detail: "214 failed: status code A9 not in CARRIER_STATUS_CODE" },
+  { event_id: "EV-9005", detected_at: hAgo(14), watchlist: "Outbound remittance", partner_name: "Coastline Apparel Co", document_type: "820", event_type: "FAILED_TRANSACTION", detail: "820 delivery rejected by Keystone VAN interconnect" },
   { event_id: "EV-9003", detected_at: hAgo(200), watchlist: "Inbound document volume", partner_name: "Atlas Toy Company", document_type: "856", event_type: "ANOMALY", detail: "Inbound volume dropped to zero" },
 ];
 
 export const deliverySchedules: any[] = [
+  { scheduleId: "SCH-0009", productId: "tgdp.transaction_activity", version: "1.2", cadence: "DAILY (05:00 UTC)", destination: "HRG-SFTP-DATA (approved destination)", format: "PARQUET", status: "PAUSED", configVersion: 2, createdAt: dAgo(40), lastRun: { at: dAgo(9), status: "FAILED", records: 0, error: "Destination quota exceeded" }, nextRun: null },
   { scheduleId: "SCH-0007", productId: "tgdp.partner_directory", version: "0.9", cadence: "WEEKLY (Mon 06:00 UTC)", destination: "HRG-SFTP-DATA (approved destination)", format: "CSV", status: "ACTIVE", configVersion: 3, createdAt: dAgo(60), lastRun: { at: dAgo(4), status: "SUCCEEDED", records: 11 }, nextRun: dAgo(-3) },
 ];

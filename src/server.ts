@@ -16,7 +16,8 @@ import { handleMcp, hostForToken, tokenFor, resetGateway } from "./mcp.js";
 import { txById, renderPayload, transactions, STATUS_TEXT } from "./data/insights.js";
 import { exports } from "./tools/tgdp.js";
 import { xrefEntities } from "./data/other.js";
-import { resetApps } from "./tools/apps.js";
+import { resetData } from "./reset.js";
+import { scenarioCatalog, SCENARIOS, runScenario, runScenarios, coverage } from "./scenarios.js";
 
 const PASSWORD = process.env.DEMO_PASSWORD || "OpenText1000!";
 const SIGN = process.env.MCP_SECRET || PASSWORD;
@@ -166,16 +167,25 @@ app.post("/api/clients/:key/agents/:agentId", (req, res) => {
 });
 
 // Demo reset: restore seeded state between recordings.
-const SNAP = { cr: JSON.stringify(changeRequests), pv: JSON.stringify(provisionings), ds: JSON.stringify(deliverySchedules), xref: JSON.stringify(xrefEntities) };
 app.post("/api/demo/reset", (_req, res) => {
-  plans.clear(); audit.length = 0; tickets.length = 0; queries.clear(); exports.clear();
-  resetAllSessions(); resetGateway(); resetDeployments(); resetApps();
-  for (const k of Object.keys(clientStatus)) delete (clientStatus as any)[k];
-  changeRequests.splice(0, changeRequests.length, ...JSON.parse(SNAP.cr));
-  provisionings.splice(0, provisionings.length, ...JSON.parse(SNAP.pv));
-  deliverySchedules.splice(0, deliverySchedules.length, ...JSON.parse(SNAP.ds));
-  const x = JSON.parse(SNAP.xref); for (const k of Object.keys(x)) (xrefEntities as any)[k] = x[k];
+  resetData(); resetAllSessions(); resetGateway();
   res.json({ ok: true, resetAt: new Date().toISOString() });
+});
+
+// Scenario library
+app.get("/api/scenarios", (_req, res) => {
+  const covered = new Set(coverage());
+  const all = [...TOOLS.map((t) => t.name), "search_knowledge", "create_support_ticket", "get_map_rule", "get_connection_status"];
+  res.json({ scenarios: scenarioCatalog(), coverage: { tools: all.length, covered: all.filter((n) => covered.has(n)).length } });
+});
+app.post("/api/scenarios/run", (req, res) => {
+  const base = `${req.protocol}://${req.get("host")}`;
+  const ids: string[] = Array.isArray(req.body?.ids) ? req.body.ids : [];
+  const trim = (r: any, full: boolean) => ({ ...r, steps: r.steps.map((st: any) => ({ ...st, out: full ? st.out : undefined })) });
+  if (req.body?.all) return res.json({ results: runScenarios(undefined, base).map((r) => trim(r, false)) });
+  const list = SCENARIOS.filter((x) => ids.includes(x.id));
+  if (!list.length) return res.status(400).json({ error: "No scenarios selected. Provide scenario IDs or all=true." });
+  res.json({ results: list.map((x) => trim(runScenario(x, base), true)) });
 });
 
 app.get("/api/backlog", (_req, res) => {

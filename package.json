@@ -8,9 +8,12 @@
     "build": "tsc -p .",
     "start": "node dist/server.js",
     "dev": "tsc -p . && node dist/server.js",
-    "test": "tsc -p . && node dist/selftest.js"
+    "test": "tsc -p . && node dist/selftest.js && node dist/run-scenarios.js",
+    "scenarios": "tsc -p . && node dist/run-scenarios.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
     "@modelcontextprotocol/sdk": "^1.32.1",

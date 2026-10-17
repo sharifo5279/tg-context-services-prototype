@@ -521,7 +521,7 @@
       <button class="btn" data-href="/cs/clients">${ic("link")}Open Context Services console</button></div>`);
 
   // ---------- Context Services console ----------
-  const csNav = (p) => navList([{ g: null, items: [["home", "/cs", "Overview"]] }, { g: "Service", items: [["wrench", "/cs/tools", "Tools", S.meta.toolCount], ["agent", "/cs/agents", "Published agents"], ["server", "/cs/clients", "Clients and endpoint", S.meta.hosts.length - 1], ["shield", "/cs/access", "Access and audit"], ["check", "/cs/approvals", "Approvals", S.plans.filter((x) => x.status === "PENDING_APPROVAL").length || ""]] }], p);
+  const csNav = (p) => navList([{ g: null, items: [["home", "/cs", "Overview"]] }, { g: "Service", items: [["wrench", "/cs/tools", "Tools", S.meta.toolCount], ["agent", "/cs/agents", "Published agents"], ["server", "/cs/clients", "Clients and endpoint", S.meta.hosts.length - 1], ["shield", "/cs/access", "Access and audit"], ["check", "/cs/approvals", "Approvals", S.plans.filter((x) => x.status === "PENDING_APPROVAL").length || ""]] }, { g: "Testing", items: [["list", "/cs/scenarios", "Test scenarios", S.sc.catalog?.length || ""]] }], p);
   const shellCs = (inner) => shellStandard({ title: "Trading Grid Context Services", tag: "Service layer", nav: csNav(location.pathname), inner });
 
   function pageCsAgents() {
@@ -556,6 +556,35 @@
         <div class="section-title">Live calls</div>${auditTable(rows.slice(0, 12))}
         <div class="section-title">Tools by domain</div>
         <table class="t"><tbody>${Object.entries(domains).map(([d, n]) => `<tr class="click" data-domain="${esc(d)}"><td>${esc(d)}</td><td class="muted" style="text-align:right">${n}</td></tr>`).join("")}</tbody></table>
+      </div>`);
+  }
+
+  S.sc = { catalog: null, coverage: null, results: {}, open: {}, q: "", domain: "", kind: "", result: "", running: false };
+  async function pageCsScenarios() {
+    if (!S.sc.catalog) { const r = await api("/api/scenarios"); S.sc.catalog = r.scenarios; S.sc.coverage = r.coverage; }
+    const sc = S.sc, q = sc.q.toLowerCase();
+    const res = (x) => sc.results[x.id];
+    const rows = sc.catalog.filter((x) => (!sc.domain || x.domain === sc.domain) && (!sc.kind || x.kind === sc.kind) && (!q || `${x.id} ${x.title} ${x.tools.join(" ")}`.toLowerCase().includes(q))
+      && (!sc.result || (sc.result === "Not run" ? !res(x) : sc.result === "Passed" ? res(x)?.pass : res(x) && !res(x).pass)));
+    const ran = Object.values(sc.results), passed = ran.filter((r) => r.pass).length;
+    const domains = [...new Set(sc.catalog.map((x) => x.domain))], kinds = [...new Set(sc.catalog.map((x) => x.kind))];
+    const opt = (list, v) => list.map((x) => `<option ${x === v ? "selected" : ""}>${esc(x)}</option>`).join("");
+    const pill = (r) => !r ? `<span class="pill neutral">Not run</span>` : r.pass ? `<span class="pill ok">Passed</span>` : `<span class="pill bad">Failed</span>`;
+    const detail = (x) => { const r = res(x); return `<tr class="scdetail"><td colspan="7"><div class="scd">
+      ${x.prompt ? `<div class="scprompt"><span class="small muted">Agent prompt</span><span>${esc(x.prompt)}</span><button class="btn sm ghost" data-copy="${esc(x.prompt)}">Copy</button></div>` : ""}
+      ${x.steps.map((st, i) => { const rs = r?.steps?.[i]; return `<div class="scstep"><div class="sch"><span class="mono"><strong>${i + 1}. ${esc(st.tool)}</strong></span><span class="small muted">Expected ${esc(st.expect)}${st.code ? ` ${esc(st.code)}` : ""}${st.check ? ` · ${esc(st.check)}` : ""}</span>${rs ? `<span class="pill ${rs.pass ? "ok" : "bad"}">${esc(rs.status)}${rs.code ? ` ${esc(rs.code)}` : ""}</span><span class="small muted">${rs.ms} ms</span>` : ""}</div>
+        ${rs?.note ? `<div class="alert bad small">${esc(rs.note)}</div>` : ""}
+        <details><summary>Arguments</summary><pre class="json">${esc(JSON.stringify(rs?.args ?? st.args, null, 2))}</pre></details>
+        ${rs?.out ? `<details><summary>Response</summary><pre class="json">${esc(JSON.stringify(rs.out, null, 2))}</pre></details>` : ""}</div>`; }).join("")}</div></td></tr>`; };
+    return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Test scenarios</h1><div class="actions"><button class="btn primary" data-scall ${sc.running ? "disabled" : ""}>${ic("play")}${sc.running ? "Running" : "Run all"}</button></div></div>
+      <p class="sub">Executable scenarios for every tool against the seeded data, with expected status and result checks.</p></div>
+      <div class="content">
+        <div class="kv scsum"><span class="k">Scenarios</span><span>${sc.catalog.length}</span><span class="k">Tools covered</span><span>${sc.coverage.covered} of ${sc.coverage.tools}</span><span class="k">Last run</span><span>${ran.length ? `${passed} passed, ${ran.length - passed} failed, ${sc.catalog.length - ran.length} not run` : "Not run"}</span></div>
+        <div class="filters"><input class="input" data-scq placeholder="Search scenario, ID or tool" value="${esc(sc.q)}"><select class="select" data-scdomain><option value="">All domains</option>${opt(domains, sc.domain)}</select><select class="select" data-sckind><option value="">All types</option>${opt(kinds, sc.kind)}</select><select class="select" data-scresult><option value="">All results</option>${opt(["Passed", "Failed", "Not run"], sc.result)}</select><span class="small muted" style="align-self:center">${rows.length} shown</span></div>
+        <div style="overflow:auto"><table class="t sct"><thead><tr><th>ID</th><th>Scenario</th><th>Type</th><th>Client</th><th>Expected</th><th>Result</th><th></th></tr></thead><tbody>
+        ${rows.map((x) => `<tr class="click" data-scrow="${x.id}"><td class="mono small">${esc(x.id)}</td><td><strong>${esc(x.title)}</strong><div class="mono small muted">${esc(x.tools.join(", "))}</div></td><td class="small">${esc(x.kind)}</td><td class="small">${esc(hostBy(x.host)?.shortName ?? x.host)}</td><td class="mono small">${esc(x.steps.map((st) => st.expect).join(" › "))}</td><td>${pill(res(x))}</td><td><button class="btn sm" data-scrun="${x.id}">Run</button></td></tr>${sc.open[x.id] ? detail(x) : ""}`).join("")}
+        </tbody></table></div>
+        <p class="small muted">Run all resets demo data before each scenario and restores it afterwards. Single runs use the current state.</p>
       </div>`);
   }
 
@@ -689,6 +718,7 @@
     else if (p === "/studio/mcp") html = pageStudioMcp();
     else if (p === "/cs") { S.audit = await api("/api/audit"); html = pageCsOverview(); }
     else if (p === "/cs/tools") html = pageCsTools();
+    else if (p === "/cs/scenarios") html = await pageCsScenarios();
     else if (p === "/cs/agents") { S.deploy = await api("/api/deployments"); html = pageCsAgents(); }
     else if (p === "/boundaries") html = pageBoundaries();
     else if (p === "/cs/clients") { S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageCsClients(); }
@@ -707,9 +737,12 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall]");
     if (!t || t.disabled) return;
     const d = t.dataset;
+    if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }
+    if (d.scall != null) { if (!confirm(`Run all ${S.sc.catalog.length} scenarios? Demo data is reset before each scenario and restored afterwards.`)) return; S.sc.running = true; render(); const r = await api("/api/scenarios/run", { method: "POST", body: { all: true } }); S.sc.running = false; for (const x of r.results ?? []) S.sc.results[x.id] = x; S.plans = await api("/api/plans"); return render(); }
+    if (d.scrow) { S.sc.open[d.scrow] = !S.sc.open[d.scrow]; return render(); }
     if (d.copy) { navigator.clipboard?.writeText(d.copy); const o = t.textContent; t.textContent = "Copied"; setTimeout(() => (t.textContent = o), 1200); return; }
     if (d.reload != null) return render();
     if (d.domain) { S.toolDomain = d.domain; return go("/cs/tools"); }
@@ -757,10 +790,14 @@
     const d = ev.target.dataset;
     if (d.ucarea != null) { S.ucFilter = ev.target.value; render(); }
     if (d.tooldomain != null) { S.toolDomain = ev.target.value; render(); }
+    if (d.scdomain != null) { S.sc.domain = ev.target.value; render(); }
+    if (d.sckind != null) { S.sc.kind = ev.target.value; render(); }
+    if (d.scresult != null) { S.sc.result = ev.target.value; render(); }
     if (d.days != null) { S.tgoFilters.days = ev.target.value; render(); }
     if (d.extagent != null) { const u = new URLSearchParams(location.search); u.set("agent", ev.target.value); go(`/ext?${u}`); }
   });
   app.addEventListener("input", (ev) => {
+    if (ev.target.dataset.scq != null) { S.sc.q = ev.target.value; const pos = ev.target.selectionStart; render().then(() => { const el = $("[data-scq]"); el.focus(); el.setSelectionRange(pos, pos); }); }
     if (ev.target.dataset.toolq != null) { S.toolQ = ev.target.value; const pos = ev.target.selectionStart; render().then(() => { const el = $("[data-toolq]"); el.focus(); el.setSelectionRange(pos, pos); }); }
   });
 

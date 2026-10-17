@@ -118,12 +118,13 @@
         {
           "key": "TGCS-110",
           "title": "Expanded seeded data",
-          "status": "Proposed",
+          "status": "Done",
           "size": "M",
           "source": "Guide scenarios",
           "desc": "Add non-EDI suppliers, a 3PL with 214s, returnable assets, chargebacks and e-invoices to support supply chain scenarios.",
           "accept": "Data supports TGCS-8xx scenarios without placeholders.",
-          "reality": "Demo construct"
+          "reality": "Demo construct",
+          "note": "Added Crestline Logistics (3PL: 940, 945, 214), Maple Ridge Crafts (web EDI supplier), 812 chargebacks, 820 remittances, CARRIER_STATUS_CODE cross-reference, maps M-1009 to M-1012, and onboarding, mailbox, change request and schedule records in failed, rejected, expired and paused states. Returnable assets and e-invoices not added."
         },
         {
           "key": "TGCS-111",
@@ -145,6 +146,18 @@
           "reality": "Proposed",
           "desc": "The brief's seven-step journey (establish access, resolve partner, find exchange, add business meaning, inspect integration context, prepare change, track) as a scene set.",
           "accept": "Each step maps to a tool call visible in the trace."
+        },
+        {
+          "key": "TGCS-111",
+          "title": "Scenario library covering every tool",
+          "status": "Done",
+          "size": "L",
+          "source": "Omar request, Oct 2026",
+          "reality": "Prototype only",
+          "desc": "Executable scenarios for all 132 tools: happy path, filters, pagination, not found, ambiguous, access denied, isolation, partial evidence, validation and approval flows. Runs from the console (Context Services, Test scenarios) and from npm test.",
+          "accept": "Every tool has at least one scenario; all scenarios pass on seeded data; Run all restores seeded state.",
+          "note": "282 scenarios, 132 of 132 tools, all passing.",
+          "priority": null
         }
       ]
     },

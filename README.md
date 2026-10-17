@@ -43,3 +43,7 @@ npm test                          # tool-level checks for all 40 use cases
 | `PUBLIC_URL` | Base URL used in links | request host |
 
 Data resets when the service restarts.
+
+## Test scenarios
+
+282 executable scenarios cover all 132 tools: happy path, filters, pagination, not found, ambiguous input, access denied, tenant isolation, partial evidence, validation and approval flows. Run them in the console (Context Services, Test scenarios) or with `npm test`. Run all resets demo data before each scenario and restores it afterwards. Scenarios with an agent prompt can also be run through any published agent.

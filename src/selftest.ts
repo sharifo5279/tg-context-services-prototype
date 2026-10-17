@@ -11,7 +11,7 @@ function check(uc: string, cond: boolean, detail = "") {
 }
 const r = (o: any) => o.result;
 
-check("UC01 active partners", r(call("list_partners", { status: "ACTIVE" })).partners.length === 10);
+check("UC01 active partners", r(call("list_partners", { status: "ACTIVE" })).partners.length === 12);
 const amb = call("search_transactions", { partner: "Northfield" });
 check("UC02 ambiguous partner", amb.error?.code === "AMBIGUOUS_PARTNER" && amb.error.candidates.length === 2);
 check("UC03 addresses", r(call("search_trading_addresses", { company: "Coastline Apparel" })).tradingAddresses[0].tradingAddress.mdType === "VAN_INTERCONNECT");
