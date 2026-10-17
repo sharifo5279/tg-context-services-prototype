@@ -8,7 +8,7 @@ export type HostKey = "tg-aviator" | "aviator-studio" | "copilot-studio" | "gemi
 const BASE_OPS = [
   "access.read", "community.read", "connectivity.read", "services.read", "contacts.read", "workflow.read",
   "transaction.read", "transaction.payload.read", "map.read", "xref.read", "xref.export", "xref.write",
-  "request.read", "request.submit", "provisioning.submit", "dataproduct.read", "dataproduct.query", "dataproduct.export", "dataproduct.schedule",
+  "request.read", "request.submit", "provisioning.submit", "dataproduct.read", "dataproduct.query", "dataproduct.export", "dataproduct.schedule", "support.ticket.create", "agent.invoke",
 ];
 
 const EXT = (eco: string) => [eco, "Aviator AKS gateway", "TG Context Services (MCP)", "Trading Grid services"];

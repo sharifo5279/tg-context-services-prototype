@@ -45,6 +45,8 @@
   const STATUS_CLS = { "Live today": "ok", "On the roadmap": "info", Incubating: "warn", Prototype: "neutral" };
   const statusTag = (a) => `<span class="pill ${STATUS_CLS[a.status] ?? "neutral"}">${esc(a.status)}</span>`;
   const uc = (n) => S.meta.useCases.find((u) => u.n === n);
+  const promptOf = (n) => (typeof n === "number" ? uc(n).prompt : n);
+  const ucLabel = (n) => (typeof n === "number" ? `UC${n}` : "");
   const EXT = ["copilot-studio", "gemini-enterprise", "sap-joule", "claude-ui"];
 
   // ---------- markdown ----------
@@ -126,7 +128,7 @@
   }
   function chatView(c, opts = {}) {
     const a = agent(c.agentId);
-    const starters = !c.items.length && a.starters?.length ? `<div class="label" style="margin-top:0"><span>${esc(opts.startLabel ?? "Suggested")}</span></div><div class="starters">${a.starters.map((n) => `<button class="starter" data-run="${n}"><span class="ucn">UC${n}</span><span>${esc(uc(n).prompt)}</span></button>`).join("")}</div>` : "";
+    const starters = !c.items.length && a.starters?.length ? `<div class="label" style="margin-top:0"><span>${esc(opts.startLabel ?? "Suggested")}</span></div><div class="starters">${a.starters.map((n) => `<button class="starter" data-prompt="${esc(promptOf(n))}"><span class="ucn">${ucLabel(n)}</span><span>${esc(promptOf(n))}</span></button>`).join("")}</div>` : "";
     return `<div class="chat">${opts.top ?? ""}${starters}${c.items.map((m, mi) => renderItem(c, m, mi)).join("")}</div>
       <form class="composer" data-compose><textarea rows="1" placeholder="${esc(opts.placeholder ?? `Ask ${a.name}`)}" ${c.busy ? "disabled" : ""}></textarea><button class="btn primary" ${c.busy ? "disabled" : ""}>${ic("send")}Send</button></form>`;
   }
@@ -219,12 +221,34 @@
     { n: 5, where: "Aviator Studio", title: "Approve the change", text: "The approval card binds to the exact entry. After approval the agent applies it and returns a verified readback.", href: "/studio/agents/asn-exception/simulate" },
     { n: 6, where: "Trading Grid Context Services", title: "Inspect the service layer", text: "Every call is authorized and audited with client, principal, route and decision.", href: "/cs" },
     { n: 7, where: "External ecosystems", title: "Same context in Copilot Studio, Gemini, Joule and Claude", text: "Run the published agent through the Aviator AKS gateway. SAP Joule's service identity is denied payload access.", href: "/ext?eco=copilot-studio" },
+    { n: 8, where: "External ecosystems", title: "Claude calls Trading Grid agents", text: "In Claude with the connector on, ask a question. Claude calls Error Analysis Agent or Xref Checker Agent as tools; the agent runs inside Context Services and returns its evidence.", href: "/cs/agents" },
     { n: 8, where: "External ecosystems", title: "Connect Claude live", text: "Add the Claude connector URL and ask Claude directly. The calls appear in the service layer audit.", href: "/cs/clients" },
     { n: 9, where: "Trading Grid Online", title: "Suspend access and fail closed", text: "Suspend Copilot Studio in Agent access, rerun the request and show that no data is returned.", href: "/tgo/access" },
   ];
+  function pageBoundaries() {
+    const row = (a, b, c) => `<tr><td><strong>${esc(a)}</strong></td><td>${esc(b)}</td><td class="small muted">${esc(c)}</td></tr>`;
+    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Simulation boundaries</span><span class="tag">Prototype</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
+    <div class="journey"><h1>What is real and what is simulated</h1><p class="sub">This prototype runs on seeded retail data and is not connected to production Trading Grid.</p>
+    <div class="section-title">Working in this prototype</div><table class="t"><tbody>
+      ${row("Tool runtime", "95 Context Services tools execute against seeded data and return evidence envelopes.", "CMS fields follow the v2 to v5 Swagger exports.")}
+      ${row("Entitlements", "Organization, BUID, solution, operation, client suspension and agent blocks are enforced on every call.", "Fail closed.")}
+      ${row("Approvals", "Changes require prepare, approve, recheck and submit; plans are single use and expire.", "")}
+      ${row("Agents", "Agents run on Claude models with the tools listed on each agent.", "Answers come from the seeded data only.")}
+      ${row("MCP endpoint", "Real Streamable HTTP endpoint; Claude can connect and call tools and agents.", "Prototype tokens, not OAuth.")}
+    </tbody></table>
+    <div class="section-title">Simulated</div><table class="t"><tbody>
+      ${row("Trading Grid Online and TG Insights screens", "Layouts follow shipped screens; data is seeded.", "Not connected to production.")}
+      ${row("Aviator Studio", "Agent definition, simulate and deployments are demo constructs.", "Aviator Studio for Business Network is in incubation.")}
+      ${row("Aviator AKS gateway", "Shown as a route hop with a per-client call limit.", "Gateway behavior is owned by the central Aviator team.")}
+      ${row("External ecosystem screens", "Copilot Studio, Gemini Enterprise and SAP Joule are simulated clients.", "Claude can be connected for real.")}
+      ${row("Insights, Cartographer, Projects and TGDP contracts", "Response shapes are modeled from the incubation brief.", "Labeled on every tool.")}
+      ${row("Agent status", "Live today, on the roadmap and incubating labels follow the Aviator portfolio.", "Roadmap and incubating agents are not commitments.")}
+    </tbody></table></div>`;
+  }
+
   function pageJourney() {
     const col = (cls, label, items, sub) => `<div class="lane ${cls}"><div class="lh">${esc(label)}</div><div class="ls">${esc(sub)}</div>${items.map(([t, d, href]) => `<button class="lanecard" data-href="${href}"><strong>${esc(t)}</strong><span>${esc(d)}</span></button>`).join("")}</div>`;
-    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Trading Grid agent journey</span><span class="tag">Prototype</span></div><div class="spacer"></div>${avatar()}</header>
+    return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Trading Grid agent journey</span><span class="tag">Prototype</span></div><div class="spacer"></div><button class="btn ghost sm" data-href="/boundaries">${ic("shield")}Simulation boundaries</button><button class="btn ghost sm" data-demoreset>${ic("refresh")}Reset demo</button>${avatar()}</header>
     <div class="journey">
       <h1>One trading community, from Trading Grid Online to any agent ecosystem</h1>
       <p class="sub">Harborview Retail Group investigates a missing ship notice in Trading Grid Online. Then it runs the same investigation from Aviator Studio and from external agent platforms through Trading Grid Context Services.</p>
@@ -238,7 +262,7 @@
         ${col("", "External", EXT.map((k) => [hostBy(k).name, hostBy(k).authPattern, `/ext?eco=${k}`]), "Customer agent ecosystems")}
       </div>
       <div class="section-title">Demo script</div>
-      <div class="scenes">${SCENES.map((s) => `<div class="scene"><div class="sn">${s.n}</div><div class="sb"><div class="sw">${esc(s.where)}</div><div class="st">${esc(s.title)}</div><div class="sd">${esc(s.text)}</div></div><button class="btn sm" data-href="${s.href}">${ic("play")}Open</button></div>`).join("")}</div>
+      <div class="scenes">${SCENES.map((s, i) => ({ ...s, n: i + 1 })).map((s) => `<div class="scene"><div class="sn">${s.n}</div><div class="sb"><div class="sw">${esc(s.where)}</div><div class="st">${esc(s.title)}</div><div class="sd">${esc(s.text)}</div></div><button class="btn sm" data-href="${s.href}">${ic("play")}Open</button></div>`).join("")}</div>
       <p class="small muted" style="margin-top:20px">Prototype on seeded retail data. Not connected to production Trading Grid. Tool contracts are proposed.</p>
     </div>`;
   }
@@ -267,7 +291,7 @@
       intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><div class="avcard"><p>Welcome to Ask Aviator. The file you selected has been loaded.</p><p>Select one of the actions below to begin. Follow-up questions must relate only to this payload.</p>
         ${[["Create a tabulated view", "Create a tabulated view of the line items: quantities, units, prices and product codes, with totals."], ["Parse the data", "Parse the data segment by segment and explain each qualifier and code in plain language."], ["Summarize payload details", "Summarize the payload: document type and purpose, sender and receiver roles, and key references."]].map(([l, q]) => `<button class="avradio" data-avask="${esc(`${q} Transaction ${S.av.txId}.`)}"><span class="rb"></span>${l}</button>`).join("")}</div></div></div>`;
     } else {
-      intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><p style="margin:2px 0 8px">Hi! I'm Aviator. How can I help you today?</p>${!c.items.length && a.starters?.length ? `<div class="avsugg">${a.starters.map((n) => `<button data-run="${n}">${esc(uc(n).prompt)}</button>`).join("")}</div>` : ""}</div></div>`;
+      intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><p style="margin:2px 0 8px">Hi! I'm Aviator. How can I help you today?</p>${!c.items.length && a.starters?.length ? `<div class="avsugg">${a.starters.map((n) => `<button data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div>` : ""}</div></div>`;
     }
     return `<div class="avstream">${intro}${c.items.map((m, mi) => aviatorItem(c, m, mi)).join("")}</div>
       <form class="avcompose" data-compose><textarea rows="2" placeholder="Ask Aviator" ${c.busy ? "disabled" : ""}></textarea><button ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
@@ -403,9 +427,14 @@
         </tbody></table>
         <div class="section-title">Connected agent applications</div>
         <div style="overflow:auto"><table class="t"><thead><tr><th>Application</th><th>Exposure</th><th>Execution principal</th><th>Operations</th><th>Last used</th><th>Status</th><th></th></tr></thead><tbody>
-        ${ext.map((h) => { const st = S.meta.clientStatus[h.key] ?? "ACTIVE"; return `<tr><td><strong>${esc(h.name)}</strong><div class="small muted">${esc(h.authPattern)}</div></td><td class="small">${esc(h.exposure)}${h.exposure === "External" ? "<div class=\"muted\">via Aviator AKS gateway</div>" : ""}</td><td class="mono small">${esc(h.principal)}<div class="muted">${esc(h.principalType.replace("_", " ").toLowerCase())}</div></td><td>${h.operations.length} of 20</td><td class="small">${last[h.key] ? esc(new Date(last[h.key]).toLocaleTimeString()) : '<span class="muted">Not used</span>'}</td><td><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Active" : "Suspended"}</span></td><td>${st === "ACTIVE" ? `<button class="btn sm danger" data-suspend="${h.key}">Suspend access</button>` : `<button class="btn sm" data-restore="${h.key}">Restore access</button>`}</td></tr>`; }).join("")}
+        ${ext.map((h) => { const st = S.meta.clientStatus[h.key] ?? "ACTIVE"; return `<tr><td><strong>${esc(h.name)}</strong><div class="small muted">${esc(h.authPattern)}</div></td><td class="small">${esc(h.exposure)}${h.exposure === "External" ? "<div class=\"muted\">via Aviator AKS gateway</div>" : ""}</td><td class="mono small">${esc(h.principal)}<div class="muted">${esc(h.principalType.replace("_", " ").toLowerCase())}</div></td><td>${h.operations.length} of ${Math.max(...S.meta.hosts.map((x) => x.operations.length))}</td><td class="small">${last[h.key] ? esc(new Date(last[h.key]).toLocaleTimeString()) : '<span class="muted">Not used</span>'}</td><td><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Active" : "Suspended"}</span></td><td>${st === "ACTIVE" ? `<button class="btn sm danger" data-suspend="${h.key}">Suspend access</button>` : `<button class="btn sm" data-restore="${h.key}">Restore access</button>`}</td></tr>`; }).join("")}
         </tbody></table></div>
         <p class="small muted">Suspension takes effect on the next call. Context Services denies every operation for a suspended application.</p>
+        <div class="section-title">Agents available to each application</div>
+        <p class="sub" style="margin-top:0">Agents published by OpenText through Aviator Studio. Block an agent to stop one application from calling it.</p>
+        <div style="overflow:auto"><table class="t"><thead><tr><th>Agent</th><th>Status</th>${ext.map((h) => `<th>${esc(h.shortName)}</th>`).join("")}</tr></thead><tbody>
+        ${(S.deploy?.agents ?? []).filter((x) => Object.values(x.clients).some((c) => c.published)).map((x) => `<tr><td><strong>${esc(x.name)}</strong></td><td>${statusTag(x)}</td>${ext.map((h) => { const st = x.clients[h.key]; if (!st?.published) return '<td class="small muted">Not published</td>'; return `<td><button class="btn sm ${st.blocked ? "" : "ghost"}" data-blockagent="${h.key}|${x.agentId}" data-on="${st.blocked ? 0 : 1}">${st.blocked ? "Unblock" : "Block"}</button>${st.blocked ? ' <span class="pill bad">Blocked</span>' : ""}</td>`; }).join("")}</tr>`).join("")}
+        </tbody></table></div>
       </div>`;
     return shellTgo("portal", "Trading Grid Online", inner);
   }
@@ -418,7 +447,17 @@
     const n = a.tools === "ALL" ? S.meta.toolCount : a.tools.length;
     return `<div class="agentcard" data-href="/studio/agents/${a.id}"><div class="h"><div class="aico">${ic("agent")}</div><div><div class="nm">${esc(a.name)}</div><div class="small muted">${esc(a.persona)}</div></div><span style="margin-left:auto">${statusTag(a)}</span></div><div class="role">${esc(a.role)}</div><div class="meta"><span>${n} tools</span><span>Based on ${esc(a.inspiredBy[0].name)}</span></div></div>`;
   }
-  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Trading Grid Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio; prototype agents are demo-only.</p></div><div class="content"><div class="agentgrid">${studioAgents().map(agentCard).join("")}</div></div>`);
+  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Trading Grid Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio; prototype agents are demo-only.</p></div><div class="content">${["Live today", "On the roadmap", "Incubating", "Prototype"].map((st) => { const list = studioAgents().filter((a) => a.status === st); return list.length ? `<div class="section-title">${st} <span class="muted small">${list.length}</span></div><div class="agentgrid">${list.map(agentCard).join("")}</div>` : ""; }).join("")}</div>`);
+
+  function deploymentsView(a) {
+    const d = S.deploy?.agents.find((x) => x.agentId === a.id);
+    if (!d) return `<div class="empty">This agent is not publishable.</div>`;
+    return `<p class="sub" style="margin-top:0">Published agents appear as the MCP tool <span class="mono">${esc(d.toolName)}</span> for each selected client. The customer administrator can still block an agent per client in Trading Grid Online.</p>
+      ${a.status !== "Live today" ? `<div class="alert" style="margin:10px 0">${esc(a.status)} agent. External clients see it labeled as a preview.</div>` : ""}
+      <table class="t"><thead><tr><th>Client</th><th>Route</th><th>Published</th><th>Trading Grid Online</th><th></th></tr></thead><tbody>
+      ${S.deploy.clients.map((h) => { const st = d.clients[h]; const hh = hostBy(h); return `<tr><td><strong>${esc(hh.name)}</strong></td><td class="small">${esc(hh.route.join(" › "))}</td><td><span class="pill ${st.published ? "ok" : "neutral"}">${st.published ? "Published" : "Not published"}</span></td><td>${st.blocked ? '<span class="pill bad">Blocked by admin</span>' : '<span class="small muted">Allowed</span>'}</td><td><button class="btn sm ${st.published ? "danger" : ""}" data-publish="${a.id}|${h}" data-on="${st.published ? 0 : 1}">${st.published ? "Unpublish" : "Publish"}</button></td></tr>`; }).join("")}
+      </tbody></table>`;
+  }
 
   function resources(a, c) {
     const tools = a.tools === "ALL" ? S.tools.map((t) => t.name) : a.tools;
@@ -448,8 +487,8 @@
     return shellStudio(`<div class="pagehead"><div class="crumbs"><a data-href="/studio">Agents</a> / ${esc(a.name)}</div>
       <div class="titlerow"><h1>${esc(a.name)}</h1>${statusTag(a)}
         <div class="actions"><button class="btn" data-href="/ext?eco=copilot-studio&agent=${a.id}">${ic("globe")}Run in external ecosystem</button><button class="btn" data-newconv="${key}">${ic("refresh")}New conversation</button><button class="btn primary" data-href="/studio/agents/${a.id}/simulate">${ic("play")}Simulate</button></div></div>
-      <div class="tabs"><button class="tab ${tab !== "simulate" ? "active" : ""}" data-href="/studio/agents/${a.id}">${ic("doc")}Agent definition</button><button class="tab ${tab === "simulate" ? "active" : ""}" data-href="/studio/agents/${a.id}/simulate">${ic("play")}Simulate</button></div></div>
-      <div class="grid2"><div class="leftcol">${tab === "simulate" ? `<div data-conv="${key}">${mounts[key](c)}</div>` : def}</div><div class="rightcol" data-side="${key}">${resources(a, c)}</div></div>`);
+      <div class="tabs"><button class="tab ${!tab ? "active" : ""}" data-href="/studio/agents/${a.id}">${ic("doc")}Agent definition</button><button class="tab ${tab === "simulate" ? "active" : ""}" data-href="/studio/agents/${a.id}/simulate">${ic("play")}Simulate</button><button class="tab ${tab === "deployments" ? "active" : ""}" data-href="/studio/agents/${a.id}/deployments">${ic("globe")}Deployments</button></div></div>
+      <div class="grid2"><div class="leftcol">${tab === "simulate" ? `<div data-conv="${key}">${mounts[key](c)}</div>` : tab === "deployments" ? deploymentsView(a) : def}</div><div class="rightcol" data-side="${key}">${resources(a, c)}</div></div>`);
   }
 
   function pageStudioUseCases() {
@@ -468,12 +507,20 @@
       <button class="btn" data-href="/cs/clients">${ic("link")}Open Context Services console</button></div>`);
 
   // ---------- Context Services console ----------
-  const csNav = (p) => navList([{ g: null, items: [["home", "/cs", "Overview"]] }, { g: "Service", items: [["wrench", "/cs/tools", "Tools", S.meta.toolCount], ["server", "/cs/clients", "Clients and endpoint", S.meta.hosts.length - 1], ["shield", "/cs/access", "Access and audit"], ["check", "/cs/approvals", "Approvals", S.plans.filter((x) => x.status === "PENDING_APPROVAL").length || ""]] }], p);
+  const csNav = (p) => navList([{ g: null, items: [["home", "/cs", "Overview"]] }, { g: "Service", items: [["wrench", "/cs/tools", "Tools", S.meta.toolCount], ["agent", "/cs/agents", "Published agents"], ["server", "/cs/clients", "Clients and endpoint", S.meta.hosts.length - 1], ["shield", "/cs/access", "Access and audit"], ["check", "/cs/approvals", "Approvals", S.plans.filter((x) => x.status === "PENDING_APPROVAL").length || ""]] }], p);
   const shellCs = (inner) => shellStandard({ title: "Trading Grid Context Services", tag: "Service layer", nav: csNav(location.pathname), inner });
+
+  function pageCsAgents() {
+    const d = S.deploy;
+    return shellCs(`<div class="pagehead"><div class="titlerow"><h1>Published agents</h1></div><p class="sub">Aviator agents callable as MCP tools. Each run executes inside Context Services under the caller's grant, and every tool call is audited under the agent.</p></div>
+      <div class="content"><div style="overflow:auto"><table class="t"><thead><tr><th>Agent</th><th>MCP tool</th><th>Status</th>${d.clients.map((h) => `<th>${esc(hostBy(h).shortName)}</th>`).join("")}</tr></thead><tbody>
+      ${d.agents.map((x) => `<tr><td><strong>${esc(x.name)}</strong></td><td class="mono small">${esc(x.toolName)}</td><td>${statusTag(x)}</td>${d.clients.map((h) => { const st = x.clients[h]; return `<td>${st.blocked ? '<span class="pill bad">Blocked</span>' : st.published ? '<span class="pill ok">Published</span>' : '<span class="small muted">No</span>'}</td>`; }).join("")}</tr>`).join("")}
+      </tbody></table></div><p class="small muted">Publishing is managed in Aviator Studio, Deployments. Blocking is managed by the customer administrator in Trading Grid Online, Agent access. The Aviator AKS gateway limits agent calls per client.</p></div>`);
+  }
 
   function auditTable(rows) {
     return rows.length ? `<div style="overflow:auto"><table class="t"><thead><tr><th>Time</th><th>Route</th><th>Principal</th><th>Tool</th><th>Decision</th><th>Result</th><th>ms</th></tr></thead><tbody>
-      ${rows.map((a) => `<tr><td class="small">${esc(new Date(a.at).toLocaleTimeString())}</td><td class="small">${esc(a.route)}${a.channel === "mcp" ? ' <span class="pill info">MCP</span>' : ""}</td><td class="mono small">${esc(a.principal)}</td><td class="mono small">${esc(a.tool)}</td><td><span class="pill ${a.decision === "PERMIT" ? "ok" : "bad"}">${esc(a.decision)}</span></td><td class="small">${esc(a.status)}</td><td class="small">${a.ms}</td></tr>`).join("")}
+      ${rows.map((a) => `<tr><td class="small">${esc(new Date(a.at).toLocaleTimeString())}</td><td class="small">${esc(a.route)}${a.operation === "agent.invoke" ? ' <span class="pill info">Agent call</span>' : a.channel?.startsWith("agent:") ? ` <span class="pill neutral">via ${esc(agent(a.channel.slice(6))?.name ?? "agent")}</span>` : a.channel === "mcp" ? ' <span class="pill info">MCP</span>' : ""}</td><td class="mono small">${esc(a.principal)}</td><td class="mono small">${esc(a.tool)}</td><td><span class="pill ${a.decision === "PERMIT" ? "ok" : "bad"}">${esc(a.decision)}</span></td><td class="small">${esc(a.status)}</td><td class="small">${a.ms}</td></tr>`).join("")}
       </tbody></table></div>` : `<div class="empty">No calls recorded since the service started.</div>`;
   }
 
@@ -589,7 +636,8 @@
   // ---------- External ecosystems (simulated clients) ----------
   function pageExt() {
     const eco = EXT.includes(qs().get("eco")) ? qs().get("eco") : "copilot-studio";
-    const agentId = studioAgents().some((a) => a.id === qs().get("agent")) ? qs().get("agent") : "asn-exception";
+    const avail = studioAgents().filter((a) => S.deploy?.agents.find((x) => x.agentId === a.id)?.clients[eco]?.published && !S.deploy.agents.find((x) => x.agentId === a.id).clients[eco].blocked);
+    const agentId = avail.some((a) => a.id === qs().get("agent")) ? qs().get("agent") : (avail.find((a) => a.id === "error-resolution") ?? avail[0])?.id ?? "error-resolution";
     const h = hostBy(eco);
     const key = `ext:${eco}:${agentId}`;
     const c = conv(key, agentId, eco);
@@ -599,7 +647,7 @@
     return `<header class="topbar ext"><div class="brand"><span class="extmark">${ic("globe")}</span><span class="name">External ecosystem client</span><span class="tag">Simulated</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
       <div class="layout"><nav class="sidenav">${nav}<div class="foot">Simulated client surface. Calls are real MCP tool invocations through the Context Services runtime.</div></nav>
       <main class="main"><div class="pagehead"><div class="titlerow"><h1>${esc(h.name)}</h1><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Connected" : "Suspended in Trading Grid Online"}</span>
-        <div class="actions"><select class="select" data-extagent>${studioAgents().map((a) => `<option value="${a.id}" ${a.id === agentId ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select><button class="btn" data-newconv="${key}">${ic("refresh")}New conversation</button></div></div>
+        <div class="actions"><select class="select" data-extagent>${avail.map((a) => `<option value="${a.id}" ${a.id === agentId ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select><button class="btn" data-newconv="${key}">${ic("refresh")}New conversation</button></div></div>
         <div class="routebar">${ic("route")}${h.route.map((r, i) => `<span class="${i === 1 ? "gw" : i === 2 ? "cs" : ""}">${esc(r)}</span>`).join('<span class="sep">›</span>')}</div>
         <div class="kv" style="margin-top:10px"><span class="k">Authentication</span><span>${esc(h.authPattern)}</span><span class="k">Principal</span><span class="mono">${esc(h.principal)} (${esc(h.principalType.replace("_", " ").toLowerCase())})</span>${h.note ? `<span class="k">Note</span><span>${esc(h.note)}</span>` : ""}</div>
         ${eco === "claude-ui" ? `<div class="alert" style="margin-top:12px">For a live connection, add the Claude UI connector URL from <a data-href="/cs/clients">Clients and endpoint</a> as a custom connector in Claude.</div>` : ""}
@@ -620,18 +668,20 @@
       if (qs().get("aviator") === "1" && S.lastAv !== location.search) { S.lastAv = location.search; S.av.open = true; S.av.agentId = "tg-aviator"; }
       html = await pageTgoInsights();
     }
-    else if (p === "/tgo/access") { S.audit = await api("/api/audit"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageTgoAccess(); }
+    else if (p === "/tgo/access") { S.deploy = await api("/api/deployments"); S.audit = await api("/api/audit"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageTgoAccess(); }
     else if (p === "/studio") html = pageStudioAgents();
-    else if (p.startsWith("/studio/agents/")) { const [, , , id, tab] = p.split("/"); html = pageStudioAgent(id, tab); }
+    else if (p.startsWith("/studio/agents/")) { const [, , , id, tab] = p.split("/"); if (tab === "deployments") S.deploy = await api("/api/deployments"); html = pageStudioAgent(id, tab); }
     else if (p === "/studio/use-cases") html = pageStudioUseCases();
     else if (p === "/studio/mcp") html = pageStudioMcp();
     else if (p === "/cs") { S.audit = await api("/api/audit"); html = pageCsOverview(); }
     else if (p === "/cs/tools") html = pageCsTools();
+    else if (p === "/cs/agents") { S.deploy = await api("/api/deployments"); html = pageCsAgents(); }
+    else if (p === "/boundaries") html = pageBoundaries();
     else if (p === "/cs/clients") { S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageCsClients(); }
     else if (p === "/cs/access") { S.audit = await api("/api/audit"); html = pageCsAccess(); }
     else if (p === "/cs/approvals") { S.plans = await api("/api/plans"); html = pageCsApprovals(); }
     else if (p.startsWith("/approve/")) { S.plans = await api("/api/plans"); html = await pageApprove(p.split("/")[2]); }
-    else if (p === "/ext") { S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageExt(); }
+    else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageExt(); }
     else html = shellCs(`<div class="content"><div class="empty">Page not found.</div></div>`);
     app.innerHTML = html;
     if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; S.txTab = "details"; return render(); }
@@ -643,7 +693,7 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-run],[data-runuc],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.copy) { navigator.clipboard?.writeText(d.copy); const o = t.textContent; t.textContent = "Copied"; setTimeout(() => (t.textContent = o), 1200); return; }
@@ -668,7 +718,10 @@
     if (d.step) { const key = keyOf(t); const [mi, si] = d.step.split(":").map(Number); const s = S.convs[key].items[mi].steps[si]; s.open = !s.open; return refreshConv(key); }
     if (d.approve) { t.disabled = true; return decide(d.approve, true, keyOf(t)); }
     if (d.reject) return decide(d.reject, false, keyOf(t));
-    if (d.run) { const key = keyOf(t); return send(key, uc(Number(d.run)).prompt); }
+    if (d.prompt) { const key = keyOf(t); return send(key, d.prompt); }
+    if (d.publish) { const [agentId, host] = d.publish.split("|"); S.deploy = await api("/api/deployments", { method: "POST", body: { agentId, host, published: t.dataset.on === "1" } }); return render(); }
+    if (d.blockagent) { const [host, agentId] = d.blockagent.split("|"); await api(`/api/clients/${host}/agents/${agentId}`, { method: "POST", body: { blocked: t.dataset.on === "1" } }); return render(); }
+    if (d.demoreset != null) { if (!confirm("Reset the demo to its seeded state? Approvals, changes, suspensions, conversations and the audit log are cleared.")) return; await api("/api/demo/reset", { method: "POST" }); S.convs = {}; S.plans = []; S.av.open = false; S.txOpen = null; t.textContent = "Demo reset"; setTimeout(render, 600); return; }
     if (d.runuc) { const u = uc(Number(d.runuc)); go(`/studio/agents/${u.agent === "tg-aviator" ? "context-assistant" : u.agent}/simulate`); return setTimeout(() => send(`studio:${u.agent}`, u.prompt), 0); }
     if (d.href) return go(d.href);
   });

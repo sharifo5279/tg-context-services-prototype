@@ -97,12 +97,13 @@
     {
      "key": "TGCS-108",
      "title": "Demo reset control",
-     "status": "Proposed",
+     "status": "Done",
      "size": "S",
      "source": "Recording readiness",
      "desc": "Reset approvals, cross-reference changes, suspensions and conversations between takes.",
      "accept": "One action restores the seeded state.",
-     "reality": "Demo construct"
+     "reality": "Demo construct",
+     "note": "Reset demo on the journey page restores seeded state."
     },
     {
      "key": "TGCS-109",
@@ -127,12 +128,13 @@
     {
      "key": "TGCS-111",
      "title": "Simulation boundaries notice",
-     "status": "Ready",
+     "status": "Done",
      "size": "S",
      "source": "Omar: grounded in reality",
      "reality": "Demo construct",
      "desc": "One page listing what is real (tool runtime, entitlement checks, approvals, MCP endpoint) and what is simulated (Aviator Studio, AKS gateway, external UIs, source contracts, OAuth).",
-     "accept": "Linked from the journey and every simulated surface."
+     "accept": "Linked from the journey and every simulated surface.",
+     "note": "Simulation boundaries page linked from the journey."
     },
     {
      "key": "TGCS-112",
@@ -189,7 +191,8 @@
      "source": "Brief: Trading Grid Online control point",
      "desc": "Grant scope, connected agent applications, suspend and restore.",
      "accept": "Suspended client fails closed on the next call.",
-     "reality": "Proposed"
+     "reality": "Proposed",
+     "note": "Agent blocks per application added to Agent access."
     },
     {
      "key": "TGCS-205",
@@ -341,32 +344,35 @@
     {
      "key": "TGCS-303",
      "title": "Transaction Finder Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Aviator portfolio, live today",
      "desc": "Find transactions from a question on the Transactions page and apply the filters.",
      "accept": "Question sets facets and returns matching rows.",
-     "reality": "Shipped"
+     "reality": "Shipped",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     },
     {
      "key": "TGCS-304",
      "title": "Knowledge Agent with client procedures",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Knowledge agent",
      "desc": "General Trading Grid knowledge plus Harborview procedures, client rules first.",
      "accept": "Answers how to request a new map with Community Projects steps.",
-     "reality": "Shipped"
+     "reality": "Shipped",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     },
     {
      "key": "TGCS-305",
      "title": "Support Ticket Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "S",
      "source": "Guide: Auto create support ticket",
      "desc": "Turn a conversation into a support ticket with full context.",
      "accept": "Ticket summary lists transaction IDs and checks performed.",
-     "reality": "Shipped"
+     "reality": "Shipped",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     },
     {
      "key": "TGCS-306",
@@ -381,42 +387,46 @@
     {
      "key": "TGCS-307",
      "title": "Daily Summarizer and Explainer agents in CCIM",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Daily digest, Explain with Aviator",
      "desc": "Daily digest of volume, errors, onboarding and anomalies; one-click findings on projections.",
      "accept": "Digest flags the Brightwell 856 anomaly and Summit 997 gap.",
-     "reality": "Shipped"
+     "reality": "Shipped",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     },
     {
      "key": "TGCS-308",
      "title": "Map Inventory and Map-level Intelligence agents",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Cartographer agents",
      "desc": "Inventory questions across maps and quick facts on the selected map, with links to source.",
      "accept": "Answers maps modified in 12 months and who owns BWHG_856.",
-     "reality": "Shipped"
+     "reality": "Shipped",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     },
     {
      "key": "TGCS-309",
      "title": "Mapping Rule Explorer Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Mapping rule explorer, built for Contivo",
      "desc": "Explain a target field's rule condition by condition with a sample.",
      "accept": "Explains how ship-to resolves through STORE_TO_GLN in map v7.",
-     "reality": "Shipped"
+     "reality": "Shipped",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     },
     {
      "key": "TGCS-310",
      "title": "Explainer Agent on projections",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "S",
      "source": "Guide: Aviator portfolio, live today",
      "reality": "Shipped",
      "desc": "Coverage gaps, related anomalies and working projections as labeled findings; split from TGCS-307 to match the portfolio list.",
-     "accept": "Findings labeled by type as in Explain with Aviator."
+     "accept": "Findings labeled by type as in Explain with Aviator.",
+     "note": "Agent built and published as an MCP tool; in-app placement pending."
     }
    ]
   },
@@ -522,22 +532,24 @@
     {
      "key": "TGCS-602",
      "title": "Configuration Resolution Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Aviator portfolio, roadmap",
      "desc": "Resolve unknown sender or receiver and delivery issues against addresses, qualifiers and map assignment.",
      "accept": "Explains a misrouted Coastline 810 through the VAN interconnect.",
-     "reality": "Roadmap"
+     "reality": "Roadmap",
+     "note": "Agent built with status label; scenario wiring pending. Publish in Aviator Studio, Deployments."
     },
     {
      "key": "TGCS-603",
      "title": "EDI Document Analyzer Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Guide: Aviator portfolio, roadmap",
      "desc": "Validate missing or invalid elements against document rules and the payload.",
      "accept": "Identifies IT104 decimal separator issue on Northfield invoices.",
-     "reality": "Roadmap"
+     "reality": "Roadmap",
+     "note": "Agent built with status label; scenario wiring pending. Publish in Aviator Studio, Deployments."
     },
     {
      "key": "TGCS-604",
@@ -569,22 +581,24 @@
     {
      "key": "TGCS-702",
      "title": "Xref Checker Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "S",
      "source": "Guide: Aviator portfolio, incubating",
      "desc": "Check cross-reference tables used by a failing map; propose the missing entry.",
      "accept": "Finds STORE_TO_GLN 0412 gap without a hint.",
-     "reality": "Incubating"
+     "reality": "Incubating",
+     "note": "Agent built with status label; scenario wiring pending. Publish in Aviator Studio, Deployments."
     },
     {
      "key": "TGCS-703",
      "title": "Error Triage Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "S",
      "source": "Guide: Aviator portfolio, incubating",
      "desc": "Classify each failed transaction and save the triage result.",
      "accept": "Overnight failures tagged by error family.",
-     "reality": "Incubating"
+     "reality": "Incubating",
+     "note": "Agent built with status label; scenario wiring pending. Publish in Aviator Studio, Deployments."
     },
     {
      "key": "TGCS-704",
@@ -609,12 +623,13 @@
     {
      "key": "TGCS-706",
      "title": "Connection Health Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "S",
      "source": "Guide: Aviator portfolio, incubating",
      "desc": "Read timeouts and delivery errors against connection status and reprocess history.",
      "accept": "Explains the Atlas Toy AS2 MDN timeout.",
-     "reality": "Incubating"
+     "reality": "Incubating",
+     "note": "Agent built with status label; scenario wiring pending. Publish in Aviator Studio, Deployments."
     },
     {
      "key": "TGCS-707",
@@ -629,12 +644,13 @@
     {
      "key": "TGCS-708",
      "title": "Remediation Advisor Agent",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "S",
      "source": "Guide: Aviator portfolio, incubating",
      "desc": "Recommend the corrective action per error family.",
      "accept": "Each finding has an owner and next step.",
-     "reality": "Incubating"
+     "reality": "Incubating",
+     "note": "Agent built with status label; scenario wiring pending. Publish in Aviator Studio, Deployments."
     },
     {
      "key": "TGCS-709",
@@ -953,12 +969,13 @@
     {
      "key": "TGCS-906",
      "title": "Deployments and publishing to ecosystems",
-     "status": "Proposed",
+     "status": "Done",
      "size": "M",
      "source": "Guide: Use agents where people already work",
      "desc": "Publish an agent through the AKS gateway to Copilot Studio, Gemini, Joule and Claude.",
      "accept": "Published agent appears as an MCP prompt for each client.",
-     "reality": "Incubating"
+     "reality": "Incubating",
+     "note": "Deployments tab per agent; live-today agents published by default."
     },
     {
      "key": "TGCS-907",
@@ -1030,12 +1047,13 @@
     {
      "key": "TGCS-1005",
      "title": "AKS gateway behavior",
-     "status": "Proposed",
+     "status": "In progress",
      "size": "M",
      "source": "Omar: central Aviator gateway",
      "desc": "Token exchange, rate and cost limits and gateway request IDs in the trace.",
      "accept": "Gateway rejects over-limit calls with a clear message.",
-     "reality": "Proposed"
+     "reality": "Proposed",
+     "note": "Per-client agent call limit done; token exchange and gateway request IDs pending."
     },
     {
      "key": "TGCS-1006",
@@ -1070,12 +1088,13 @@
     {
      "key": "TGCS-1009",
      "title": "Agent-to-agent calls through Context Services",
-     "status": "Proposed",
+     "status": "Done",
      "size": "M",
      "source": "Guide: Answers without a support ticket; Brief: Gemini A2A",
      "reality": "Roadmap",
      "desc": "A client's own agent calls a published Trading Grid agent (MCP prompt or A2A) on governed data with its own audit trail.",
-     "accept": "Call chain shows client agent, Trading Grid agent and tools."
+     "accept": "Call chain shows client agent, Trading Grid agent and tools.",
+     "note": "Published agents are MCP tools; runs execute in Context Services under the caller's grant."
     },
     {
      "key": "TGCS-1010",

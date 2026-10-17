@@ -7,6 +7,7 @@ import { projectsTools, crView, provView } from "./projects.js";
 import { tgdpTools, queries, exports } from "./tgdp.js";
 import { ok, fail, deny, checkOperation, hostOf, GRANT, PERSONA, Ctx } from "../runtime.js";
 import { changeRequests, provisionings } from "../data/other.js";
+import { aviatorTools } from "./aviator.js";
 
 const A = "Trading Grid Context Services";
 let ALL: ToolDef[] = [];
@@ -81,7 +82,8 @@ const accessTools: ToolDef[] = [
 ALL = [...accessTools, ...insightsTools, ...cmsTools, ...cartographerTools, ...projectsTools, ...tgdpTools];
 
 export const TOOLS = ALL;
-export const toolByName = (n: string) => ALL.find((t) => t.name === n);
+export const AGENT_ONLY = aviatorTools;
+export const toolByName = (n: string) => ALL.find((t) => t.name === n) ?? aviatorTools.find((t) => t.name === n);
 
 export type AuditEntry = { at: string; route: string; host: string; principal: string; sessionId: string; channel: string; tool: string; operation: string; decision: string; status: string; ms: number; args: any };
 export const audit: AuditEntry[] = [];

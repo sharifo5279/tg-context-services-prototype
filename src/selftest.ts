@@ -105,5 +105,18 @@ check("Denial: other BUID", call("get_company", { company: "C10023002" }).status
 check("Denial: billing not granted", call("get_billing_profile").status === "DENIED");
 check("Scope before discovery", r(call("search_companies", { query: "Lakeshore" })).candidates.length === 0);
 
+// Agent services and publishing
+check("Knowledge: Harborview procedure first", r(call("search_knowledge", { query: "ASN failed missing cross-reference procedure" })).results[0].id === "KB-HRG-201");
+check("Map rule: ship-to lookup", r(call("get_map_rule", { map: "BWHG_856_4010_IN", target_field: "ship-to" })).rules[0].ruleId === "R-1001-ST-07");
+check("Connection health: Atlas down", r(call("get_connection_status", { partner: "Atlas Toy" })).status === "DOWN");
+check("Support ticket created", r(call("create_support_ticket", { summary: "Atlas AS2 outage", details: "MDN timeouts" })).ticketId.startsWith("CS-"));
+const dep = await import("./deployments.js");
+check("Live agents published to Claude", dep.agentsFor("claude-ui").some((a: any) => a.id === "error-resolution") && dep.agentsFor("claude-ui").every((a: any) => a.status === "Live today"));
+check("Incubating agents not published by default", !dep.agentsFor("copilot-studio").some((a: any) => a.id === "xref-checker"));
+check("Agent tool names", dep.toolNameFor("xref-checker") === "xref_checker_agent" && dep.toolNameFor("error-resolution") === "error_analysis_agent");
+dep.blocked["sap-joule"].add("error-resolution");
+check("Admin block removes agent", !dep.agentsFor("sap-joule").some((a: any) => a.id === "error-resolution"));
+dep.resetDeployments();
+
 console.log(`\n${pass} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

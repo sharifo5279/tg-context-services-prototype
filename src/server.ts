@@ -4,11 +4,15 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { runTurn, resetSession, MODEL, apiKeyConfigured } from "./agent.js";
+import { runTurn, resetSession, resetAllSessions, MODEL, apiKeyConfigured } from "./agent.js";
+import { agentsFor, deploymentState, published, blocked, resetDeployments, CLIENT_KEYS } from "./deployments.js";
+import { changeRequests, provisionings, deliverySchedules } from "./data/other.js";
+import { tickets } from "./tools/aviator.js";
+import { queries } from "./tools/tgdp.js";
 import { catalog, invoke, audit, TOOLS } from "./tools/index.js";
 import { HOSTS, GRANT, PERSONA, plans, decidePlan, clientStatus, scopeFilter, HostKey } from "./runtime.js";
 import { AGENTS, USE_CASES } from "./agents.js";
-import { handleMcp, hostForToken, tokenFor } from "./mcp.js";
+import { handleMcp, hostForToken, tokenFor, resetGateway } from "./mcp.js";
 import { txById, renderPayload, transactions, STATUS_TEXT } from "./data/insights.js";
 import { exports } from "./tools/tgdp.js";
 import { xrefEntities } from "./data/other.js";
@@ -92,6 +96,10 @@ app.post("/api/chat", async (req, res) => {
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
   const emit = (e: any) => res.write(JSON.stringify(e) + "\n");
+  if (HOSTS[host as HostKey].exposure === "External" && !agentsFor(host).some((a) => a.id === agentId)) {
+    emit({ type: "error", message: `This agent is not available to ${HOSTS[host as HostKey].name}. Publish it in Aviator Studio, Deployments, or unblock it in Trading Grid Online, Agent access.` });
+    return res.end();
+  }
   try { await runTurn({ sessionId, host, agentId, message, baseUrl: baseUrl(req) }, emit); }
   catch (e: any) { emit({ type: "error", message: String(e?.message ?? e) }); }
   res.end();
@@ -140,6 +148,33 @@ app.get("/api/tgo/transactions/:id", (req, res) => {
   const { _t, ...rest } = t;
   const related = t.refs.poNumber ? transactions.filter((x) => x.transactionId !== t.transactionId && (x.refs.poNumber === t.refs.poNumber || x.refs.ackForTransactionId === t.transactionId)).sort((a, b) => a._t - b._t).map(tgoRow) : transactions.filter((x) => x.refs.ackForTransactionId === t.transactionId).map(tgoRow);
   res.json({ ...rest, related, translated: t.payloadVariants.includes("TRANSLATED") ? renderPayload(t, "TRANSLATED") : null, row: tgoRow(t), statusText: STATUS_TEXT[t.sourceStatus], ack: ack ? { transactionId: ack.transactionId, documentType: ack.documentType, status: ack.ack?.status, code: ack.ack?.code, receivedAt: ack.receivedAt } : null, payloadPreview: renderPayload(t, "ORIGINAL") });
+});
+
+app.get("/api/deployments", (_req, res) => res.json({ clients: CLIENT_KEYS, agents: deploymentState() }));
+app.post("/api/deployments", (req, res) => {
+  const { agentId, host, published: on } = req.body ?? {};
+  if (!published[agentId] || !CLIENT_KEYS.includes(host)) return res.status(400).json({ error: "Unknown agent or client." });
+  if (on) published[agentId].add(host); else published[agentId].delete(host);
+  res.json({ agents: deploymentState() });
+});
+app.post("/api/clients/:key/agents/:agentId", (req, res) => {
+  const k = req.params.key as HostKey;
+  if (!blocked[k]) return res.status(404).json({ error: "Client not found." });
+  if (req.body?.blocked) blocked[k].add(req.params.agentId); else blocked[k].delete(req.params.agentId);
+  res.json({ agents: deploymentState() });
+});
+
+// Demo reset: restore seeded state between recordings.
+const SNAP = { cr: JSON.stringify(changeRequests), pv: JSON.stringify(provisionings), ds: JSON.stringify(deliverySchedules), xref: JSON.stringify(xrefEntities) };
+app.post("/api/demo/reset", (_req, res) => {
+  plans.clear(); audit.length = 0; tickets.length = 0; queries.clear(); exports.clear();
+  resetAllSessions(); resetGateway(); resetDeployments();
+  for (const k of Object.keys(clientStatus)) delete (clientStatus as any)[k];
+  changeRequests.splice(0, changeRequests.length, ...JSON.parse(SNAP.cr));
+  provisionings.splice(0, provisionings.length, ...JSON.parse(SNAP.pv));
+  deliverySchedules.splice(0, deliverySchedules.length, ...JSON.parse(SNAP.ds));
+  const x = JSON.parse(SNAP.xref); for (const k of Object.keys(x)) (xrefEntities as any)[k] = x[k];
+  res.json({ ok: true, resetAt: new Date().toISOString() });
 });
 
 app.get("/api/backlog", (_req, res) => {
