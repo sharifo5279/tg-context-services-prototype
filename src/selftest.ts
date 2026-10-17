@@ -105,6 +105,37 @@ check("Denial: other BUID", call("get_company", { company: "C10023002" }).status
 check("Denial: billing not granted", call("get_billing_profile").status === "DENIED");
 check("Scope before discovery", r(call("search_companies", { query: "Lakeshore" })).candidates.length === 0);
 
+
+// Application endpoints: CCIM, TG Insights, CCPM
+check("CCIM digest", r(call("ccim_get_daily_digest")).anomaliesDetected.some((a: any) => a.partner === "Summit Beverage Co"));
+check("CCIM coverage gap", r(call("ccim_list_watchlists")).watchlists.some((w: any) => w.watchlistId === "WL-05" && !w.anomalyDetection));
+check("CCIM inactive partners", r(call("ccim_list_trading_community", { status: "INACTIVE" })).partners.some((p: any) => p.partner.startsWith("Redline")));
+check("CCIM dormant document types", r(call("ccim_get_document_type_analysis", {})).dormantCount > 0);
+check("TGI facets", r(call("tgi_get_facets", {})).deliveryStatus.FAIL > 0);
+const shId = call("get_transaction", { key_value: "SH-77155" }).result.transactionId;
+check("TGI processing flow", r(call("tgi_get_processing_flow", { transaction_id: shId })).steps.some((x: any) => x.status === "FAILED" && x.error?.code === "XREF-404"));
+check("TGI business document denied for SAP Joule", call("tgi_get_business_document", { transaction_id: shId }, sap).status === "DENIED");
+check("TGI redelivery rejects non-delivery failure", call("tgi_redeliver_transactions", { transaction_ids: [shId] }).status === "ERROR");
+const other = await import("./data/other.js");
+const saved0412 = other.xrefEntities.STORE_TO_GLN.entries["0412"]; delete other.xrefEntities.STORE_TO_GLN.entries["0412"];
+const rp1 = call("tgi_reprocess_transaction", { transaction_id: shId });
+decidePlan(rp1.result.planId, true, "selftest");
+check("TGI reprocess fails before fix", r(call("tgi_reprocess_transaction", { plan_id: rp1.result.planId })).result === "FAILED_AGAIN");
+other.xrefEntities.STORE_TO_GLN.entries["0412"] = saved0412 ?? { gln: "0614141000418", locationName: "DC 0412 Greensboro", locationType: "DC", active: "Y" };
+const rp2 = call("tgi_reprocess_transaction", { transaction_id: shId });
+decidePlan(rp2.result.planId, true, "selftest");
+check("TGI reprocess succeeds after xref fix", r(call("tgi_reprocess_transaction", { plan_id: rp2.result.planId })).result === "DELIVERED");
+check("CCPM four monitor agents", r(call("ccpm_list_monitor_agents")).agents.map((a: any) => a.name).join() === "Nora,Lex,Liz,Reese");
+check("CCPM Lex finds Summit 997 breach", r(call("ccpm_list_findings", { rule_id: "R-LEX-01", partner: "Summit Beverage" })).total >= 3);
+const fnd = r(call("ccpm_list_findings", { agent: "lex" })).findings[0];
+check("CCPM chain of reasoning", r(call("ccpm_get_finding", { finding_id: fnd.findingId })).chainOfReasoning.length === 4);
+check("CCPM triage assigns", r(call("ccpm_update_finding", { finding_id: fnd.findingId, assignee: "buying.desk@harborview.example" })).status === "ASSIGNED");
+check("CCPM rule deploy requires approval", call("ccpm_create_rule", { agent: "lex", name: "855 in 24h", type: "ACK_WITHIN_HOURS", params: { documentType: "850", ackType: "855", hours: 24 } }).status === "APPROVAL_REQUIRED");
+check("CCPM scorecard", r(call("ccpm_get_scorecard", { partner: "Summit Beverage" })).kpis.length === 5);
+const apps = await import("./tools/apps.js");
+apps.resetApps();
+check("Demo reset restores reprocessed ASN", call("get_transaction", { key_value: "SH-77155" }).result.sourceStatus === "FAIL");
+
 // Agent services and publishing
 check("Knowledge: Harborview procedure first", r(call("search_knowledge", { query: "ASN failed missing cross-reference procedure" })).results[0].id === "KB-HRG-201");
 check("Map rule: ship-to lookup", r(call("get_map_rule", { map: "BWHG_856_4010_IN", target_field: "ship-to" })).rules[0].ruleId === "R-1001-ST-07");

@@ -14,7 +14,8 @@ A working prototype of Trading Grid exposed as governed MCP tools for customer a
 
 ## Contents
 
-- **95 MCP tools** from the incubation brief across Community Management, TG Insights, Cartographer, Community Projects and Provisioning, and Data Explorer over Trading Grid Data Platform. CMS response fields follow the v2 to v5 Swagger exports. Other products use modeled contracts, and each tool is labeled with its contract basis.
+- **128 MCP tools**: 95 from the incubation brief across Community Management, TG Insights, Cartographer, Community Projects and Provisioning, and Data Explorer over Trading Grid Data Platform. CMS response fields follow the v2 to v5 Swagger exports. Other products use modeled contracts, and each tool is labeled with its contract basis. 33 application tools cover Command Center Integration Monitor (11), TG Insights application features (11) and Command Center Performance Monitor (11, incubation), modeled on the Innovation Guide.
+- **Every Aviator Studio agent is published to every external client by default** and appears as an MCP tool. Unpublish in Studio Deployments or a block in Trading Grid Online Agent access removes it.
 - **Evidence envelope** on every response: source references, observed time, freshness, completeness, missing evidence and the access decision.
 - **Entitlements:** organization, BUID, solution and operation checks on every call. The SAP Joule service identity does not hold payload access.
 - **Approval-gated changes:** every change goes through prepare, approve, recheck, submit and track. Each approval is bound to one plan's exact parameters, can be used once and expires after 30 minutes.

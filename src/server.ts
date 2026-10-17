@@ -16,6 +16,7 @@ import { handleMcp, hostForToken, tokenFor, resetGateway } from "./mcp.js";
 import { txById, renderPayload, transactions, STATUS_TEXT } from "./data/insights.js";
 import { exports } from "./tools/tgdp.js";
 import { xrefEntities } from "./data/other.js";
+import { resetApps } from "./tools/apps.js";
 
 const PASSWORD = process.env.DEMO_PASSWORD || "OpenText1000!";
 const SIGN = process.env.MCP_SECRET || PASSWORD;
@@ -168,7 +169,7 @@ app.post("/api/clients/:key/agents/:agentId", (req, res) => {
 const SNAP = { cr: JSON.stringify(changeRequests), pv: JSON.stringify(provisionings), ds: JSON.stringify(deliverySchedules), xref: JSON.stringify(xrefEntities) };
 app.post("/api/demo/reset", (_req, res) => {
   plans.clear(); audit.length = 0; tickets.length = 0; queries.clear(); exports.clear();
-  resetAllSessions(); resetGateway(); resetDeployments();
+  resetAllSessions(); resetGateway(); resetDeployments(); resetApps();
   for (const k of Object.keys(clientStatus)) delete (clientStatus as any)[k];
   changeRequests.splice(0, changeRequests.length, ...JSON.parse(SNAP.cr));
   provisionings.splice(0, provisionings.length, ...JSON.parse(SNAP.pv));

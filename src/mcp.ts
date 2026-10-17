@@ -53,7 +53,7 @@ export function hostForToken(token?: string | null): HostKey | null {
 }
 
 function buildServer(ctx: Ctx) {
-  const server = new Server({ name: "trading-grid-context-services", version: "0.1.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Services (prototype, seeded data). Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
+  const server = new Server({ name: "trading-grid-context-services", version: "0.2.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Services (prototype, seeded data). Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [...(checkOperation(ctx, "agent.invoke") ? [] : agentsFor(ctx.host).map(agentToolDef)), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({

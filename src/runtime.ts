@@ -9,6 +9,7 @@ const BASE_OPS = [
   "access.read", "community.read", "connectivity.read", "services.read", "contacts.read", "workflow.read",
   "transaction.read", "transaction.payload.read", "map.read", "xref.read", "xref.export", "xref.write",
   "request.read", "request.submit", "provisioning.submit", "dataproduct.read", "dataproduct.query", "dataproduct.export", "dataproduct.schedule", "support.ticket.create", "agent.invoke",
+  "ccim.read", "tgi.read", "tgi.configure", "tgi.redeliver", "ccpm.read", "ccpm.triage", "ccpm.write",
 ];
 
 const EXT = (eco: string) => [eco, "Aviator AKS gateway", "TG Context Services (MCP)", "Trading Grid services"];
@@ -76,7 +77,7 @@ export const GRANT = {
   buids: [HUB_BUID],
   solutions: [SOLUTION_ID, CARTO_SOLUTION, "TGDP-HRG"],
   dataProducts: ["tgdp.transaction_activity", "tgdp.partner_directory", "tgdp.relationship_network", "tgdp.ccim_integration_events"],
-  approvalRequiredFor: ["request.submit", "provisioning.submit", "xref.write", "dataproduct.schedule"],
+  approvalRequiredFor: ["request.submit", "provisioning.submit", "xref.write", "dataproduct.schedule", "tgi.redeliver", "ccpm.write"],
   status: "ACTIVE",
   grantedBy: "hrg.tgo.admin",
   grantedAt: "2026-10-05T14:00:00Z",

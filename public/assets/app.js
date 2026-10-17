@@ -230,7 +230,7 @@
     return `<header class="topbar"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">Simulation boundaries</span><span class="tag">Prototype</span></div><div class="spacer"></div>${journeyBtn}${avatar()}</header>
     <div class="journey"><h1>What is real and what is simulated</h1><p class="sub">This prototype runs on seeded retail data and is not connected to production Trading Grid.</p>
     <div class="section-title">Working in this prototype</div><table class="t"><tbody>
-      ${row("Tool runtime", "95 Context Services tools execute against seeded data and return evidence envelopes.", "CMS fields follow the v2 to v5 Swagger exports.")}
+      ${row("Tool runtime", `${S.tools.length} Context Services tools execute against seeded data and return evidence envelopes: 95 from the incubation brief and ${S.tools.length - 95} application tools for Command Center Integration Monitor, TG Insights and Command Center Performance Monitor.`, "CMS fields follow the v2 to v5 Swagger exports. Application tools are modeled on the Innovation Guide.")}
       ${row("Entitlements", "Organization, BUID, solution, operation, client suspension and agent blocks are enforced on every call.", "Fail closed.")}
       ${row("Approvals", "Changes require prepare, approve, recheck and submit; plans are single use and expire.", "")}
       ${row("Agents", "Agents run on Claude models with the tools listed on each agent.", "Answers come from the seeded data only.")}

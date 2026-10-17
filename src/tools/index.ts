@@ -8,6 +8,7 @@ import { tgdpTools, queries, exports } from "./tgdp.js";
 import { ok, fail, deny, checkOperation, hostOf, GRANT, PERSONA, Ctx } from "../runtime.js";
 import { changeRequests, provisionings } from "../data/other.js";
 import { aviatorTools } from "./aviator.js";
+import { appTools } from "./apps.js";
 
 const A = "Trading Grid Context Services";
 let ALL: ToolDef[] = [];
@@ -79,7 +80,7 @@ const accessTools: ToolDef[] = [
   },
 ];
 
-ALL = [...accessTools, ...insightsTools, ...cmsTools, ...cartographerTools, ...projectsTools, ...tgdpTools];
+ALL = [...accessTools, ...insightsTools, ...cmsTools, ...cartographerTools, ...projectsTools, ...tgdpTools, ...appTools];
 
 export const TOOLS = ALL;
 export const AGENT_ONLY = aviatorTools;
