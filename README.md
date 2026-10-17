@@ -47,3 +47,7 @@ Data resets when the service restarts.
 ## Test scenarios
 
 282 executable scenarios cover all 132 tools: happy path, filters, pagination, not found, ambiguous input, access denied, tenant isolation, partial evidence, validation and approval flows. Run them in the console (Context Services, Test scenarios) or with `npm test`. Run all resets demo data before each scenario and restores it afterwards. Scenarios with an agent prompt can also be run through any published agent.
+
+## World model
+
+About 30 trading partners exchange roughly 1,000 business documents per weekday. Six months of history are generated per day from a fixed seed, and the next 30 days are generated ahead and released as time passes. Traffic follows business hours, weekdays, month-end invoice peaks and the holiday season; partners onboard and go quiet over time. Endpoint outages, acknowledgment outages, pickup stalls, map regressions, cross-reference gaps and document errors occur at random rates. Demo changes (approvals, cross-reference edits, reprocessing, publishing, audit) persist in Postgres when `DATABASE_URL` is set.

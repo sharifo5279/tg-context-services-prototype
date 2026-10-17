@@ -158,6 +158,18 @@
           "accept": "Every tool has at least one scenario; all scenarios pass on seeded data; Run all restores seeded state.",
           "note": "282 scenarios, 132 of 132 tools, all passing.",
           "priority": null
+        },
+        {
+          "key": "TGCS-112",
+          "title": "Continuous world model",
+          "status": "Done",
+          "size": "XL",
+          "source": "Omar request, Oct 2026",
+          "reality": "Demo construct",
+          "desc": "About 30 partners and 1,000 business documents per weekday; six months of history plus 30 days ahead released live; business-hour, month-end, holiday, onboarding and churn patterns; random incidents; Postgres persistence of demo state.",
+          "accept": "Traffic arrives continuously; restarts reproduce the same history; demo changes survive restarts; scenarios find current examples.",
+          "note": "Render free Postgres expires after 30 days; upgrade before then.",
+          "priority": null
         }
       ]
     },
