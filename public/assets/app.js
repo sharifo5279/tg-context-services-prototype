@@ -27,6 +27,8 @@
     search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     x: '<path d="M6 6l12 12M18 6 6 18"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>',
+    collapse: '<path d="M4 14h6v6M20 10h-6V4M10 14l-7 7M14 10l7-7"/>',
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
   };
   const ic = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${I[n] ?? ""}</svg>`;
@@ -91,46 +93,59 @@
     const m = { OK: ["ok", "Permit"], APPROVAL_REQUIRED: ["info", "Approval required"], DENIED: ["bad", "Denied"], ERROR: ["warn", s.envelope?.error?.code ?? "Error"] }[s.status] ?? ["neutral", s.status];
     return `<span class="pill ${m[0]}">${esc(m[1])}</span>`;
   }
+  const toolTitle = (n) => S.tools?.find((t) => t.name === n)?.title ?? n.replace(/_/g, " ");
   function renderStep(s, si, mi) {
-    const prod = (s.product ?? "").replace("Trading Grid ", "");
-    return `<div class="step"><div class="summary" data-step="${mi}:${si}">
-        ${stepIcon(s)}<div class="sn"><b>${esc(s.name)}</b><span class="p">${esc(prod)}${s.summary ? ` · ${esc(s.summary)}` : ""}</span></div>
-        <div class="sr">${s.done && s.completeness && s.completeness !== "COMPLETE" ? `<span class="pill warn">${esc(s.completeness)}</span>` : ""}${statusPill(s)}${s.done ? `<span>${s.ms} ms</span>` : ""}</div></div>
-      ${s.open ? `<div class="detail">
-        <div class="kv"><span class="k">Source binding</span><span class="mono">${esc(s.binding ?? "")}</span><span class="k">Contract basis</span><span>${esc(s.basis ?? "")}</span>${s.envelope?.access ? `<span class="k">Access</span><span>${esc(s.envelope.access.decision)} · ${esc(s.envelope.access.operation)} · ${esc(s.envelope.access.executionPrincipal)} · ${esc(s.envelope.access.organization)}/${esc(s.envelope.access.buid)}</span>` : ""}</div>
-        <div class="small muted">Input</div><pre class="json">${esc(JSON.stringify(s.input, null, 2))}</pre>
-        ${s.envelope ? `<div class="small muted">Response</div><pre class="json">${esc(JSON.stringify(s.envelope, null, 2))}</pre>` : ""}
+    const flag = !s.done ? "" : s.status === "DENIED" ? `<span class="af bad">Denied</span>` : s.status === "ERROR" ? `<span class="af warn">${esc(s.envelope?.error?.code ?? "Error")}</span>` : s.status === "APPROVAL_REQUIRED" ? `<span class="af info">Approval required</span>` : "";
+    return `<div class="astep${s.open ? " open" : ""}"><div class="ar" data-step="${mi}:${si}"><span class="ad ${!s.done ? "run" : s.status === "OK" ? "" : "x"}"></span><span class="an">${esc(toolTitle(s.name))}</span>${flag}<span class="as">${esc(s.summary ?? "")}</span>${s.done ? `<span class="ams">${s.ms} ms</span>` : ""}</div>
+      ${s.open ? `<div class="adetail">
+        <div class="kv"><span class="k">Tool</span><span class="mono">${esc(s.name)}</span><span class="k">Source</span><span>${esc((s.product ?? "").replace("Trading Grid ", ""))} · <span class="mono">${esc(s.binding ?? "")}</span></span><span class="k">Basis</span><span>${esc(s.basis ?? "")}</span>${s.envelope?.access ? `<span class="k">Access</span><span>${esc(s.envelope.access.decision)} · ${esc(s.envelope.access.operation)} · ${esc(s.envelope.access.executionPrincipal)}</span>` : ""}${s.completeness ? `<span class="k">Completeness</span><span>${esc(s.completeness)}</span>` : ""}</div>
+        <details><summary>Input</summary><pre class="json">${esc(JSON.stringify(s.input, null, 2))}</pre></details>
+        ${s.envelope ? `<details><summary>Response</summary><pre class="json">${esc(JSON.stringify(s.envelope, null, 2))}</pre></details>` : ""}
       </div>` : ""}</div>`;
+  }
+  /** One quiet activity line per answer; expands to the tool calls and route. */
+  function activity(m, mi, route) {
+    if (!m.steps.length && !m.thinking) return "";
+    const running = m.steps.find((x) => !x.done);
+    let label;
+    if (m.thinking || running) label = running ? `${esc(toolTitle(running.name))}` : m.steps.length ? "Reviewing results" : "Thinking";
+    else label = `Used ${m.steps.length} tool${m.steps.length === 1 ? "" : "s"}${m.elapsed ? ` · ${(m.elapsed / 1000).toFixed(1)} s` : ""}`;
+    const busy = m.thinking || running;
+    return `<div class="activity${m.showSteps ? " open" : ""}${busy ? " busy" : ""}"><button class="ah" data-togglesteps="${mi}" ${!m.steps.length ? "disabled" : ""}>${busy ? `<span class="spin"></span>` : ""}<span class="al">${label}</span>${m.steps.length ? `<span class="chev">${m.showSteps ? "▾" : "▸"}</span>` : ""}</button>
+      ${m.showSteps && m.steps.length ? `<div class="alist">${route?.length ? `<div class="aroute">${route.map((r) => esc(r)).join(" › ")}</div>` : ""}${m.steps.map((x, si) => renderStep(x, si, mi)).join("")}</div>` : ""}</div>`;
   }
   function renderPlan(p) {
     const st = S.plans.find((x) => x.planId === p.planId)?.status ?? p.planStatus ?? p.status;
-    const checks = (p.validation?.checks ?? []).map((c) => `<tr><td>${esc(c.check)}</td><td><span class="pill ${c.result === "PASS" ? "ok" : c.result === "WARNING" ? "warn" : "bad"}">${esc(c.result)}</span></td><td class="small muted">${esc(c.detail ?? "")}</td></tr>`).join("");
-    return `<div class="approval"><div class="ah">${ic("check")}Approval required<span class="pill ${st === "PENDING_APPROVAL" ? "info" : st === "APPROVED" || st === "EXECUTED" ? "ok" : "bad"}" style="margin-left:auto">${esc(String(st).replace("_", " "))}</span></div>
-      <div class="kv"><span class="k">Plan</span><span class="mono">${esc(p.planId)}</span><span class="k">Action</span><span>${esc(p.summary)}</span><span class="k">Target</span><span class="mono">${esc(p.target)}</span><span class="k">Submit with</span><span class="mono">${esc(p.submitWith?.tool ?? p.submitTool)}</span><span class="k">Expires</span><span>${esc(new Date(p.expiresAt).toLocaleTimeString())}</span></div>
-      ${checks ? `<table class="t" style="margin-top:8px"><tbody>${checks}</tbody></table>` : ""}
-      <details style="margin-top:8px"><summary class="small muted" style="cursor:pointer">Parameters bound to this approval</summary><pre class="json">${esc(JSON.stringify(p.parameters, null, 2))}</pre></details>
-      ${st === "PENDING_APPROVAL" ? `<div class="acts"><button class="btn primary" data-approve="${p.planId}">${ic("check")}Approve and submit</button><button class="btn danger" data-reject="${p.planId}">Reject</button></div>` : ""}
+    const cks = p.validation?.checks ?? [];
+    const passed = cks.filter((c) => c.result === "PASS").length;
+    const rows = cks.map((c) => `<tr><td>${esc(c.check)}</td><td><span class="pill ${c.result === "PASS" ? "ok" : c.result === "WARNING" ? "warn" : "bad"}">${esc(c.result)}</span></td><td class="small muted">${esc(c.detail ?? "")}</td></tr>`).join("");
+    const pending = st === "PENDING_APPROVAL";
+    return `<div class="approval${pending ? "" : " decided"}"><div class="ah"><span class="at">${esc(p.summary)}</span><span class="pill ${pending ? "info" : st === "APPROVED" || st === "EXECUTED" ? "ok" : "bad"}">${pending ? "Approval required" : esc(String(st).replace("_", " ").toLowerCase())}</span></div>
+      <div class="am small muted"><span class="mono">${esc(p.planId)}</span> · ${esc(p.target)}${cks.length ? ` · ${passed} of ${cks.length} checks passed` : ""} · expires ${esc(new Date(p.expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }))}</div>
+      <details class="ad"><summary>Details</summary><div class="kv"><span class="k">Submit with</span><span class="mono">${esc(p.submitWith?.tool ?? p.submitTool)}</span></div>${rows ? `<table class="t"><tbody>${rows}</tbody></table>` : ""}<pre class="json">${esc(JSON.stringify(p.parameters, null, 2))}</pre></details>
+      ${pending ? `<div class="acts"><button class="btn sm primary" data-approve="${p.planId}">Approve and submit</button><button class="btn sm" data-reject="${p.planId}">Reject</button></div>` : ""}
     </div>`;
   }
   function renderItem(c, m, mi) {
     if (m.role === "user") return `<div class="msg user">${esc(m.text)}</div>`;
     const a = agent(m.agentId);
     const route = m.route ?? hostBy(c.host)?.route ?? [];
-    return `<div class="msg agent"><div class="mh"><div class="aico sm">${ic(c.host === "tg-aviator" ? "spark" : "agent")}</div>${esc(a?.name ?? "Agent")}<span class="meta">${m.steps.length} tool call${m.steps.length === 1 ? "" : "s"}${m.elapsed ? ` · ${(m.elapsed / 1000).toFixed(1)} s` : ""}</span></div>
-      <div class="routeline">${ic("route")}${route.map((r) => `<span>${esc(r)}</span>`).join('<span class="sep">›</span>')}</div>
-      <div class="steps">${m.steps.map((s, si) => renderStep(s, si, mi)).join("")}</div>
-      ${m.thinking ? `<div class="thinking"><span class="dots"><span></span><span></span><span></span></span>${m.steps.length ? "Reviewing evidence" : "Planning tool calls"}</div>` : ""}
+    return `<div class="msg agent"><div class="mh"><div class="aico sm">${ic(c.host === "tg-aviator" ? "spark" : "agent")}</div>${esc(a?.name ?? "Agent")}</div>
+      ${activity(m, mi, route)}
       ${m.error ? `<div class="md"><div class="alert bad">${esc(m.error)}</div></div>` : ""}
       <div class="md">${md(m.text)}</div>
       ${m.plans.map(renderPlan).join("")}
       ${c.host === "tg-aviator" && m.text && !m.thinking ? `<div class="aidisc">AI-generated. Verify before acting.</div>` : ""}
     </div>`;
   }
+  S.max = {};
   function chatView(c, opts = {}) {
     const a = agent(c.agentId);
+    const max = !!S.max[c.key];
     const starters = !c.items.length && a.starters?.length ? `<div class="label" style="margin-top:0"><span>${esc(opts.startLabel ?? "Suggested")}</span></div><div class="starters">${a.starters.map((n) => `<button class="starter" data-prompt="${esc(promptOf(n))}"><span class="ucn">${ucLabel(n)}</span><span>${esc(promptOf(n))}</span></button>`).join("")}</div>` : "";
-    return `<div class="chat">${opts.top ?? ""}${starters}${c.items.map((m, mi) => renderItem(c, m, mi)).join("")}</div>
-      <form class="composer" data-compose><textarea rows="1" placeholder="${esc(opts.placeholder ?? `Ask ${a.name}`)}" ${c.busy ? "disabled" : ""}></textarea><button class="btn primary" ${c.busy ? "disabled" : ""}>${ic("send")}Send</button></form>`;
+    return `<div class="chatframe${max ? " max" : ""}"><div class="chatbar"><span class="cbt">${max ? esc(a.name) : ""}</span><button class="iconbtn" data-chatmax="${c.key}" title="${max ? "Exit full screen" : "Full screen"}">${ic(max ? "collapse" : "expand")}</button></div>
+      <div class="chatscroll"><div class="chat">${opts.top ?? ""}${starters}${c.items.map((m, mi) => renderItem(c, m, mi)).join("")}</div></div>
+      <form class="composer" data-compose><textarea rows="1" placeholder="${esc(opts.placeholder ?? `Ask ${a.name}`)}" ${c.busy ? "disabled" : ""}></textarea><button class="btn primary" ${c.busy ? "disabled" : ""}>${ic("send")}Send</button></form></div>`;
   }
 
   // Each page registers its chat mount: element [data-conv=key] whose content = mount(c)
@@ -142,7 +157,7 @@
       raf[key] = 0;
       const el = document.querySelector(`[data-conv="${key}"]`);
       if (!el || !mounts[key]) return;
-      const scroller = el.closest("[data-scroll]") ?? document.scrollingElement;
+      const scroller = el.querySelector(".chatframe.max .chatscroll") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
       const near = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 160;
       const draft = el.querySelector("textarea")?.value ?? "";
       el.innerHTML = mounts[key](S.convs[key]);
@@ -275,11 +290,10 @@
 
   function aviatorItem(c, m, mi) {
     if (m.role === "user") return `<div class="avmsg user">${esc(m.text)}</div>`;
-    const steps = m.steps.length ? `<button class="avevidence" data-togglesteps="${mi}">${ic("route")}${m.steps.length} Trading Grid call${m.steps.length === 1 ? "" : "s"}${m.showSteps ? " · hide" : " · show"}</button>${m.showSteps ? `<div class="steps">${m.steps.map((x, si) => renderStep(x, si, mi)).join("")}</div>` : ""}` : "";
+    const steps = activity(m, mi, m.route);
     const done = !m.thinking && (m.text || m.error);
     const disc = done && c.agentId === "error-resolution" ? `<p class="avdisc"><strong>Disclaimer:</strong> This analysis is AI-generated and intended to assist with understanding transactional error messages. Human judgment should always be applied when interpreting these errors or deciding on further actions.</p>${S.av.txId ? `<p class="avdisc"><strong>Transaction ID:</strong> <a data-tx="${S.av.txId}">${esc(S.av.txId)}</a></p>` : ""}` : "";
     return `<div class="avmsg bot">${AV_AVATAR}<div class="avbody">${steps}
-      ${m.thinking ? `<div class="thinking" style="padding:4px 0"><span class="dots"><span></span><span></span><span></span></span>${m.steps.length ? "Reviewing evidence" : "Thinking"}</div>` : ""}
       ${m.error ? `<div class="alert bad">${esc(m.error)}</div>` : ""}
       <div class="md avmd">${md(m.text)}</div>${m.plans.map(renderPlan).join("")}${disc}
       ${done ? `<div class="avfb"><span title="Copy">${ic("doc")}</span><span title="Helpful">${ic("check")}</span><span title="Not helpful">${ic("x")}</span></div>` : ""}</div></div>`;
@@ -303,8 +317,8 @@
     const key = avKey();
     const c = conv(key, S.av.agentId, "tg-aviator");
     mounts[key] = aviatorChat;
-    return `<aside class="aviator" data-scroll><div class="avh">${AV_LOGO}<div><div class="avt">Aviator</div><div class="avs">${esc(a.subtitle ?? "Trading Grid Online")}</div></div>
-      <div class="avicons"><button class="iconbtn" data-avnew title="New conversation">${ic("refresh")}</button><button class="iconbtn" data-avclose title="Close">${ic("x")}</button></div></div>
+    return `<aside class="aviator${S.av.max ? " max" : ""}" data-scroll><div class="avh">${AV_LOGO}<div><div class="avt">Aviator</div><div class="avs">${esc(a.subtitle ?? "Trading Grid Online")}</div></div>
+      <div class="avicons"><button class="iconbtn" data-avnew title="New conversation">${ic("refresh")}</button><button class="iconbtn" data-avmax title="${S.av.max ? "Exit full screen" : "Full screen"}">${ic(S.av.max ? "collapse" : "expand")}</button><button class="iconbtn" data-avclose title="Close">${ic("x")}</button></div></div>
       <div class="avb" data-conv="${key}">${aviatorChat(c)}</div></aside>`;
   }
   function openAviator(agentId, prompt, txId) {
@@ -693,7 +707,7 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.copy) { navigator.clipboard?.writeText(d.copy); const o = t.textContent; t.textContent = "Copied"; setTimeout(() => (t.textContent = o), 1200); return; }
@@ -701,7 +715,9 @@
     if (d.domain) { S.toolDomain = d.domain; return go("/cs/tools"); }
     if (d.tool) return toolDrawer(d.tool);
     if (d.avopen) { if (S.av.open && S.av.agentId === d.avopen) { S.av.open = false; return render(); } S.av = { ...S.av, open: true, agentId: d.avopen }; return render(); }
-    if (d.avclose != null) { S.av.open = false; return render(); }
+    if (d.avclose != null) { S.av.open = false; S.av.max = false; return render(); }
+    if (d.avmax != null) { S.av.max = !S.av.max; return render(); }
+    if (d.chatmax) { S.max[d.chatmax] = !S.max[d.chatmax]; return refreshConv(d.chatmax); }
     if (d.avnew != null) { delete S.convs[avKey()]; return render(); }
     if (d.avask) return send(avKey(), d.avask);
     if (d.togglesteps) { const key = keyOf(t); const m = S.convs[key].items[Number(d.togglesteps)]; m.showSteps = !m.showSteps; return refreshConv(key); }
@@ -728,6 +744,11 @@
   app.addEventListener("submit", (ev) => {
     if (ev.target.matches("[data-compose]")) { ev.preventDefault(); const ta = ev.target.querySelector("textarea"); const v = ta.value; ta.value = ""; return send(keyOf(ev.target), v); }
     if (ev.target.matches("[data-txsearch]")) { ev.preventDefault(); S.tgoFilters.q = ev.target.q.value.trim(); return render(); }
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    if (S.av.max) { S.av.max = false; render(); }
+    for (const k of Object.keys(S.max)) if (S.max[k]) { S.max[k] = false; refreshConv(k); }
   });
   app.addEventListener("keydown", (ev) => {
     if (ev.target.matches("[data-compose] textarea") && ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); ev.target.form.requestSubmit(); }
