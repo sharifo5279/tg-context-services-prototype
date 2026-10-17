@@ -41,7 +41,9 @@
   }
   const hostBy = (k) => S.meta.hosts.find((h) => h.key === k);
   const agent = (id) => S.meta.agents.find((a) => a.id === id);
-  const studioAgents = () => S.meta.agents.filter((a) => a.surface !== "tgo");
+  const studioAgents = () => S.meta.agents.filter((a) => a.id !== "tg-aviator");
+  const STATUS_CLS = { "Live today": "ok", "On the roadmap": "info", Incubating: "warn", Prototype: "neutral" };
+  const statusTag = (a) => `<span class="pill ${STATUS_CLS[a.status] ?? "neutral"}">${esc(a.status)}</span>`;
   const uc = (n) => S.meta.useCases.find((u) => u.n === n);
   const EXT = ["copilot-studio", "gemini-enterprise", "sap-joule", "claude-ui"];
 
@@ -210,8 +212,8 @@
 
   // ---------- Demo journey ----------
   const SCENES = [
-    { n: 1, where: "Trading Grid Online", title: "Find the failed ASN in TG Insights", text: "Filter Transactions to delivery failures and open ASN SH-77155 from Brightwell Home Goods.", href: "/tgo/insights?q=SH-77155" },
-    { n: 2, where: "Trading Grid Online", title: "Analyze it with TG Aviator", text: "Run Analyze with Aviator on the failed transaction, then ask follow-up questions in the Aviator chat.", href: "/tgo/insights?q=SH-77155&open=1" },
+    { n: 1, where: "Trading Grid Online", title: "Find the failed ASN in TG Insights", text: "From Trading Grid Online, open Transactions, filter to delivery failures and open ASN SH-77155.", href: "/tgo" },
+    { n: 2, where: "Trading Grid Online", title: "Analyze it with Aviator", text: "Analyze with Aviator runs the Error Analysis Agent. The Payloads tab runs the Payload Analysis Agent.", href: "/tgo/insights?q=SH-77155&open=1" },
     { n: 3, where: "Trading Grid Online", title: "Authorize agent access", text: "Review which agent applications can reach Harborview's Trading Grid data, with scope and operations.", href: "/tgo/access" },
     { n: 4, where: "Aviator Studio", title: "Run the ASN Exception Agent", text: "The agent uses Trading Grid Context Services over MCP, finds the cause and prepares the cross-reference fix.", href: "/studio/agents/asn-exception/simulate" },
     { n: 5, where: "Aviator Studio", title: "Approve the change", text: "The approval card binds to the exact entry. After approval the agent applies it and returns a verified readback.", href: "/studio/agents/asn-exception/simulate" },
@@ -227,9 +229,9 @@
       <h1>One trading community, from Trading Grid Online to any agent ecosystem</h1>
       <p class="sub">Harborview Retail Group investigates a missing ship notice in Trading Grid Online. Then it runs the same investigation from Aviator Studio and from external agent platforms through Trading Grid Context Services.</p>
       <div class="lanes">
-        ${col("", "Internal", [["Trading Grid Online", "TG Insights transactions and agent access administration", "/tgo/insights"], ["TG Aviator", "Error, payload and transaction analysis inside Trading Grid Online", "/tgo/insights?aviator=1"]], "Core Business Network applications")}
+        ${col("", "Internal", [["Trading Grid Online", "TG Insights transactions and agent access administration", "/tgo/insights"], ["Trading Grid Aviator", "Error Analysis, Payload Analysis and Transaction Finder agents, in app", "/tgo/insights?aviator=1"]], "Core Business Network applications")}
         <div class="lanearrow">›</div>
-        ${col("", "OpenText", [["Aviator Studio", "Build and simulate agents on Trading Grid context", "/studio"]], "Outside Trading Grid Online")}
+        ${col("", "OpenText", [["Aviator Studio", "Shared Aviator agents built and simulated on Trading Grid Context Services", "/studio"]], "Outside Trading Grid Online")}
         <div class="lanearrow">›</div>
         ${col("emph", "Service layer", [["Trading Grid Context Services", `${S.meta.toolCount} governed MCP tools, grants, approvals and audit`, "/cs"], ["Aviator AKS gateway", "Central Aviator egress to external ecosystems", "/cs/clients"]], "Governed externalization")}
         <div class="lanearrow">›</div>
@@ -242,19 +244,83 @@
   }
 
   // ---------- Trading Grid Online ----------
-  const TGO_RAIL = [["chart", "/tgo/dashboard", "Dashboard"], ["swap", "/tgo/insights", "Transactions"], ["bell", "/tgo/alerts", "Alerts"], ["key", "/tgo/access", "Agent access"]];
-  function shellTgo(appName, inner) {
+  const AV_LOGO = `<img class="avlogo" src="/assets/aviator-logo.png" alt="">`;
+  const AV_AVATAR = `<img class="avavatar" src="/assets/aviator-avatar.png" alt="">`;
+  const avKey = () => `tgo:${S.av.agentId}`;
+  S.av = { open: false, agentId: "tg-aviator", txId: null };
+
+  function aviatorItem(c, m, mi) {
+    if (m.role === "user") return `<div class="avmsg user">${esc(m.text)}</div>`;
+    const steps = m.steps.length ? `<button class="avevidence" data-togglesteps="${mi}">${ic("route")}${m.steps.length} Trading Grid call${m.steps.length === 1 ? "" : "s"}${m.showSteps ? " · hide" : " · show"}</button>${m.showSteps ? `<div class="steps">${m.steps.map((x, si) => renderStep(x, si, mi)).join("")}</div>` : ""}` : "";
+    const done = !m.thinking && (m.text || m.error);
+    const disc = done && c.agentId === "error-resolution" ? `<p class="avdisc"><strong>Disclaimer:</strong> This analysis is AI-generated and intended to assist with understanding transactional error messages. Human judgment should always be applied when interpreting these errors or deciding on further actions.</p>${S.av.txId ? `<p class="avdisc"><strong>Transaction ID:</strong> <a data-tx="${S.av.txId}">${esc(S.av.txId)}</a></p>` : ""}` : "";
+    return `<div class="avmsg bot">${AV_AVATAR}<div class="avbody">${steps}
+      ${m.thinking ? `<div class="thinking" style="padding:4px 0"><span class="dots"><span></span><span></span><span></span></span>${m.steps.length ? "Reviewing evidence" : "Thinking"}</div>` : ""}
+      ${m.error ? `<div class="alert bad">${esc(m.error)}</div>` : ""}
+      <div class="md avmd">${md(m.text)}</div>${m.plans.map(renderPlan).join("")}${disc}
+      ${done ? `<div class="avfb"><span title="Copy">${ic("doc")}</span><span title="Helpful">${ic("check")}</span><span title="Not helpful">${ic("x")}</span></div>` : ""}</div></div>`;
+  }
+  function aviatorChat(c) {
+    const a = agent(c.agentId);
+    let intro;
+    if (c.agentId === "payload-analysis") {
+      intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><div class="avcard"><p>Welcome to Ask Aviator. The file you selected has been loaded.</p><p>Select one of the actions below to begin. Follow-up questions must relate only to this payload.</p>
+        ${[["Create a tabulated view", "Create a tabulated view of the line items: quantities, units, prices and product codes, with totals."], ["Parse the data", "Parse the data segment by segment and explain each qualifier and code in plain language."], ["Summarize payload details", "Summarize the payload: document type and purpose, sender and receiver roles, and key references."]].map(([l, q]) => `<button class="avradio" data-avask="${esc(`${q} Transaction ${S.av.txId}.`)}"><span class="rb"></span>${l}</button>`).join("")}</div></div></div>`;
+    } else {
+      intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><p style="margin:2px 0 8px">Hi! I'm Aviator. How can I help you today?</p>${!c.items.length && a.starters?.length ? `<div class="avsugg">${a.starters.map((n) => `<button data-run="${n}">${esc(uc(n).prompt)}</button>`).join("")}</div>` : ""}</div></div>`;
+    }
+    return `<div class="avstream">${intro}${c.items.map((m, mi) => aviatorItem(c, m, mi)).join("")}</div>
+      <form class="avcompose" data-compose><textarea rows="2" placeholder="Ask Aviator" ${c.busy ? "disabled" : ""}></textarea><button ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
+      <div class="avfoot">AI can make mistakes. <a>Learn more</a></div>`;
+  }
+  function aviatorPanel() {
+    if (!S.av.open) return "";
+    const a = agent(S.av.agentId);
+    const key = avKey();
+    const c = conv(key, S.av.agentId, "tg-aviator");
+    mounts[key] = aviatorChat;
+    return `<aside class="aviator" data-scroll><div class="avh">${AV_LOGO}<div><div class="avt">Aviator</div><div class="avs">${esc(a.subtitle ?? "Trading Grid Online")}</div></div>
+      <div class="avicons"><button class="iconbtn" data-avnew title="New conversation">${ic("refresh")}</button><button class="iconbtn" data-avclose title="Close">${ic("x")}</button></div></div>
+      <div class="avb" data-conv="${key}">${aviatorChat(c)}</div></aside>`;
+  }
+  function openAviator(agentId, prompt, txId) {
+    S.av = { open: true, agentId, txId: txId ?? S.av.txId };
+    const key = `tgo:${agentId}`;
+    if (prompt) delete S.convs[key];
+    render().then(() => prompt && send(key, prompt));
+  }
+
+  function tgoHeader(variant, appName) {
+    if (variant === "portal") {
+      return `<header class="tgohead"><span class="tgomenu">${ic("list")}</span><img src="/assets/opentext-logo-white.svg" alt="OpenText" class="wm"><span class="bar">|</span><span class="ap">${esc(appName)}</span><span class="ver">26.4</span><div class="spacer"></div>
+        <button class="tgoicon" data-avopen="tg-aviator" title="Aviator"><img src="/assets/aviator-logo.png" alt=""></button><button class="myav" data-avopen="tg-aviator">${ic("agent")}MyAviator</button>${journeyBtn}</header>`;
+    }
+    return `<header class="topbar tgi"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">${esc(appName)}</span><span class="ver">26.4</span></div><div class="spacer"></div>
+      <button class="iconbtn av" data-avopen="tg-aviator" title="Ask Aviator"><img src="/assets/aviator-logo.png" alt=""></button>${journeyBtn}${avatar()}</header>`;
+  }
+  const TGO_RAIL = [["home", "/tgo", "Trading Grid Online"], ["swap", "/tgo/insights", "Transactions"], ["key", "/tgo/access", "Agent access"]];
+  function shellTgo(variant, appName, inner) {
     const p = location.pathname;
-    const key = "tgo:tg-aviator";
-    const c = conv(key, "tg-aviator", "tg-aviator");
-    mounts[key] = (cc) => chatView(cc, { placeholder: "Ask Aviator", startLabel: "Try asking" });
-    return `<header class="topbar tgo"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">${esc(appName)}</span><span class="ver">26.4</span></div><div class="spacer"></div>
-      <span class="small muted hide-sm">Trading Grid Online</span><button class="btn sm ${S.aviatorOpen ? "primary" : ""}" data-aviator>${ic("spark")}Ask Aviator</button>${journeyBtn}${avatar()}</header>
-      <div class="tgo-wrap ${S.aviatorOpen ? "with-aviator" : ""}">
-        <nav class="rail">${TGO_RAIL.map(([icn, href, label]) => `<button class="railbtn ${p.startsWith(href) ? "active" : ""}" data-href="${href}" title="${label}" ${href === "/tgo/dashboard" || href === "/tgo/alerts" ? "disabled" : ""}>${ic(icn)}</button>`).join("")}</nav>
-        <div class="tgo-main">${inner}</div>
-        ${S.aviatorOpen ? `<aside class="aviator" data-scroll><div class="avh"><div class="aico">${ic("spark")}</div><div><strong>Aviator</strong><div class="small muted">Trading Grid Aviator · uses your access rights</div></div><button class="btn ghost sm" data-aviator style="margin-left:auto">${ic("x")}</button></div><div class="avb" data-conv="${key}">${mounts[key](c)}</div></aside>` : ""}
+    return `${tgoHeader(variant, appName)}
+      <div class="tgo-wrap ${S.av.open ? "with-aviator" : ""} ${variant}">
+        ${variant === "portal" ? "" : `<nav class="rail">${TGO_RAIL.map(([icn, href, label]) => `<button class="railbtn ${p === href ? "active" : ""}" data-href="${href}" title="${label}">${ic(icn)}</button>`).join("")}</nav>`}
+        <div class="tgo-main">${inner}</div>${aviatorPanel()}
       </div>`;
+  }
+
+  function pageTgoHome() {
+    const tile = (cls, icn, label, href) => `<button class="tgtile ${cls}" ${href ? `data-href="${href}"` : "disabled"}><span class="tc">${ic(icn)}</span><span>${label}</span></button>`;
+    const inner = `<div class="tgohome">
+      <section class="welcome"><h1>Welcome, Jordan</h1><h3>Global Partner Directory</h3><div class="wstats"><div><span class="wi">${ic("globe")}</span>Partners in GPD<strong>287.9K+</strong></div><div><span class="wi">${ic("agent")}</span>Partners in your community<strong>11</strong></div><div><span class="wi">${ic("swap")}</span>Transactions last 7 days<strong>${S.tgoCount ?? "1.9K"}</strong></div></div></section>
+      <section class="tgcard"><h4>${ic("doc")}Documentation Library</h4><a>Trading Grid Online</a><a>Trading Grid Community Projects</a><a>Trading Grid Insights</a></section>
+      <section class="tgcard"><h4>${ic("chart")}Trading Grid Insights</h4><a data-href="/tgo/insights">Dashboard</a><a data-href="/tgo/insights">Transactions</a><a data-href="/tgo/insights">Monitoring</a></section>
+      ${tile("teal", "route", "Trading Grid Cartographer")}
+      <section class="tgcard"><h4>${ic("agent")}Account Manager</h4><a>My Company and Services</a><a>My Users</a><a>Roles and Permissions</a><a data-href="/tgo/access">Agent access</a></section>
+      ${tile("magenta", "chart", "Reports")}
+      ${tile("purple", "doc", "Transaction Manager NG")}
+      ${tile("blue", "swap", "File Transfer Service NG")}
+    </div>`;
+    return shellTgo("portal", "Trading Grid Online", inner);
   }
 
   const DELIV_ICON = { Delivered: ["ok", "check"], "Delivery failed": ["bad", "x"], "In process": ["warn", "refresh"], Received: ["neutral", "doc"] };
@@ -283,33 +349,46 @@
           ${d.rows.map((r) => `<tr data-tx="${r.transactionId}"><td><a>${esc(fmtTime(r.receivedAt))}</a><div class="st">${statusIcon(r.delivery)}${r.hasError ? `<span class="sicon bad">${ic("x")}</span>` : ""}${esc(r.delivery)}</div></td><td>${esc(r.sender.companyName)}<div>${esc(r.sender.orgId)}</div></td><td>${esc(r.receiver.companyName)}<div>${esc(r.receiver.orgId)}</div></td><td class="mono">${esc(r.transactionId)}<div>${esc(r.senderTransactionId)}</div></td><td>${esc(r.transactionType)}<div>${esc(r.ediType)}</div></td></tr>`).join("") || `<tr><td colspan="5" class="muted">No transactions match the filters.</td></tr>`}
           </tbody></table></div>
         </section>
-      </div>${S.txOpen ? await txDrawer(S.txOpen) : ""}`;
-    return shellTgo("Trading Grid Insights", inner);
+      </div>${S.txOpen ? await txDetail(S.txOpen) : ""}`;
+    return shellTgo("tgi", "Trading Grid Insights", inner);
   }
 
-  async function txDrawer(id) {
+  async function txDetail(id) {
     const t = await api(`/api/tgo/transactions/${id}`);
     if (t.error) return "";
-    const keys = Object.values(t.keys).map((k) => `<span class="k">${esc(k.name)}</span><span class="mono">${esc(k.value)}</span>`).join("");
-    return `<div class="drawer-bg" data-closetx></div><div class="drawer"><div class="dh"><div><div class="small muted">Transaction details</div><div class="mono"><strong>${esc(t.transactionId)}</strong></div></div><button class="btn ghost sm" style="margin-left:auto" data-closetx>Close</button></div>
-      <div class="db">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">${statusIcon(t.row.delivery)}<strong>${esc(t.row.delivery)}</strong><span class="muted small">${esc(t.statusText)}</span></div>
-        <div class="kv"><span class="k">Arrival</span><span>${esc(fmtTime(t.receivedAt))}</span><span class="k">Sender</span><span>${esc(t.sender.companyName)} · <span class="mono">${esc(t.sender.tradingAddress)}</span></span><span class="k">Receiver</span><span>${esc(t.receiver.companyName)} · <span class="mono">${esc(t.receiver.tradingAddress)}</span></span><span class="k">Type</span><span>${esc(t.row.transactionType)} · ${esc(t.ediType)} ${esc(t.version)}</span>${keys}<span class="k">Control numbers</span><span class="mono">${esc(Object.entries(t.controlNumbers).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(" · "))}</span><span class="k">Map</span><span class="mono">${esc(t.mapId ?? "")}</span></div>
-        <div class="section-title">Processing</div>
-        <table class="t"><tbody>${t.statusHistory.map((h) => `<tr><td>${esc(h.step)}</td><td><span class="pill ${h.status === "COMPLETED" ? "ok" : h.status === "FAILED" ? "bad" : "warn"}">${esc(h.status)}</span></td><td class="small muted">${esc(new Date(h.at).toLocaleTimeString())}</td></tr>`).join("")}</tbody></table>
-        ${t.errors.length ? `<div class="section-title">Error</div><div class="errbox"><div class="mono"><strong>${esc(t.errors[0].code)}</strong> · ${esc(t.errors[0].service)} · ${esc(t.errors[0].step)}</div><div>${esc(t.errors[0].message)}</div><button class="btn primary sm" data-analyze="${t.transactionId}" style="margin-top:10px">${ic("spark")}Analyze with Aviator</button></div>` : ""}
-        <div class="section-title">Functional acknowledgment</div>
-        <div class="small">${t.ack ? `${esc(t.ack.documentType)} ${esc(t.ack.status)} (${esc(t.ack.code)}) at ${esc(new Date(t.ack.receivedAt).toLocaleString())}` : "No acknowledgment observed."}</div>
-        <div class="section-title">Payload <button class="btn ghost sm" data-askpayload="${t.transactionId}" style="margin-left:8px">${ic("spark")}Summarize with Aviator</button></div>
-        <pre class="json">${esc(t.payloadPreview)}</pre>
+    const tab = S.txTab ?? "details";
+    const kv = (rows) => rows.filter(([, v]) => v != null && v !== "").map(([k, v, cls]) => `<span class="k">${esc(k)}</span><span class="${cls ?? ""}">${esc(v)}</span>`).join("");
+    const keys = Object.values(t.keys).map((k) => [k.name, k.value, "mono"]);
+    let body = "";
+    if (tab === "details") {
+      body = `<div class="dgrid"><div>
+        ${t.errors.length ? `<div class="dsec"><div class="dsh">Error <button class="avpill" data-analyze="${t.transactionId}"><img src="/assets/aviator-logo.png" alt="">Analyze with Aviator</button></div><div class="dkv">${kv([["Error code", t.errors[0].code, "red"], ["External error message", t.errors[0].message, "red"], ["Service name", t.errors[0].service, "red"], ["Processing step", t.errors[0].step]])}</div></div>` : ""}
+        <div class="dsec"><div class="dsh">Sender</div><div class="dkv">${kv([["Sender name", t.sender.companyName], ["Sender org ID", t.sender.orgId], ["Trading address", t.sender.tradingAddress, "mono"], ["Region", "US"], ["EDI type", t.ediType], ["Transaction type", t.row.transactionType], ["Size in", String(t.sizeBytes)]])}</div></div>
+        <div class="dsec"><div class="dsh">Business keys</div><div class="dkv">${kv(keys)}</div></div>
+      </div><div>
+        <div class="dsec"><div class="dsh">Internal</div><div class="dkv">${kv([["Correlation ID", t.correlationId, "mono"], ["Sender transaction ID", t.senderTransactionId, "mono"], ["Map", t.mapId, "mono"]])}</div></div>
+        <div class="dsec"><div class="dsh">Receiver</div><div class="dkv">${kv([["Receiver name", t.receiver.companyName], ["Receiver org ID", t.receiver.orgId], ["Trading address", t.receiver.tradingAddress, "mono"], ["Outbound format", t.ediType], ["Priority", "Real time"]])}</div></div>
+        <div class="dsec"><div class="dsh">Additional information</div><div class="dkv">${kv([["Control numbers", Object.entries(t.controlNumbers).map(([k, v]) => `${k.toUpperCase()} ${v}`).join(" · "), "mono"], ["Version", t.version], ["Functional acknowledgment", t.ack ? `${t.ack.documentType} ${t.ack.status} (${t.ack.code})` : "No acknowledgment observed"], ["Last modified", fmtTime(t.lastModified)]])}</div></div>
       </div></div>`;
+    } else if (tab === "flow") {
+      body = `<div class="flowsteps">${t.statusHistory.map((h) => `<div class="fstep ${h.status === "FAILED" ? "bad" : h.status === "COMPLETED" ? "ok" : "warn"}"><span class="fdot"></span><strong>${esc(h.step)}</strong><span class="small muted">${esc(h.status)} · ${esc(new Date(h.at).toLocaleTimeString())}</span></div>`).join("")}</div>`;
+    } else if (tab === "related") {
+      body = t.related.length ? `<table class="txt"><thead><tr><th>Arrival time</th><th>Transaction type</th><th>Status</th><th>OpenText transaction ID</th></tr></thead><tbody>${t.related.map((r) => `<tr data-tx="${r.transactionId}"><td><a>${esc(fmtTime(r.receivedAt))}</a></td><td>${esc(r.transactionType)} (${esc(r.ediType)})</td><td><div class="st">${statusIcon(r.delivery)}${esc(r.delivery)}${r.fa ? ` · FA ${esc(r.fa)}` : ""}</div></td><td class="mono">${esc(r.transactionId)}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">No related transactions found.</div>`;
+    } else {
+      body = `<div class="paygrid"><table class="t"><thead><tr><th>File type</th><th>Filename</th><th>Size</th></tr></thead><tbody><tr><td>Input</td><td class="mono">${esc(t.fileId)}.edi</td><td>${t.payloadPreview.length}</td></tr>${t.translated ? `<tr><td>Output</td><td class="mono">${esc(t.fileId)}.json</td><td>${t.translated.length}</td></tr>` : ""}</tbody></table>
+        <div class="payview"><div class="payh">Input<button class="avpill" data-askpayload="${t.transactionId}"><img src="/assets/aviator-logo.png" alt="">Ask Aviator</button></div><pre>${t.payloadPreview.split("\n").map((l, i) => `<span class="ln">${i + 1}</span>${esc(l)}`).join("\n")}</pre></div></div>`;
+    }
+    return `<div class="txdetail ${S.av.open ? "with-aviator" : ""}"><div class="txh"><span class="mono">${esc(t.transactionId)}</span>${ic("link")}<span class="muted">Delivery status:</span>${statusIcon(t.row.delivery)}<span>${esc(t.row.delivery)}</span>
+        <div class="spacer"></div><button class="iconbtn av" data-avopen="tg-aviator" title="Aviator"><img src="/assets/aviator-logo.png" alt=""></button><button class="iconbtn" data-closetx title="Close">${ic("x")}</button></div>
+      <div class="txtabs2">${[["details", "Details"], ["flow", "Flow"], ["related", "Related transactions"], ["payloads", "Payloads"]].map(([k, l]) => `<button class="${tab === k ? "active" : ""}" data-txtab="${k}">${l}</button>`).join("")}</div>
+      <div class="txb">${body}</div></div>`;
   }
 
   function pageTgoAccess() {
     const ext = S.meta.hosts.filter((h) => h.key !== "tg-aviator" && h.key !== "claude-connector");
     const last = {};
     for (const a of S.audit ?? []) if (!last[a.host]) last[a.host] = a.at;
-    const inner = `<div class="tgo-crumbs">${ic("home")}<span>/</span><span>Administration</span><span>/</span><strong>Agent access</strong></div>
+    const inner = `<div class="tgo-crumbs">${ic("home")}<span>/</span><span>Account Manager</span><span>/</span><strong>Agent access</strong></div>
       <div class="tgo-page">
         <div class="titlerow"><h1>Agent access</h1></div>
         <p class="sub">Agent applications that can reach Harborview Retail Group's Trading Grid data. Access is limited to the scope below and can be suspended at any time.</p>
@@ -328,7 +407,7 @@
         </tbody></table></div>
         <p class="small muted">Suspension takes effect on the next call. Context Services denies every operation for a suspended application.</p>
       </div>`;
-    return shellTgo("Trading Grid Online", inner);
+    return shellTgo("portal", "Trading Grid Online", inner);
   }
 
   // ---------- Aviator Studio ----------
@@ -337,9 +416,9 @@
 
   function agentCard(a) {
     const n = a.tools === "ALL" ? S.meta.toolCount : a.tools.length;
-    return `<div class="agentcard" data-href="/studio/agents/${a.id}"><div class="h"><div class="aico">${ic("agent")}</div><div><div class="nm">${esc(a.name)}</div><div class="small muted">${esc(a.persona)}</div></div></div><div class="role">${esc(a.role)}</div><div class="meta"><span>${n} tools</span><span>Based on ${esc(a.inspiredBy[0].name)}</span></div></div>`;
+    return `<div class="agentcard" data-href="/studio/agents/${a.id}"><div class="h"><div class="aico">${ic("agent")}</div><div><div class="nm">${esc(a.name)}</div><div class="small muted">${esc(a.persona)}</div></div><span style="margin-left:auto">${statusTag(a)}</span></div><div class="role">${esc(a.role)}</div><div class="meta"><span>${n} tools</span><span>Based on ${esc(a.inspiredBy[0].name)}</span></div></div>`;
   }
-  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Agents built on Trading Grid Context Services. Published agents are available to external ecosystems through the Aviator AKS gateway.</p></div><div class="content"><div class="agentgrid">${studioAgents().map(agentCard).join("")}</div></div>`);
+  const pageStudioAgents = () => shellStudio(`<div class="pagehead"><div class="titlerow"><h1>Agents</h1></div><p class="sub">Trading Grid Aviator agents on Trading Grid Context Services. Status follows the Aviator portfolio; prototype agents are demo-only.</p></div><div class="content"><div class="agentgrid">${studioAgents().map(agentCard).join("")}</div></div>`);
 
   function resources(a, c) {
     const tools = a.tools === "ALL" ? S.tools.map((t) => t.name) : a.tools;
@@ -367,7 +446,7 @@
       <div class="label"><span>Based on</span></div>
       <table class="t"><tbody>${a.inspiredBy.map((x) => `<tr><td><strong>${esc(x.name)}</strong></td><td class="muted">${esc(x.where)}</td></tr>`).join("")}</tbody></table>`;
     return shellStudio(`<div class="pagehead"><div class="crumbs"><a data-href="/studio">Agents</a> / ${esc(a.name)}</div>
-      <div class="titlerow"><h1>${esc(a.name)}</h1><span class="badge"><span class="dot"></span>V1 Published</span>
+      <div class="titlerow"><h1>${esc(a.name)}</h1>${statusTag(a)}
         <div class="actions"><button class="btn" data-href="/ext?eco=copilot-studio&agent=${a.id}">${ic("globe")}Run in external ecosystem</button><button class="btn" data-newconv="${key}">${ic("refresh")}New conversation</button><button class="btn primary" data-href="/studio/agents/${a.id}/simulate">${ic("play")}Simulate</button></div></div>
       <div class="tabs"><button class="tab ${tab !== "simulate" ? "active" : ""}" data-href="/studio/agents/${a.id}">${ic("doc")}Agent definition</button><button class="tab ${tab === "simulate" ? "active" : ""}" data-href="/studio/agents/${a.id}/simulate">${ic("play")}Simulate</button></div></div>
       <div class="grid2"><div class="leftcol">${tab === "simulate" ? `<div data-conv="${key}">${mounts[key](c)}</div>` : def}</div><div class="rightcol" data-side="${key}">${resources(a, c)}</div></div>`);
@@ -535,9 +614,10 @@
     Object.keys(mounts).forEach((k) => delete mounts[k]);
     let html;
     if (p === "/") html = pageJourney();
-    else if (p === "/tgo" || p === "/tgo/insights") {
+    else if (p === "/tgo") html = pageTgoHome();
+    else if (p === "/tgo/insights") {
       if (qs().get("q") != null && S.lastQ !== location.search) { S.lastQ = location.search; S.tgoFilters = { days: 7, q: qs().get("q") }; }
-      if (qs().get("aviator") === "1" && S.lastAv !== location.search) { S.lastAv = location.search; S.aviatorOpen = true; }
+      if (qs().get("aviator") === "1" && S.lastAv !== location.search) { S.lastAv = location.search; S.av.open = true; S.av.agentId = "tg-aviator"; }
       html = await pageTgoInsights();
     }
     else if (p === "/tgo/access") { S.audit = await api("/api/audit"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageTgoAccess(); }
@@ -554,31 +634,32 @@
     else if (p === "/ext") { S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageExt(); }
     else html = shellCs(`<div class="content"><div class="empty">Page not found.</div></div>`);
     app.innerHTML = html;
-    if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; return render(); }
+    if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; S.txTab = "details"; return render(); }
     if (p === "/cs" || p === "/cs/access") poll = setTimeout(() => { if (location.pathname === p && !document.querySelector(".drawer")) render(); }, 4000);
   }
   const go = (href) => { history.pushState({}, "", href); window.scrollTo(0, 0); render(); };
   window.addEventListener("popstate", render);
   const keyOf = (el) => el.closest("[data-conv]")?.dataset.conv ?? null;
 
-  function openAviatorWith(prompt) {
-    S.aviatorOpen = true;
-    render().then(() => send("tgo:tg-aviator", prompt));
-  }
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-run],[data-runuc],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-aviator],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
+    const t = ev.target.closest("[data-href],[data-run],[data-runuc],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.copy) { navigator.clipboard?.writeText(d.copy); const o = t.textContent; t.textContent = "Copied"; setTimeout(() => (t.textContent = o), 1200); return; }
     if (d.reload != null) return render();
     if (d.domain) { S.toolDomain = d.domain; return go("/cs/tools"); }
     if (d.tool) return toolDrawer(d.tool);
-    if (d.aviator != null) { S.aviatorOpen = !S.aviatorOpen; return render(); }
-    if (d.tx) { S.txOpen = d.tx; return render(); }
+    if (d.avopen) { if (S.av.open && S.av.agentId === d.avopen) { S.av.open = false; return render(); } S.av = { ...S.av, open: true, agentId: d.avopen }; return render(); }
+    if (d.avclose != null) { S.av.open = false; return render(); }
+    if (d.avnew != null) { delete S.convs[avKey()]; return render(); }
+    if (d.avask) return send(avKey(), d.avask);
+    if (d.togglesteps) { const key = keyOf(t); const m = S.convs[key].items[Number(d.togglesteps)]; m.showSteps = !m.showSteps; return refreshConv(key); }
+    if (d.txtab) { S.txTab = d.txtab; return render(); }
+    if (d.tx) { if (!location.pathname.startsWith("/tgo/insights")) { S.txOpen = d.tx; S.txTab = "details"; return go("/tgo/insights"); } S.txOpen = d.tx; S.txTab = "details"; return render(); }
     if (d.closetx != null) { S.txOpen = null; return render(); }
-    if (d.analyze) { S.txOpen = null; return openAviatorWith(`Analyze failed transaction ${d.analyze}. Explain the likely cause, which side of the exchange owns it, what you checked, and the next steps.`); }
-    if (d.askpayload) { S.txOpen = null; return openAviatorWith(`Summarize the payload of transaction ${d.askpayload}: document type, parties, key references and line items.`); }
+    if (d.analyze) return openAviator("error-resolution", `Analyze failed transaction ${d.analyze}. Explain the likely cause, which side of the exchange owns it, what you checked, and the numbered next steps.`, d.analyze);
+    if (d.askpayload) { S.av = { open: true, agentId: "payload-analysis", txId: d.askpayload }; delete S.convs["tgo:payload-analysis"]; return render(); }
     if (d.facet) { S.tgoFilters[d.facet] = S.tgoFilters[d.facet] === d.val ? "" : d.val; return render(); }
     if (d.unf) { S.tgoFilters[d.unf] = ""; return render(); }
     if (d.clearf != null) { S.tgoFilters = { days: S.tgoFilters.days }; return render(); }

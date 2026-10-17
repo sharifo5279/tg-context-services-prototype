@@ -134,7 +134,8 @@ app.get("/api/tgo/transactions/:id", (req, res) => {
   if (!t) return res.status(404).json({ error: "Transaction not found." });
   const ack = transactions.find((x) => x.refs.ackForTransactionId === t.transactionId);
   const { _t, ...rest } = t;
-  res.json({ ...rest, row: tgoRow(t), statusText: STATUS_TEXT[t.sourceStatus], ack: ack ? { transactionId: ack.transactionId, documentType: ack.documentType, status: ack.ack?.status, code: ack.ack?.code, receivedAt: ack.receivedAt } : null, payloadPreview: renderPayload(t, "ORIGINAL") });
+  const related = t.refs.poNumber ? transactions.filter((x) => x.transactionId !== t.transactionId && (x.refs.poNumber === t.refs.poNumber || x.refs.ackForTransactionId === t.transactionId)).sort((a, b) => a._t - b._t).map(tgoRow) : transactions.filter((x) => x.refs.ackForTransactionId === t.transactionId).map(tgoRow);
+  res.json({ ...rest, related, translated: t.payloadVariants.includes("TRANSLATED") ? renderPayload(t, "TRANSLATED") : null, row: tgoRow(t), statusText: STATUS_TEXT[t.sourceStatus], ack: ack ? { transactionId: ack.transactionId, documentType: ack.documentType, status: ack.ack?.status, code: ack.ack?.code, receivedAt: ack.receivedAt } : null, payloadPreview: renderPayload(t, "ORIGINAL") });
 });
 
 app.get("/api/audit", (_req, res) => res.json(audit.slice(0, 200)));

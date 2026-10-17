@@ -16,6 +16,9 @@ export type AgentDef = {
   tools: string[] | "ALL";
   starters: number[];
   surface?: "tgo" | "studio";
+  /** Status as published in the Trading Grid Aviator portfolio (Innovation Guide H2 2026). */
+  status: "Live today" | "On the roadmap" | "Incubating" | "Prototype";
+  subtitle?: string;
 };
 
 const OUTPUT_RULES = "Present exceptions as a markdown table. Keep the narrative short. End with a 'Recommended action' line.";
@@ -24,10 +27,12 @@ export const AGENTS: AgentDef[] = [
   {
     id: "tg-aviator",
     surface: "tgo",
-    name: "Trading Grid Aviator",
+    status: "Live today",
+    subtitle: "Trading Grid Online",
+    name: "Aviator",
     persona: "Trading Grid Online user",
     role: "Answer questions about transactions, errors, payloads, maps and the trading community inside Trading Grid Online, using the signed-in user's access rights.",
-    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Payload Analysis Agent", where: "TG Insights" }, { name: "Transaction Search Agent", where: "TG Insights" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
+    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Payload Analysis Agent", where: "TG Insights" }, { name: "Transaction Finder Agent", where: "TG Insights" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
     scenario: "Any EDI error, read and routed to its fix",
     instructions: [
       { title: "Explain the transaction", body: "For a failed transaction: state the likely cause, which side of the exchange owns it, the signals checked, and numbered next steps. Label the analysis as AI-generated." },
@@ -40,11 +45,31 @@ export const AGENTS: AgentDef[] = [
     starters: [6, 7, 31, 27],
   },
   {
+    id: "payload-analysis",
+    surface: "tgo",
+    status: "Live today",
+    subtitle: "Trading Grid Insights Payload Viewer",
+    name: "Payload Analysis Agent",
+    persona: "Support analyst",
+    role: "Explain a payload in plain language: what it is, what it contains and what is wrong with it.",
+    inspiredBy: [{ name: "Payload Analysis Agent", where: "TG Insights" }],
+    scenario: "Payload problem without reading raw EDI",
+    instructions: [
+      { title: "Read the payload", body: "Load the selected payload. Give the document type and purpose, sender and receiver roles, key references and line items as a table. Explain qualifiers and codes in plain language. When the payload is incomplete or malformed, state what must change for it to process. Follow-up questions relate only to this payload." },
+    ],
+    inputs: ["Payload"],
+    knowledge: ["X12 and EDIFACT code lists"],
+    outputs: [{ name: "Business summary", type: "Text" }, { name: "Line items", type: "Table" }],
+    tools: ["get_transaction", "get_transaction_payload", "get_partner_context"],
+    starters: [31],
+  },
+  {
     id: "morning-triage",
-    name: "Morning Triage Agent",
+    status: "Live today",
+    name: "Daily Summarizer Agent",
     persona: "Integration operations lead",
     role: "Your role is to tell the operations lead what failed or went unacknowledged overnight, which partners and flows are affected, and what to look at first.",
-    inspiredBy: [{ name: "Daily Summarizer and Explainer Agent", where: "Command Center Integration Monitor" }, { name: "Transaction Search Agent", where: "TG Insights" }],
+    inspiredBy: [{ name: "Daily Summarizer Agent", where: "Command Center Integration Monitor" }, { name: "Transaction Finder Agent", where: "TG Insights" }],
     scenario: "Morning operations triage",
     instructions: [
       { title: "Collect overnight exceptions", body: "## Task goal\nFind failed transactions and missing or rejected acknowledgments from the last 12 hours. Check integration monitor events in the CCIM data product for anomalies.\n## Rules\nUse only data the requesting user is entitled to see. Absence of an acknowledgment is unknown, not a rejection." },
@@ -59,10 +84,11 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "asn-exception",
+    status: "Prototype",
     name: "ASN Exception Agent",
     persona: "EDI support analyst",
     role: "Your role is to help the EDI team catch advance ship notices that were rejected, failed or missing, explain why, and prepare the fix and the follow-up to each supplier.",
-    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Map-level Intelligence Agent", where: "Trading Grid Cartographer" }, { name: "Xref Checker Agent (roadmap)", where: "Innovation Guide scenario" }],
+    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Map-level Intelligence Agent", where: "Trading Grid Cartographer" }, { name: "Xref Checker Agent (incubating)", where: "Innovation Guide scenario" }],
     scenario: "“Where are my ASNs?”",
     instructions: [
       { title: "Find rejected, failed and missing ASNs", body: "## Task goal\nFind the ASNs (856) the user asks about, or those from the last 24 hours that failed or were rejected. For each, retrieve the transaction, its acknowledgment and its status history.\n## Rules\nUse only data the requesting user is entitled to see. Do not resend, change or cancel anything without approval: prepare the change and wait." },
@@ -78,10 +104,12 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "error-resolution",
-    name: "Error Resolution Agent",
+    status: "Live today",
+    subtitle: "Trading Grid Insights Error Analysis",
+    name: "Error Analysis Agent",
     persona: "Supplier management and B2B support",
     role: "Your role is to read a failed document, explain the error in plain language, show which side owns the fix, and draft a notice that tells the supplier exactly what to change.",
-    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Payload Analysis Agent", where: "TG Insights" }, { name: "Audience Message Composer Agent (roadmap)", where: "Innovation Guide scenario" }],
+    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Payload Analysis Agent", where: "TG Insights" }, { name: "Audience Message Composer Agent (scenario)", where: "Innovation Guide scenario" }],
     scenario: "Telling a supplier exactly what to fix",
     instructions: [
       { title: "Read the error and the payload", body: "## Task goal\nFor the failed transaction or partner, get the error record and the original payload. Identify the segment and element at fault.\n## Rules\nPayload access is entitled separately. If it is denied, say so and continue from metadata." },
@@ -96,10 +124,11 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "fa-reconciliation",
+    status: "Incubating",
     name: "FA Reconciliation Agent",
     persona: "EDI manager",
     role: "Your role is to catch every purchase order that was not acknowledged on time, separate missing from rejected acknowledgments, and say which suppliers need follow-up.",
-    inspiredBy: [{ name: "FA Reconciliation Agent (roadmap)", where: "Innovation Guide scenario" }, { name: "Lex, timing and SLA (incubation)", where: "Command Center Performance Monitor" }],
+    inspiredBy: [{ name: "FA Reconciliation Agent (incubating)", where: "Innovation Guide scenario" }, { name: "Lex, timing and SLA (incubation)", where: "Command Center Performance Monitor" }],
     scenario: "Every late PO acknowledgment caught and explained",
     instructions: [
       { title: "Check functional acknowledgments", body: "## Task goal\nFor outbound 850 and ORDERS, find missing (997 or CONTRL) and rejected acknowledgments. Apply FA delinquency cycles: cycle 1 at 24 hours, cycle 2 at 48 hours.\n## Rules\nMissing is unknown, never rejected. Use AK5 or UCI codes for rejection detail." },
@@ -114,7 +143,8 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "partner-onboarding",
-    name: "Partner Onboarding Agent",
+    status: "On the roadmap",
+    name: "Onboarding Guide Agent",
     persona: "Onboarding manager",
     role: "Your role is to report where each new trading partner is in onboarding, confirm first live transactions, and prepare provisioning and connection requests for approval.",
     inspiredBy: [{ name: "Onboarding Guide Agent (roadmap)", where: "Trading Grid Aviator in Partner Hub" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
@@ -132,6 +162,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "community-insights",
+    status: "Live today",
     name: "Community Insights Agent",
     persona: "Supply chain and sourcing leader",
     role: "Your role is to answer questions about the trading community: who is active, which relationships have gone quiet, how volume is changing, and which data products support the analysis.",
@@ -150,6 +181,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "context-assistant",
+    status: "Prototype",
     name: "Context Services Assistant",
     persona: "Any Trading Grid user",
     role: "Your role is to answer any question about Harborview's trading community, connectivity, transactions, maps, requests and data products using every authorized Trading Grid Context Services tool.",
