@@ -15,7 +15,7 @@
     if (!B.data) return;
     const all = B.data.epics.flatMap((e) => e.items.map((i) => ({ ...i, epic: e.key })));
     const c = counts(all);
-    const bar = `<div class="bl-bar"><button class="bl-toggle" data-bl="toggle"><strong>Backlog</strong><span>${c.total} items</span><span><span class="pill ok">${c.Done} done</span></span><span><span class="pill info">${c["In progress"]} in progress</span></span><span><span class="pill warn">${c.Ready} ready</span></span><span><span class="pill neutral">${c.Proposed} proposed</span></span><span class="bl-upd">Updated ${esc(B.data.updated)}</span><span class="bl-chev">${B.open ? "Close" : "Open"}</span></button></div>`;
+    const bar = `<button class="bl-dot${B.open ? " open" : ""}" data-bl="toggle" title="${B.open ? "Close backlog" : `Backlog: ${c.total} items, ${c.Done} done, ${c["In progress"]} in progress`}" aria-label="Backlog"></button>`;
     if (!B.open) { root.innerHTML = bar; return; }
     const q = B.q.toLowerCase();
     const epics = B.data.epics.filter((e) => !B.epic || e.key === B.epic).map((e) => ({ ...e, items: e.items.filter((i) => (!B.status || i.status === B.status) && (!q || `${i.key} ${i.title} ${i.desc} ${i.source}`.toLowerCase().includes(q))) })).filter((e) => e.items.length);

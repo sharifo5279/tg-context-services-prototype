@@ -506,14 +506,10 @@ table.txt .st { display: flex; align-items: center; gap: 6px; color: var(--ink) 
 }
 
 /* ---- Backlog footer ---- */
-body { padding-bottom: 40px; }
-.bl-bar { position: fixed; left: 0; right: 0; bottom: 0; height: 38px; background: #fff; border-top: 1px solid var(--line-2); z-index: 60; }
-.bl-toggle { width: 100%; height: 100%; border: 0; background: none; display: flex; align-items: center; gap: 14px; padding: 0 16px; cursor: pointer; font-size: 13px; color: var(--slate); white-space: nowrap; overflow: hidden; }
-.bl-toggle strong { color: var(--ink); }
-.bl-upd { margin-left: auto; }
-.bl-chev { color: var(--blue); font-weight: 600; }
+.bl-dot { position: fixed; left: 10px; bottom: 10px; width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 2px solid #fff; background: var(--blue); box-shadow: 0 0 0 1px var(--line-2); opacity: 0.55; cursor: pointer; z-index: 60; transition: opacity 0.15s, transform 0.15s; }
+.bl-dot:hover, .bl-dot.open { opacity: 1; transform: scale(1.25); }
 .bl-bg { position: fixed; inset: 0; background: rgba(16, 28, 47, 0.25); z-index: 58; }
-.bl-sheet { position: fixed; left: 0; right: 0; bottom: 38px; height: min(74vh, 820px); background: #fff; z-index: 59; border-top: 2px solid var(--blue); display: flex; flex-direction: column; box-shadow: 0 -8px 24px rgba(16, 28, 47, 0.12); }
+.bl-sheet { position: fixed; left: 0; right: 0; bottom: 0; height: min(74vh, 820px); background: #fff; z-index: 59; border-top: 2px solid var(--blue); display: flex; flex-direction: column; box-shadow: 0 -8px 24px rgba(16, 28, 47, 0.12); }
 .bl-head { padding: 14px 20px 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .bl-head h2 { margin: 0; font-size: 18px; }
 .bl-filters { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
