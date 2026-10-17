@@ -159,7 +159,7 @@ export const AGENTS: AgentDef[] = [
     inputs: ["Partner", "Invitation"],
     knowledge: ["HRG supplier onboarding template"],
     outputs: [{ name: "Onboarding status", type: "Table" }, { name: "Requests", type: "Text" }],
-    tools: ["get_invitation", "search_registration_requests", "get_registration_request", "search_process_instances", "get_process_instance", "get_workflow_template", "list_workflow_templates", "search_trading_relationships", "get_partner_context", "search_transactions", "list_maps", "get_map_metadata", "prepare_partner_provisioning", "submit_partner_provisioning", "get_partner_provisioning_status", "list_change_request_types", "prepare_change_request", "submit_change_request", "get_change_request_status", "get_work_order_status", "search_company_contacts"],
+    tools: ["get_invitation", "search_registration_requests", "get_registration_request", "search_process_instances", "get_process_instance", "get_workflow_template", "list_workflow_templates", "search_trading_relationships", "get_partner_context", "search_transactions", "list_maps", "get_map_metadata", "prepare_partner_provisioning", "submit_partner_provisioning", "get_partner_provisioning_status", "list_change_request_types", "prepare_change_request", "submit_change_request", "list_change_requests", "get_change_request_status", "get_work_order_status", "search_company_contacts"],
     starters: [12, 30, 19, 18],
   },
   {

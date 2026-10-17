@@ -233,6 +233,13 @@ F("Add a missing store: prepare, approve, apply", "Approval flow", [
 
 // ---------------------------------------------------------------- Community Projects and Provisioning
 S("list_change_request_types", "Change request types", "Happy path", {}, "OK");
+S("list_change_requests", "All change requests", "Happy path", {}, "OK", { check: ["Seeded history", (o) => R(o).total >= 40] });
+S("list_change_requests", "Open work orders", "Filter", { state: "OPEN" }, "OK", { check: ["Only unfinished", (o) => R(o).changeRequests.every((c: any) => c.workOrders.some((w: any) => !["COMPLETED", "CANCELLED", "REJECTED"].includes(w.state)))] });
+S("list_change_requests", "Rejected requests", "Filter", { state: "REJECTED" }, "OK", { check: ["Reason present", (o) => R(o).changeRequests.length > 0 && R(o).changeRequests.every((c: any) => c.submissionState === "REJECTED" || c.workOrders.some((w: any) => w.state === "REJECTED"))] });
+S("list_change_requests", "Map changes in last 90 days", "Filter", { type: "MAP_CHANGE", from: "90d" }, "OK", { check: ["Type matches", (o) => R(o).changeRequests.every((c: any) => c.workOrders.some((w: any) => w.type === "MAP_CHANGE"))] });
+S("list_change_requests", "Requests for Coastline Apparel", "Filter", { partner: "Coastline Apparel" }, "OK", { check: ["Includes ST-10421", (o) => JSON.stringify(R(o)).includes("ST-10421")] });
+S("list_change_requests", "Second page", "Pagination", { page_size: 10, cursor: Buffer.from("10").toString("base64url") }, "OK", { check: ["Page of 10", (o) => R(o).changeRequests.length === 10] });
+S("list_change_requests", "Unknown partner", "Not found", { partner: "Zzyzx Nonexistent" }, "ERROR");
 S("get_change_request_status", "Accepted request in progress", "Happy path", { status_id: "ST-10421" }, "OK");
 S("get_change_request_status", "Rejected request", "Happy path", { status_id: "ST-10466" }, "OK", { check: ["Reason", (o) => JSON.stringify(R(o)).includes("Certificate")] });
 S("get_change_request_status", "Unknown request", "Not found", { status_id: "ST-00000" }, "ERROR");

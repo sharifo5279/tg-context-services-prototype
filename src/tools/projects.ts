@@ -2,9 +2,9 @@
 import * as O from "../data/other.js";
 import { invitations, registrations, companyById } from "../data/cms.js";
 import { ok, fail, createPlan, approvalRequired, consumePlan, Ctx } from "../runtime.js";
-import { ToolDef, s, MODELED, NEW_CONTRACT } from "./types.js";
+import { ToolDef, s, MODELED, NEW_CONTRACT, PAGE, paginate } from "./types.js";
 import { eq } from "../util.js";
-import { resolveCompany } from "./common.js";
+import { resolveCompany, parseTime } from "./common.js";
 
 const P = "Trading Grid Community Projects";
 const PV = "Trading Grid Community Provisioning Services";
@@ -96,6 +96,38 @@ export const projectsTools: ToolDef[] = [
       wo.attachments.push({ fileName: c.plan!.parameters.fileName, attachedAt: new Date().toISOString() });
       c.plan!.status = "EXECUTED";
       return ok(ctx, "attach_change_request_file", "request.submit", { receipt: { workOrderId: wo.workOrderId, fileName: c.plan!.parameters.fileName, receivedAt: new Date().toISOString() } }, { sources: src(P, `POST /TGCP/v1/work-orders/files?workOrderId=${wo.workOrderId}`) });
+    },
+  },
+  {
+    name: "list_change_requests", domain: "Requests and provisioning", product: P, title: "List change requests",
+    description: "List change requests (work-order requests) with their work orders. Filter by state, type, partner, submitter or date; open returns requests with unfinished work orders.",
+    operation: "request.read", kind: "read", binding: "GET /TGCP/v1/work-orders-requests (filtered)", basis: MODELED,
+    inputSchema: s.obj({
+      state: s.str("Submission or work-order state: SUBMITTED, ACCEPTED, REJECTED, NEW, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED, or OPEN (any unfinished work order)."),
+      type: s.str("Work-order type, e.g. AS2_CONNECTION or MAP_CHANGE (see list_change_request_types)."),
+      partner: s.str("Partner company ID or name."),
+      submitted_by: s.str("Submitter user ID."),
+      from: s.str("Submitted on or after: ISO date or relative such as 30d."),
+      ...PAGE,
+    }),
+    handler: (a, ctx) => {
+      let pid: string | null = null;
+      if (a.partner) { const r = resolveCompany(a.partner); if (r.kind !== "ok") return fail(ctx, "list_change_requests", "request.read", r.kind === "ambiguous" ? "AMBIGUOUS_PARTNER" : "NOT_FOUND", r.kind === "ambiguous" ? `'${a.partner}' matches several partners. Select one.` : `No permitted partner matches '${a.partner}'.`, r.kind === "ambiguous" ? { candidates: (r as any).candidates } : {}); pid = r.company.companyId; }
+      const from = a.from ? parseTime(a.from) : null;
+      const st = a.state ? String(a.state).toUpperCase() : null;
+      const DONE = ["COMPLETED", "CANCELLED", "REJECTED"];
+      const rows = O.changeRequests.map(crView).filter((c: any) =>
+        (!pid || c.partnerCompanyId === pid) && (!a.submitted_by || eq(c.submittedBy, a.submitted_by)) && (!from || Date.parse(c.submittedAt) >= from)
+        && (!a.type || c.workOrders.some((w: any) => eq(w.type, a.type)))
+        && (!st || (st === "OPEN" ? c.submissionState !== "REJECTED" && c.workOrders.some((w: any) => !DONE.includes(w.state)) : eq(c.submissionState, st) || c.workOrders.some((w: any) => eq(w.state, st)))))
+        .sort((x: any, y: any) => String(y.submittedAt).localeCompare(String(x.submittedAt)));
+      const { page, pagination } = paginate(rows, a);
+      const byState: Record<string, number> = {};
+      for (const c of rows) for (const w of (c as any).workOrders) byState[w.state] = (byState[w.state] ?? 0) + 1;
+      return ok(ctx, "list_change_requests", "request.read", {
+        total: rows.length, workOrdersByState: byState,
+        changeRequests: page.map((c: any) => ({ statusId: c.statusId, title: c.title, partner: c.partnerCompanyId ? companyById(c.partnerCompanyId)?.companyName ?? c.partnerCompanyId : null, submittedAt: c.submittedAt, submittedBy: c.submittedBy, submissionState: c.submissionState, ...(c.rejectionReason ? { rejectionReason: c.rejectionReason } : {}), workOrders: c.workOrders.map((w: any) => ({ workOrderId: w.workOrderId, type: w.type, state: w.state, stateSince: w.stateSince, assignedTeam: w.assignedTeam, ...(w.holdReason ? { holdReason: w.holdReason } : {}) })) })),
+      }, { sources: src(P, "GET /TGCP/v1/work-orders-requests"), pagination, interpretation: "Submission state shows whether the request was accepted. Work-order state shows delivery progress." });
     },
   },
   {

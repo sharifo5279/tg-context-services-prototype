@@ -170,6 +170,16 @@
           "accept": "Traffic arrives continuously; restarts reproduce the same history; demo changes survive restarts; scenarios find current examples.",
           "note": "Render free Postgres expires after 30 days; upgrade before then.",
           "priority": null
+        },
+        {
+          "key": "TGCS-113",
+          "title": "List change requests and work orders",
+          "status": "Done",
+          "size": "S",
+          "source": "Demo request",
+          "desc": "list_change_requests tool with state, type, partner, submitter and date filters. 48 seeded requests over six months.",
+          "accept": "Seven scenarios pass, including open, rejected, partner and pagination.",
+          "reality": "Demo construct"
         }
       ]
     },

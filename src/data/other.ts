@@ -127,6 +127,54 @@ export const changeRequests: any[] = [
   { statusId: "ST-10471", requestId: "REQ-10471", title: "New 945 map version for Crestline short-ship reasons", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(1), submittedBy: "j.patel", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5571", type: "MAP_CHANGE", state: "NEW", stateSince: dAgo(1), assignedTeam: "BN mapping", attachments: [{ fileName: "crestline_945_w12_codes.xlsx" }] }] },
   { statusId: "ST-10388", requestId: "REQ-10388", title: "Brightwell 856 ship-to store resolution", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(14), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5488", type: "MAP_CHANGE", state: "COMPLETED", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "store_resolution_spec.xlsx" }] }] },
 ];
+// History of change requests and their work orders over the last six months (deterministic).
+{
+  let seed = 7319;
+  const r = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  const pick = <T>(a: T[]) => a[Math.floor(r() * a.length)];
+  const people = ["jordan.lee", "s.okafor", "j.patel", "m.chen", "edi.team"];
+  const TEAM: Record<string, string> = { AS2_CONNECTION: "BN connectivity", SFTP_CONNECTION: "BN connectivity", TRADING_PARTNER: "BN onboarding", MAP_NEW: "BN mapping", MAP_CHANGE: "BN mapping", PS_MAP: "Professional Services" };
+  const partners = PROFILES.filter((p) => p.flow !== "WEB_EDI").map((p) => p.id);
+  const DOCS = ["850", "855", "856", "810", "846", "940", "945", "214", "820", "812"];
+  const NAMES: Record<string, string> = Object.fromEntries(Object.entries({ C20001: "Northfield Foods", C20002: "Northfield Farms", C20003: "Coastline Apparel", C20004: "Brightwell Home Goods", C20005: "Pinegate Home", C20006: "Hollanda Trading", C20007: "Summit Beverage", C20008: "Atlas Toy", C20009: "Meridian Personal Care", C20013: "Crestline Logistics", C20015: "Bayside Snacks", C20016: "Granite Peak Outdoor", C20017: "Lumen Lighting Supply", C20018: "Orchard Lane Juices", C20019: "Riverstone Pet Products", C20020: "Cascadia Paper Goods", C20021: "Silverline Kitchenware", C20022: "Harbor and Pine Textiles", C20023: "Kestrel Electronics", C20024: "Meadowbrook Dairy", C20025: "Sunfield Produce Partners", C20026: "Ironwood Tools", C20027: "Blue Heron Baby", C20029: "Northstar Apparel Group", C20030: "Tidewater Seafood", C20031: "Prairie Grain Foods", C20032: "Alder and Ash Furniture", C20033: "Vantage Health Supply", C20034: "Rocky Coast Beverages" }));
+  const title = (type: string, pid: string, doc: string) => {
+    const n = NAMES[pid] ?? pid;
+    return ({
+      AS2_CONNECTION: pick([`AS2 certificate renewal for ${n}`, `New AS2 connection for ${n} production`, `AS2 endpoint change for ${n}`]),
+      SFTP_CONNECTION: pick([`SFTP connection for ${n} test`, `SFTP credential rotation for ${n}`]),
+      TRADING_PARTNER: pick([`Add ${doc} relationship for ${n}`, `Move ${n} to production`, `New trading address for ${n}`]),
+      MAP_NEW: `New ${doc} map for ${n}`,
+      MAP_CHANGE: pick([`${n} ${doc} map change: ship-to handling`, `${n} ${doc} map change: unit of measure`, `${n} ${doc} map change: new reference qualifier`]),
+      PS_MAP: `Professional Services ${doc} mapping for ${n}`,
+    } as Record<string, string>)[type];
+  };
+  const types = ["AS2_CONNECTION", "SFTP_CONNECTION", "TRADING_PARTNER", "MAP_NEW", "MAP_CHANGE", "MAP_CHANGE", "PS_MAP", "TRADING_PARTNER"];
+  for (let k = 0; k < 44; k++) {
+    const days = Math.round(Math.pow(r(), 1.4) * 180) + 1;
+    const type = pick(types);
+    const pid = pick(partners);
+    const doc = pick(DOCS);
+    const rejected = r() < 0.07;
+    const nWo = type === "TRADING_PARTNER" && r() < 0.35 ? 2 : 1;
+    const wos = Array.from({ length: nWo }, (_, w) => {
+      const t = w === 0 ? type : type === "TRADING_PARTNER" ? "MAP_NEW" : type;
+      const leadDays = { AS2_CONNECTION: 6, SFTP_CONNECTION: 5, TRADING_PARTNER: 9, MAP_NEW: 21, MAP_CHANGE: 10, PS_MAP: 35 }[t] ?? 10;
+      const prog = days / leadDays;
+      const state = rejected ? "REJECTED" : prog > 1.3 ? (r() < 0.06 ? "CANCELLED" : "COMPLETED") : prog > 0.25 ? (r() < 0.3 ? "ON_HOLD" : "IN_PROGRESS") : "NEW";
+      const since = state === "COMPLETED" ? Math.max(1, Math.round(days - leadDays * (0.7 + r() * 0.6))) : state === "IN_PROGRESS" ? Math.max(0, Math.round(days * (0.2 + r() * 0.5))) : days;
+      return { workOrderId: `WO-${5100 + k * 2 + w}`, type: t, state, stateSince: dAgo(since), assignedTeam: TEAM[t], attachments: r() < 0.5 ? [{ fileName: `${(NAMES[pid] ?? pid).toLowerCase().replace(/[^a-z]+/g, "_")}_${doc}_spec.pdf` }] : [], ...(state === "ON_HOLD" ? { holdReason: pick(["Waiting for partner test file", "Waiting for partner certificate", "Waiting for specification approval"]) } : {}) };
+    });
+    changeRequests.push({ statusId: `ST-${10100 + k}`, requestId: `REQ-${10100 + k}`, title: title(type, pid, doc), projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(days), submittedBy: pick(people), submissionState: rejected ? "REJECTED" : "ACCEPTED", partnerCompanyId: pid, ...(rejected ? { rejectionReason: pick(["Required attachment missing; attach the file and resubmit.", "Duplicate of an open request.", "Partner company is not in the selected project."]) } : {}), workOrders: wos });
+  }
+  // Guarantee examples of every work-order state in the seeded history.
+  const gen = changeRequests.filter((c) => /^ST-101/.test(c.statusId) && c.submissionState === "ACCEPTED");
+  const holds = ["Waiting for partner test file", "Waiting for partner certificate", "Waiting for specification approval"];
+  gen.filter((c) => Date.parse(c.submittedAt) > Date.now() - 45 * 864e5).slice(0, 3).forEach((c, i) => { const w = c.workOrders[0]; w.state = "ON_HOLD"; w.holdReason = holds[i]; w.stateSince = dAgo(2 + i * 3); });
+  gen.filter((c) => c.workOrders[0].state === "COMPLETED").slice(-2).forEach((c) => { c.workOrders[0].state = "CANCELLED"; });
+  for (const c of changeRequests) if (!c.partnerCompanyId) c.partnerCompanyId = c.title.includes("Coastline") ? "C20003" : c.title.includes("Brightwell") ? "C20004" : c.title.includes("Crestline") ? "C20013" : null;
+  changeRequests.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
+}
+
 
 export const provisioningTemplates = [
   { templateName: "HRG_SUPPLIER_STD", description: "Standard X12 supplier: mailbox, AS2 address, relationships for 850, 855, 856, 810, 997", workflowTemplateId: 3101, requiredInputs: ["invitationId", "tradingAddress", "deliveryMethod"] },
