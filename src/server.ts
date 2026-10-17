@@ -71,7 +71,7 @@ app.use("/assets", express.static(path.join(PUBLIC, "assets")));
 app.use((req, res, next) => {
   if (authed(req)) return next();
   if (req.path.startsWith("/api/")) return res.status(401).json({ error: "Sign in required." });
-  return res.redirect("/login");
+  return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
 });
 
 // ---- Console API ------------------------------------------------------------------------------------
@@ -211,6 +211,14 @@ app.get("/api/xref-export/:entity", (req, res) => { const e = xrefEntities[req.p
 
 // ---- Single-page console --------------------------------------------------------------------------
 app.use(express.static(PUBLIC, { index: false }));
+// Copilot client as an installable home-screen app (full screen on iOS Safari).
+const APP_HEAD = `<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Copilot"><meta name="theme-color" content="#f5f2ee"><link rel="manifest" href="/assets/copilot.webmanifest"><link rel="apple-touch-icon" href="/assets/copilot-icon-180.png">`;
+app.get("/copilot", (_req, res) => {
+  const html = readFileSync(path.join(PUBLIC, "index.html"), "utf8")
+    .replace('<meta name="viewport" content="width=device-width, initial-scale=1">', '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">' + APP_HEAD)
+    .replace("<title>Trading Grid Context Services</title>", "<title>Copilot</title>");
+  res.type("html").send(html);
+});
 app.get(/.*/, (_req, res) => res.sendFile(path.join(PUBLIC, "index.html")));
 
 try { await loadState(); } catch (e: any) { console.error("Persistence: load failed; continuing in memory:", e?.message ?? e); }

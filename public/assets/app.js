@@ -763,7 +763,7 @@
     const blocked = (S.meta.clientStatus[eco] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => cpsChat(cc, agentId, avail, blocked);
     const chats = Object.values(S.convs).filter((x) => x.host === eco && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
-    const nav = [["chat", "Chat", "/ext?eco=copilot-studio&agent=context-assistant"], ["compass", "Discover", ""], ["search", "Search", ""]];
+    const nav = [["chat", "Chat", "x"], ["compass", "Discover", ""], ["search", "Search", ""]];
     return `<div class="cop ${S.cps.side ? "side-open" : ""}">
       <aside class="cop-side"><div class="cop-brand"><span>Copilot</span><span class="cop-tiny">simulated</span><button class="cop-round sm" data-copside="0" title="Close">${ic("x")}</button></div>
         ${nav.map(([i, l, h]) => `<button class="cop-nav" ${h ? `data-cpsuse="context-assistant"` : ""}>${ic(i)}<span>${l}</span></button>`).join("")}
@@ -802,6 +802,7 @@
     else if (p === "/cs/access") { S.audit = await api("/api/audit"); html = pageCsAccess(); }
     else if (p === "/cs/approvals") { S.plans = await api("/api/plans"); html = pageCsApprovals(); }
     else if (p.startsWith("/approve/")) { S.plans = await api("/api/plans"); html = await pageApprove(p.split("/")[2]); }
+    else if (p === "/copilot") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageCopilot(); }
     else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; if ((qs().get("eco") ?? "copilot-studio") === "copilot-studio") { S.audit = await api("/api/audit"); html = pageCopilot(); } else html = pageExt(); }
     else html = shellCs(`<div class="content"><div class="empty">Page not found. Return to the demo journey.</div></div>`);
     app.innerHTML = html;
@@ -818,7 +819,7 @@
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.copside) { S.cps.side = d.copside === "1"; return render(); }
-    if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`/ext?${u}`); }
+    if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`${location.pathname}?${u}`); }
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }
     if (d.scall != null) { if (!confirm(`Run all ${S.sc.catalog.length} scenarios? Demo data is reset before each scenario and restored afterwards.`)) return; S.sc.running = true; render(); const r = await api("/api/scenarios/run", { method: "POST", body: { all: true } }); S.sc.running = false; for (const x of r.results ?? []) S.sc.results[x.id] = x; S.plans = await api("/api/plans"); return render(); }
     if (d.scrow) { S.sc.open[d.scrow] = !S.sc.open[d.scrow]; return render(); }
@@ -873,7 +874,7 @@
     if (d.sckind != null) { S.sc.kind = ev.target.value; render(); }
     if (d.scresult != null) { S.sc.result = ev.target.value; render(); }
     if (d.days != null) { S.tgoFilters.days = ev.target.value; render(); }
-    if (d.cpsagent != null) { const u = new URLSearchParams(location.search); u.set("eco", "copilot-studio"); u.set("agent", ev.target.value); go(`/ext?${u}`); }
+    if (d.cpsagent != null) { const u = new URLSearchParams(location.search); if (location.pathname === "/ext") u.set("eco", "copilot-studio"); u.set("agent", ev.target.value); go(`${location.pathname}?${u}`); }
     if (d.extagent != null) { const u = new URLSearchParams(location.search); u.set("agent", ev.target.value); go(`/ext?${u}`); }
   });
   app.addEventListener("input", (ev) => {

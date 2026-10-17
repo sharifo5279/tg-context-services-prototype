@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Copilot"><link rel="apple-touch-icon" href="/assets/copilot-icon-180.png">
 <title>Sign in · Trading Grid Context Services</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/app.css">
@@ -29,7 +29,7 @@
 document.getElementById("f").addEventListener("submit", async (e) => {
   e.preventDefault();
   const r = await fetch("/api/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: document.getElementById("pw").value }) });
-  if (r.ok) location.href = "/"; else document.getElementById("err").textContent = "Incorrect password. Re-enter the password.";
+  if (r.ok) { const n = new URLSearchParams(location.search).get("next") || "/"; location.href = n.startsWith("/") && !n.startsWith("//") ? n : "/"; } else document.getElementById("err").textContent = "Incorrect password. Re-enter the password.";
 });
 </script>
 </body>
