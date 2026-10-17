@@ -15,7 +15,7 @@ export function tokenFor(host: HostKey) {
 
 export function hostForToken(token?: string | null): HostKey | null {
   if (!token) return null;
-  return (Object.keys(HOSTS) as HostKey[]).find((h) => tokenFor(h) === token) ?? null;
+  return (Object.keys(HOSTS) as HostKey[]).filter((h) => h !== "tg-aviator").find((h) => tokenFor(h) === token) ?? null;
 }
 
 function buildServer(ctx: Ctx) {

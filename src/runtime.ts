@@ -3,7 +3,7 @@ import { randomUUID, createHash } from "node:crypto";
 import { HUB_BUID, HUB_ORG, HUB_ID, SOLUTION_ID, companyById, bprs, invitations } from "./data/cms.js";
 import { CARTO_SOLUTION } from "./data/other.js";
 
-export type HostKey = "copilot-studio" | "gemini-enterprise" | "sap-joule" | "claude-connector" | "claude-ui";
+export type HostKey = "tg-aviator" | "aviator-studio" | "copilot-studio" | "gemini-enterprise" | "sap-joule" | "claude-connector" | "claude-ui";
 
 const BASE_OPS = [
   "access.read", "community.read", "connectivity.read", "services.read", "contacts.read", "workflow.read",
@@ -11,37 +11,55 @@ const BASE_OPS = [
   "request.read", "request.submit", "provisioning.submit", "dataproduct.read", "dataproduct.query", "dataproduct.export", "dataproduct.schedule",
 ];
 
+const EXT = (eco: string) => [eco, "Aviator AKS gateway", "TG Context Services (MCP)", "Trading Grid services"];
+
 export const HOSTS: Record<HostKey, any> = {
+  "tg-aviator": {
+    key: "tg-aviator", name: "Trading Grid Aviator", shortName: "TG Aviator", exposure: "Internal",
+    authPattern: "Trading Grid Online session (first party)",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "tgo-aviator",
+    note: "Runs inside Trading Grid Online with the user's own access rights.",
+    route: ["Trading Grid Online", "TG Aviator", "Trading Grid services"],
+    operations: BASE_OPS,
+  },
+  "aviator-studio": {
+    key: "aviator-studio", name: "OpenText Aviator Studio", shortName: "Aviator Studio", exposure: "OpenText, outside Trading Grid Online",
+    route: ["Aviator Studio", "TG Context Services (MCP)", "Trading Grid services"],
+    authPattern: "First-party OAuth, delegated user; Trading Grid Online grant",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-aviator-studio-hrg",
+    note: "Executes as the signed-in user.",
+    operations: BASE_OPS,
+  },
   "copilot-studio": {
-    key: "copilot-studio", name: "Microsoft Copilot Studio", shortName: "Copilot Studio",
+    key: "copilot-studio", exposure: "External", route: EXT("Copilot Studio"), name: "Microsoft Copilot Studio", shortName: "Copilot Studio",
     authPattern: "OAuth authorization code with user consent; Streamable HTTP",
     principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-copilot-hrg-b2b-ops",
     note: "Executes as the signed-in user. Verify whose connection runs the published agent.",
     operations: BASE_OPS,
   },
   "gemini-enterprise": {
-    key: "gemini-enterprise", name: "Google Gemini Enterprise", shortName: "Gemini Enterprise",
+    key: "gemini-enterprise", exposure: "External", route: EXT("Gemini Enterprise"), name: "Google Gemini Enterprise", shortName: "Gemini Enterprise",
     authPattern: "Custom MCP connector, OAuth with PKCE; Streamable HTTP",
     principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-gemini-hrg-b2b-ops",
     note: "Executes as the signed-in user. Only selected tools are enabled.",
     operations: BASE_OPS,
   },
   "sap-joule": {
-    key: "sap-joule", name: "SAP Joule Studio", shortName: "SAP Joule",
+    key: "sap-joule", exposure: "External", route: EXT("SAP Joule"), name: "SAP Joule Studio", shortName: "SAP Joule",
     authPattern: "BTP destination with client credentials (service identity)",
     principalType: "SERVICE_IDENTITY", principal: "svc-joule-hrg-procurement", clientApplication: "btp-dest-tgcs-hrg",
     note: "No user delegation on this route. Service identity grant excludes payload content.",
     operations: BASE_OPS.filter((o) => o !== "transaction.payload.read"),
   },
   "claude-connector": {
-    key: "claude-connector", name: "Claude (MCP connector)", shortName: "Claude connector",
+    key: "claude-connector", exposure: "External", route: EXT("Claude"), name: "Claude (MCP connector)", shortName: "Claude connector",
     authPattern: "Remote MCP server, bearer token (prototype)",
     principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-claude-hrg-b2b-ops",
     note: "Executes as the connecting user.",
     operations: BASE_OPS,
   },
   "claude-ui": {
-    key: "claude-ui", name: "Claude chatbot (Claude UI)", shortName: "Claude UI",
+    key: "claude-ui", exposure: "External", route: EXT("Claude"), name: "Claude chatbot (Claude UI)", shortName: "Claude UI",
     authPattern: "Custom connector in Claude settings; token in connector URL (prototype)",
     principalType: "DELEGATED_USER", principal: "jordan.lee@harborview.example", clientApplication: "app-claude-ui-hrg",
     note: "Executes as the connecting user.",
@@ -149,8 +167,12 @@ export function fail(ctx: Ctx, tool: string, operation: string, code: string, me
   return { status: "ERROR", tool, error: { code, message, ...extra }, access: { decision: "PERMIT", operation, ...principalBlock(ctx) } };
 }
 
+/** Client status is managed by the customer administrator in Trading Grid Online (Agent access). */
+export const clientStatus: Record<string, "ACTIVE" | "SUSPENDED"> = {};
+
 export function checkOperation(ctx: Ctx, operation: string): string | null {
   const h = hostOf(ctx);
+  if (clientStatus[h.key] === "SUSPENDED") return `Access for client ${h.name} is suspended in Trading Grid Online (Agent access). No Trading Grid data is returned.`;
   if (!h.operations.includes(operation)) {
     return `Operation '${operation}' is not in the grant for ${h.principalType === "SERVICE_IDENTITY" ? "service identity" : "principal"} ${h.principal} (${h.name}).`;
   }

@@ -15,11 +15,30 @@ export type AgentDef = {
   outputs: { name: string; type: string }[];
   tools: string[] | "ALL";
   starters: number[];
+  surface?: "tgo" | "studio";
 };
 
 const OUTPUT_RULES = "Present exceptions as a markdown table. Keep the narrative short. End with a 'Recommended action' line.";
 
 export const AGENTS: AgentDef[] = [
+  {
+    id: "tg-aviator",
+    surface: "tgo",
+    name: "Trading Grid Aviator",
+    persona: "Trading Grid Online user",
+    role: "Answer questions about transactions, errors, payloads, maps and the trading community inside Trading Grid Online, using the signed-in user's access rights.",
+    inspiredBy: [{ name: "Error Analysis Agent", where: "TG Insights" }, { name: "Payload Analysis Agent", where: "TG Insights" }, { name: "Transaction Search Agent", where: "TG Insights" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
+    scenario: "Any EDI error, read and routed to its fix",
+    instructions: [
+      { title: "Explain the transaction", body: "For a failed transaction: state the likely cause, which side of the exchange owns it, the signals checked, and numbered next steps. Label the analysis as AI-generated." },
+      { title: "Read payloads", body: "Summarize document type, parties, key references and line items. Explain qualifiers in plain language." },
+    ],
+    inputs: ["Transaction", "Question"],
+    knowledge: ["Trading Grid documentation", "Harborview procedures"],
+    outputs: [{ name: "Answer", type: "Text" }],
+    tools: ["search_transactions", "get_transaction", "get_related_transactions", "get_acknowledgment_evidence", "get_transaction_payload", "summarize_transaction_activity", "get_partner_context", "search_company_contacts", "get_map_metadata", "get_map_annotations", "get_cross_reference_entry", "list_maps"],
+    starters: [6, 7, 31, 27],
+  },
   {
     id: "morning-triage",
     name: "Morning Triage Agent",

@@ -5,10 +5,10 @@ import { fileURLToPath } from "node:url";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { runTurn, resetSession, MODEL, apiKeyConfigured } from "./agent.js";
 import { catalog, invoke, audit, TOOLS } from "./tools/index.js";
-import { HOSTS, GRANT, PERSONA, plans, decidePlan, HostKey } from "./runtime.js";
+import { HOSTS, GRANT, PERSONA, plans, decidePlan, clientStatus, scopeFilter, HostKey } from "./runtime.js";
 import { AGENTS, USE_CASES } from "./agents.js";
 import { handleMcp, hostForToken, tokenFor } from "./mcp.js";
-import { txById, renderPayload } from "./data/insights.js";
+import { txById, renderPayload, transactions, STATUS_TEXT } from "./data/insights.js";
 import { exports } from "./tools/tgdp.js";
 import { xrefEntities } from "./data/other.js";
 
@@ -67,7 +67,8 @@ app.get("/api/meta", (req, res) => {
     product: "Trading Grid Context Services", model: MODEL, apiKeyConfigured: apiKeyConfigured(), toolCount: TOOLS.length,
     persona: PERSONA, grant: GRANT, hosts: Object.values(HOSTS),
     agents: AGENTS, useCases: USE_CASES,
-    mcp: { url: `${b}/mcp`, tokens: Object.fromEntries((Object.keys(HOSTS) as HostKey[]).map((h) => [h, { token: tokenFor(h), pathUrl: `${b}/mcp/k/${tokenFor(h)}` }])) },
+    clientStatus,
+    mcp: { url: `${b}/mcp`, tokens: Object.fromEntries((Object.keys(HOSTS) as HostKey[]).filter((h) => h !== "tg-aviator").map((h) => [h, { token: tokenFor(h), pathUrl: `${b}/mcp/k/${tokenFor(h)}` }])) },
   });
 });
 
@@ -99,6 +100,41 @@ app.get("/api/plans/:id", (req, res) => { const p = plans.get(req.params.id); re
 app.post("/api/plans/:id/decision", (req, res) => {
   const p = decidePlan(req.params.id, !!req.body?.approve, PERSONA.user);
   return p ? res.json(p) : res.status(404).json({ error: "Plan not found." });
+});
+
+app.post("/api/clients/:key/status", (req, res) => {
+  const k = req.params.key as HostKey;
+  if (!HOSTS[k] || k === "tg-aviator") return res.status(404).json({ error: "Client not found." });
+  clientStatus[k] = req.body?.active ? "ACTIVE" : "SUSPENDED";
+  res.json({ key: k, status: clientStatus[k] });
+});
+
+// ---- Trading Grid Online: TG Insights transactions (first-party UI data) ---------------------------
+const DELIVERY: Record<string, string> = { DLVD: "Delivered", FAIL: "Delivery failed", INPR: "In process", RCVD: "Received" };
+const tgoRow = (t: any) => ({
+  transactionId: t.transactionId, receivedAt: t.receivedAt, sender: t.sender, receiver: t.receiver, senderTransactionId: t.senderTransactionId,
+  transactionType: { "850": "PurchaseOrder", "855": "POAcknowledgment", "856": "ShipNotice", "810": "Invoice", "997": "FunctionalAck", "846": "InventoryAdvice", ORDERS: "PurchaseOrder", DESADV: "ShipNotice", INVOIC: "Invoice", CONTRL: "SyntaxAck" }[t.documentType as string] ?? t.documentType,
+  ediType: t.documentType, delivery: DELIVERY[t.sourceStatus], sourceStatus: t.sourceStatus, hasError: t.errors.length > 0, fa: t.ack?.status ?? null,
+});
+app.get("/api/tgo/transactions", (req, res) => {
+  const q = req.query as any;
+  const from = Date.now() - Number(q.days ?? 7) * 86400_000;
+  let rows = transactions.filter((t) => t._t >= from && t.environment === "PRODUCTION" && scopeFilter(t.partnerCompanyId));
+  const facets = (key: (t: any) => string) => Object.entries(rows.reduce((m: any, t) => ((m[key(t)] = (m[key(t)] ?? 0) + 1), m), {})).sort((a: any, b: any) => b[1] - a[1]).slice(0, 8);
+  const base = { sender: facets((t) => t.sender.companyName), receiver: facets((t) => t.receiver.companyName), delivery: facets((t) => DELIVERY[t.sourceStatus]), ediType: facets((t) => t.documentType) };
+  if (q.delivery) rows = rows.filter((t) => DELIVERY[t.sourceStatus] === q.delivery);
+  if (q.sender) rows = rows.filter((t) => t.sender.companyName === q.sender);
+  if (q.receiver) rows = rows.filter((t) => t.receiver.companyName === q.receiver);
+  if (q.ediType) rows = rows.filter((t) => t.documentType === q.ediType);
+  if (q.q) { const v = String(q.q).toUpperCase(); rows = rows.filter((t) => t.transactionId === v || Object.values(t.keys).some((k: any) => String(k.value).toUpperCase() === v) || Object.values(t.controlNumbers).includes(v)); }
+  res.json({ total: rows.length, facets: base, rows: rows.slice(0, 60).map(tgoRow) });
+});
+app.get("/api/tgo/transactions/:id", (req, res) => {
+  const t: any = txById(req.params.id);
+  if (!t) return res.status(404).json({ error: "Transaction not found." });
+  const ack = transactions.find((x) => x.refs.ackForTransactionId === t.transactionId);
+  const { _t, ...rest } = t;
+  res.json({ ...rest, row: tgoRow(t), statusText: STATUS_TEXT[t.sourceStatus], ack: ack ? { transactionId: ack.transactionId, documentType: ack.documentType, status: ack.ack?.status, code: ack.ack?.code, receivedAt: ack.receivedAt } : null, payloadPreview: renderPayload(t, "ORIGINAL") });
 });
 
 app.get("/api/audit", (_req, res) => res.json(audit.slice(0, 200)));

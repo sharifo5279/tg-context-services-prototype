@@ -19,8 +19,10 @@ function systemPrompt(agentId: string, host: HostKey) {
   const a = agentById(agentId);
   const h = HOSTS[host];
   return [
-    `You are ${a.name}, a customer agent running in ${h.name} for ${PERSONA.company}. The user is ${PERSONA.name}, ${PERSONA.title}.`,
-    `You reach OpenText Trading Grid only through Trading Grid Context Services MCP tools. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,
+    `You are ${a.name}, running in ${h.name} for ${PERSONA.company}. The user is ${PERSONA.name}, ${PERSONA.title}.`,
+    host === "tg-aviator"
+      ? "You run inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
+      : `You reach OpenText Trading Grid only through Trading Grid Context Services MCP tools${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,
     `Current time: ${new Date().toISOString()}.`,
     "",
     a.role,
@@ -112,7 +114,7 @@ export async function runTurn(opts: { sessionId: string; host: HostKey; agentId:
       emit({
         type: "tool_result", id: c.id, name: c.name, ms, status: out.status,
         decision: out.access?.decision, product: tool?.product, binding: tool?.binding, basis: tool?.basis,
-        completeness: out.evidence?.completeness, summary: summarize(out), envelope: out,
+        completeness: out.evidence?.completeness, summary: summarize(out), envelope: out, route: HOSTS[opts.host].route,
       });
       if (out.status === "APPROVAL_REQUIRED") emit({ type: "approval", plan: out.result });
       const text = JSON.stringify(out);

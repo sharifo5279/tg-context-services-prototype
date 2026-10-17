@@ -83,7 +83,7 @@ ALL = [...accessTools, ...insightsTools, ...cmsTools, ...cartographerTools, ...p
 export const TOOLS = ALL;
 export const toolByName = (n: string) => ALL.find((t) => t.name === n);
 
-export type AuditEntry = { at: string; host: string; principal: string; sessionId: string; channel: string; tool: string; operation: string; decision: string; status: string; ms: number; args: any };
+export type AuditEntry = { at: string; route: string; host: string; principal: string; sessionId: string; channel: string; tool: string; operation: string; decision: string; status: string; ms: number; args: any };
 export const audit: AuditEntry[] = [];
 
 /** Single enforcement path: authenticate (caller), evaluate operation entitlement, invoke, envelope, audit. */
@@ -101,7 +101,7 @@ export function invoke(name: string, args: any, ctx: Ctx, channel: "console" | "
     }
   }
   const ms = Date.now() - t0 + 40 + Math.floor(Math.random() * 120); // includes simulated source latency
-  audit.unshift({ at: new Date().toISOString(), host: ctx.host, principal: hostOf(ctx).principal, sessionId: ctx.sessionId, channel, tool: name, operation: t?.operation ?? "?", decision: out?.access?.decision ?? "N/A", status: out?.status, ms, args });
+  audit.unshift({ at: new Date().toISOString(), route: (hostOf(ctx).route ?? []).join(" > "), host: ctx.host, principal: hostOf(ctx).principal, sessionId: ctx.sessionId, channel, tool: name, operation: t?.operation ?? "?", decision: out?.access?.decision ?? "N/A", status: out?.status, ms, args });
   if (audit.length > 500) audit.pop();
   return { out, ms, tool: t };
 }
