@@ -891,7 +891,7 @@
     return `<div class="cop ${S.cps.side ? "side-open" : ""}">
       <aside class="cop-side"><div class="cop-brand"><span>Copilot</span><span class="cop-tiny">simulated</span><span class="cop-sp"></span><button class="cop-ib" title="Apps">${ic("grid")}</button><button class="cop-ib cop-x" data-copside="0" title="Close">${ic("x")}</button></div>
         ${nav.map(([i, l, h]) => `<button class="cop-nav" ${h}>${ic(i)}<span>${l}</span></button>`).join("")}
-        <div class="cop-sec">Pinned</div><div class="cop-agents"><button class="cop-chatlink ${agentId === "context-assistant" ? "on" : ""}" data-cpsuse="context-assistant">${ic("sparkle")}<span>Copilot</span></button>${avail.filter((x) => x.id !== "context-assistant").map((x) => `<button class="cop-chatlink ${x.id === agentId ? "on" : ""}" data-cpsuse="${x.id}"><i>${esc(initials(x.name))}</i><span>${esc(x.name)}</span></button>`).join("")}</div>
+        <div class="cop-sec">Pinned</div><div class="cop-agents"><button class="cop-chatlink ${agentId === "context-assistant" ? "on" : ""}" data-cpsuse="context-assistant">${ic("sparkle")}<span>Copilot</span></button></div>
         ${chats.length ? `<div class="cop-sec">Chats</div>${chats.map(([id, t]) => `<button class="cop-chatlink" data-cpsuse="${id}"><span>${esc(t.slice(0, 48))}</span></button>`).join("")}` : ""}
         <div class="cop-prof"><div class="avatar sm">JL</div><div><div class="n">${esc(S.meta.persona.name)}</div><div class="s">Harborview Retail Group</div></div></div></aside>
       <div class="cop-scrim" data-copside="0"></div>
@@ -1415,6 +1415,8 @@
     if (d.extagent != null) { const u = new URLSearchParams(location.search); u.set("agent", ev.target.value); go(`/ext?${u}`); }
   });
   app.addEventListener("input", (ev) => {
+    // Composer grows with its text so every typed line stays visible.
+    if (ev.target.matches?.("[data-compose] textarea")) { const ta = ev.target; ta.style.height = "auto"; ta.style.height = `${Math.min(ta.scrollHeight, 200)}px`; ta.style.overflowY = ta.scrollHeight > 200 ? "auto" : "hidden"; ta.scrollTop = ta.scrollHeight; }
     if (ev.target.dataset.scq != null) { S.sc.q = ev.target.value; const pos = ev.target.selectionStart; render().then(() => { const el = $("[data-scq]"); el.focus(); el.setSelectionRange(pos, pos); }); }
     if (ev.target.dataset.toolq != null) { S.toolQ = ev.target.value; const pos = ev.target.selectionStart; render().then(() => { const el = $("[data-toolq]"); el.focus(); el.setSelectionRange(pos, pos); }); }
   });

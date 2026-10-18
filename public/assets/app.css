@@ -1389,8 +1389,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .cl-bb { min-width: 0; max-width: 100%; }
 /* Stage on a phone: the whole footer outside the navigation plays the next turn; larger play target */
 .stage.mob .stage-foot { padding-bottom: env(safe-area-inset-bottom, 0); }
-.stage.mob .stage-play { width: 44px; height: 44px; background: none; left: 4px !important; }
-.stage.mob .stage-play::after { content: ""; position: absolute; left: 18px; top: 18px; width: 8px; height: 8px; border-radius: 50%; background: #dfe3e8; }
+.stage.mob .stage-play { width: 52px; height: 48px; background: none; left: auto !important; right: 2px; }
+.stage.mob .stage-play::after { content: ""; position: absolute; left: 19px; top: 17px; width: 14px; height: 14px; border-radius: 50%; background: #d3d8df; }
 @media (max-width: 600px) { .astep .ams, .astep .aby { display: none; } .astep .af + .as, .astep .aby + .as:empty { display: none; } .astep .as { padding-left: 0; } .activity .alist { gap: 6px; } }
 
 /* Native progress indicators per client */
