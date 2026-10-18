@@ -106,12 +106,33 @@
 
   // ---------- markdown ----------
   const inline = (s) => s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  // Visual blocks the agent can emit as fenced blocks: kpi, status, chart bar, chart line. One row per line, cells split by "|".
+  function visual(kind, rows) {
+    const cells = rows.map((r) => r.split("|").map((c) => c.trim())).filter((c) => c[0]);
+    const title = cells.find((c) => /^title:/i.test(c[0]))?.[0].replace(/^title:\s*/i, "");
+    const data = cells.filter((c) => !/^title:/i.test(c[0]));
+    const num = (v) => parseFloat(String(v ?? "").replace(/[^0-9.\-]/g, ""));
+    const head = title ? `<div class="rv-title">${inline(title)}</div>` : "";
+    if (kind === "kpi") return `<div class="rv">${head}<div class="rv-kpis">${data.map(([l, v, n]) => `<div class="rv-kpi"><span>${inline(l)}</span><b>${inline(v ?? "")}</b>${n ? `<em>${inline(n)}</em>` : ""}</div>`).join("")}</div></div>`;
+    if (kind === "status") return `<div class="rv">${head}<div class="rv-status">${data.map(([l, st, d]) => { const v = st ?? ""; const k = /\b(bad|fail|failed|failing|error|red|blocked|denied|critical|missing|expired)\b/i.test(v) ? "bad" : /\b(warn|risk|at risk|pending|amber|hold|on hold|progress|in progress|open|degraded|test)\b/i.test(v) ? "warn" : /\b(ok|done|complete|completed|healthy|green|active|live|delivered|passed)\b/i.test(v) ? "ok" : "info"; return `<div class="rv-st ${k}"><i></i><div><b>${inline(l)}</b>${d ? `<span>${inline(d)}</span>` : ""}</div><em>${inline(st ?? "")}</em></div>`; }).join("")}</div></div>`;
+    if (kind === "chart bar" || kind === "chart") {
+      const max = Math.max(...data.map((c) => num(c[1])).filter((x) => !isNaN(x)), 0) || 1;
+      return `<div class="rv">${head}<div class="rv-bars">${data.map(([l, v]) => `<div class="rv-bar"><span>${inline(l)}</span><div><i style="width:${Math.max(2, (num(v) / max) * 100).toFixed(1)}%"></i></div><b>${inline(v ?? "")}</b></div>`).join("")}</div></div>`;
+    }
+    if (kind === "chart line") {
+      const pts = data.map(([l, v]) => [l, num(v), v]).filter((p) => !isNaN(p[1])); if (pts.length < 2) return null;
+      const ys = pts.map((p) => p[1]), lo = Math.min(...ys), hi = Math.max(...ys), span = hi - lo || 1;
+      const xy = pts.map((p, k) => [8 + (k * 284) / (pts.length - 1), 8 + (1 - (p[1] - lo) / span) * 64]);
+      return `<div class="rv">${head}<svg class="rv-line" viewBox="0 0 300 80" width="100%" height="96"><polyline points="${xy.map((q) => q.join(",")).join(" ")}"/>${xy.map((q) => `<circle cx="${q[0]}" cy="${q[1]}" r="2.6"/>`).join("")}</svg><div class="rv-axis">${pts.map((p) => `<span><b>${inline(p[2])}</b>${inline(p[0])}</span>`).join("")}</div></div>`;
+    }
+    return null;
+  }
   function md(src) {
     const lines = esc(src).split("\n");
     let out = "", i = 0;
     while (i < lines.length) {
       const l = lines[i];
-      if (/^```/.test(l)) { let b = ""; i++; while (i < lines.length && !/^```/.test(lines[i])) b += lines[i++] + "\n"; i++; out += `<pre>${b}</pre>`; continue; }
+      if (/^```/.test(l)) { const kind = l.slice(3).trim().toLowerCase(); let b = ""; const rows = []; i++; while (i < lines.length && !/^```/.test(lines[i])) { rows.push(lines[i]); b += lines[i++] + "\n"; } i++; out += visual(kind, rows) ?? `<pre>${b}</pre>`; continue; }
       if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
         const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => inline(c.trim()));
         const head = cells(l); i += 2; let body = "";
