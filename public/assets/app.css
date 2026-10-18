@@ -1115,7 +1115,8 @@ body:has(.cl) .bl-dot, body:has(.stage) .bl-dot { display: none; }
   .cl-top { height: 52px; padding: 0 8px; }
   .cl-col { padding: 12px 16px 18px; gap: 18px; }
   .cl-ub { max-width: 86%; }
-  .cl-md table { display: block; overflow-x: auto; white-space: nowrap; }
+  .cl-md table { display: block; overflow-x: auto; white-space: normal; }
+  .cl-md td, .cl-md th { min-width: 5.5em; }
   .cl-foot { padding: 0 10px 4px; gap: 8px; }
   .cl-hello h1 { font-size: 26px; }
   .cl-sim { margin-top: -4px; }
@@ -1390,3 +1391,4 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .stage.mob .stage-foot { padding-bottom: env(safe-area-inset-bottom, 0); }
 .stage.mob .stage-play { width: 44px; height: 44px; background: none; left: 4px !important; }
 .stage.mob .stage-play::after { content: ""; position: absolute; left: 18px; top: 18px; width: 8px; height: 8px; border-radius: 50%; background: #dfe3e8; }
+@media (max-width: 600px) { .astep .ams { display: none; } .astep .af + .as, .astep .aby + .as:empty { display: none; } .astep .as { padding-left: 0; } .activity .alist { gap: 6px; } }
