@@ -127,6 +127,10 @@ export const changeRequests: any[] = [
   { statusId: "ST-10471", requestId: "REQ-10471", title: "New 945 map version for Crestline short-ship reasons", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(1), submittedBy: "j.patel", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5571", type: "MAP_CHANGE", state: "NEW", stateSince: dAgo(1), assignedTeam: "BN mapping", attachments: [{ fileName: "crestline_945_w12_codes.xlsx" }] }] },
   { statusId: "ST-10388", requestId: "REQ-10388", title: "Brightwell 856 ship-to store resolution", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(14), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5488", type: "MAP_CHANGE", state: "COMPLETED", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "store_resolution_spec.xlsx" }] }] },
 ];
+// Certificate renewal for the Northfield Foods AS2 incident; times are relative to the current time.
+export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN connectivity", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }] }] };
+changeRequests.push(JSON.parse(JSON.stringify(CERT_CR)));
+
 // History of change requests and their work orders over the last six months (deterministic).
 {
   let seed = 7319;

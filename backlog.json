@@ -198,7 +198,7 @@
           "status": "Done",
           "size": "M",
           "source": "Demo request",
-          "desc": "/stage shows seven clients (Copilot, Teams, Joule Work, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude) on an iPhone and a laptop; left and right arrow keys switch clients; one conversation mirrors across both screens.",
+          "desc": "/stage shows seven clients (Copilot, Teams, Joule Work, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude) on an iPhone and a laptop; left and right arrow keys switch clients; one conversation mirrors across both screens. ServiceNow runs in Service Operations Workspace on incident INC0041873 (Northfield Foods AS2 certificate expired two hours before the current time; inbound files fail at receipt; renewal ST-10500 in progress).",
           "accept": "A prompt sent on either device appears on both.",
           "reality": "Demo construct"
         }
@@ -1255,11 +1255,11 @@
         },
         {
           "key": "TGCS-1105",
-          "title": "SAP Joule style client",
-          "status": "Proposed",
+          "title": "SAP S/4HANA with Joule client",
+          "status": "Done",
           "size": "M",
           "source": "Omar request",
-          "desc": "Joule side panel over an S/4HANA-style inbound delivery screen.",
+          "desc": "Monitor Supplier Confirmations list report with Joule docked; purchase orders and shipment status come from Trading Grid; Joule Work mobile on iPhone.",
           "accept": "Shows service identity and payload denial.",
           "reality": "Demo construct"
         },

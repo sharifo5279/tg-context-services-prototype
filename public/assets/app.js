@@ -804,14 +804,16 @@
       rail: [["bell", "Activity"], ["chat", "Chat", 1], ["users", "Teams"], ["calendar", "Calendar"], ["more", "More"]],
       tabs: [["bell", "Activity"], ["chat", "Chat", 1], ["users", "Teams"], ["calendar", "Calendar"], ["more", "More"]],
       bot: "TG", hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid agent published to Teams through Copilot Studio" },
-    joule: { name: "Joule Work", host: "sap-joule", bar: "#f5f6f7", ph: "Message Joule", agents: "Agents", auto: "Joule",
+    joule: { name: "SAP S/4HANA", host: "sap-joule", bar: "#f5f6f7", ph: "Message Joule", agents: "Agents", auto: "Joule", ws: "s4",
       tabs: [["home", "Home"], ["tasks", "Tasks"], ["spark", "Joule", 1], ["grid", "Apps"]],
-      bot: "J", hello: (n) => `Hi ${n}, what do you want to get done?`, sim: "Simulated client · Trading Grid via SAP BTP destination and Aviator AKS gateway" },
+      bot: "J", hello: (n) => `Hi ${n}, what do you want to get done?`, sim: "Simulated client · Trading Grid via SAP BTP destination and Aviator AKS gateway",
+      starters: (d, sel) => sel ? [`When will purchase order ${sel.po} from ${sel.supplier} arrive?`, `Has ${sel.supplier} confirmed purchase order ${sel.po}?`, `Show every document exchanged for purchase order ${sel.po}.`] : [] },
     gemini: { name: "Gemini Enterprise", host: "gemini-enterprise", bar: "#ffffff", ph: "Ask Gemini", agents: "Agents", auto: "Gemini",
       hello: (n) => `Hello, ${n}`, sim: "Simulated client · Trading Grid custom MCP connector via Aviator AKS gateway" },
     servicenow: { name: "ServiceNow", host: "servicenow", bar: "#032d42", dark: 1, ph: "Ask Now Assist", agents: "AI agents", auto: "Now Assist",
       tabs: [["home", "Home"], ["list", "Requests"], ["spark", "Now Assist", 1], ["agent", "Profile"]],
-      bot: "NA", hello: (n) => `Hi ${n}. What can Now Assist help with?`, sim: "Simulated client · Trading Grid via AI Agent Fabric MCP client and Aviator AKS gateway" },
+      bot: "NA", hello: (n) => `Hi ${n}. What can Now Assist help with?`, sim: "Simulated client · Trading Grid via AI Agent Fabric MCP client and Aviator AKS gateway", ws: "servicenow",
+      starters: (d) => d ? [`Summarize incident ${d.number} with Trading Grid evidence.`, `Which ${d.partner.replace(/ Inc$/, "")} documents failed, and what business is affected?`, `What is the status of certificate renewal ${d.changeRequest}?`] : [] },
     chatgpt: { name: "ChatGPT Enterprise", host: "chatgpt-enterprise", bar: "#ffffff", ph: "Ask anything", agents: "GPTs", auto: "ChatGPT",
       hello: () => "What can I help with?", sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
     claude: { name: "Claude", host: "claude-ui", bar: "#faf9f5", ph: "Reply to Claude", agents: "Trading Grid agents", auto: "Claude",
@@ -839,7 +841,8 @@
     const first = (S.meta.persona.name || "").split(" ")[0];
     const title = agentId === "context-assistant" ? K.auto : a?.name ?? K.auto;
     c.botName = id === "teams" ? (agentId === "context-assistant" ? "Trading Grid" : a?.name) : K.auto;
-    const starters = (a?.starters ?? []).slice(0, 4).map((n) => `<button class="cl-starter" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("");
+    const custom = K.starters ? K.starters(S.scene?.[K.ws], wsSelected(K)) : null;
+    const starters = (custom?.length ? custom : (a?.starters ?? []).slice(0, 4).map(promptOf)).map((p) => `<button class="cl-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("");
     const empty = !c.items.length ? `<div class="cl-hello"><h1>${esc(K.hello(first))}</h1><div class="cl-starters">${starters}</div></div>` : "";
     const icons = { teams: ["video", "phone", "more"], joule: ["expand", "more"], gemini: ["more"], servicenow: ["more"], chatgpt: ["share", "more"], claude: ["share", "more"] }[id];
     return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Menu">${ic(id === "teams" ? "back" : "menu")}</button>
@@ -852,6 +855,52 @@
         ${K.tabs ? `<nav class="cl-tabs">${K.tabs.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
         <div class="cl-sim">${esc(K.sim)}</div></div>`;
   }
+  S.scene = {};
+  const fdate = (iso) => new Date(iso).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  const ago = (iso) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60000); const h = Math.floor(m / 60); return m < 60 ? `${m} min ago` : `${h} hr ${m % 60} min ago`; };
+  function wsSelected(K) {
+    if (K.ws !== "s4") return null;
+    const d = S.scene.s4; if (!d) return null;
+    return d.rows.find((r) => r.po === qs().get("po")) ?? d.rows.find((r) => r.po === d.selected) ?? d.rows[0];
+  }
+  const S4_ST = { "Not confirmed": "warn", Confirmed: "info", Shipped: "ok", Invoiced: "neutral" };
+  function wsArea(K) {
+    if (K.ws === "s4") {
+      const d = S.scene.s4, sel = wsSelected(K);
+      if (!d) return `<div class="ws-area"></div>`;
+      const f = (l, v) => `<label class="s4-f"><span>${esc(l)}:</span><div>${esc(v)}</div></label>`;
+      return `<div class="ws-area s4">
+        <header class="s4-shell"><span class="s4-logo">SAP</span><span class="s4-app">Monitor Supplier Confirmations ${ic("chev")}</span><span class="cl-sp"></span>${ic("search")}<span class="s4-joule on">${ic("spark")}</span>${ic("bell")}<span class="cl-av round sm">JL</span></header>
+        <div class="s4-page">
+          <div class="s4-head"><h1>Standard ${ic("chev")}</h1>
+            <div class="s4-filters">${f("Purchasing Group", d.purchasingGroup)}${f("Plant", d.plant)}${f("Order Date", "Last 7 days")}${f("Confirmation Status", "All")}<button class="s4-go">Go</button></div></div>
+          <div class="s4-table"><div class="s4-tbar"><b>Purchase Orders (${d.rows.length})</b><span class="cl-sp"></span><button>Send Reminder</button><button>Export</button></div>
+            <table><thead><tr><th>Purchase Order</th><th>Supplier</th><th>Order Date</th><th>Requested Delivery</th><th>Confirmation Status</th><th>Inbound Shipment</th></tr></thead><tbody>
+            ${d.rows.map((r) => `<tr class="${sel && r.po === sel.po ? "sel" : ""}" data-s4po="${r.po}"><td class="lnk">${r.po}</td><td>${esc(r.supplier)}</td><td>${fdate(r.orderedAt)}</td><td>${fdate(r.requestedDelivery + "T12:00:00Z")}</td><td><span class="s4-st ${S4_ST[r.status]}">${esc(r.status)}</span></td><td>${esc(r.shipmentId ?? "")}</td></tr>`).join("")}
+            </tbody></table></div></div>
+        ${sel ? `<div class="s4-mcard"><div class="k">Purchase order</div><div class="t">${sel.po}</div><div class="s">${esc(sel.supplier)} · ordered ${fdate(sel.orderedAt)}</div><span class="s4-st ${S4_ST[sel.status]}">${esc(sel.status)}</span></div>` : ""}</div>`;
+    }
+    const d = S.scene.servicenow;
+    if (!d) return `<div class="ws-area"></div>`;
+    const fld = (l, v, req) => `<div class="sn-f"><label>${req ? "<i>*</i>" : ""}${esc(l)}</label><div class="sn-in">${esc(v)}</div></div>`;
+    const fails = Object.entries(d.byDoc).map(([k, v]) => `${k} × ${v}`).join(", ");
+    const notes = [
+      ["Jordan Lee", "Work notes", new Date(Date.parse(d.openedAt) + 35 * 60000).toISOString(), `Raised certificate renewal ${d.changeRequest} in Trading Grid Community Projects. BN connectivity assigned; partner's new signing certificate attached.`],
+      ["Jordan Lee", "Work notes", new Date(Date.parse(d.openedAt) + 6 * 60000).toISOString(), `Trading Grid shows inbound files from ${d.partner} failing AS2 signature verification since ${new Date(d.certificateExpired).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Outbound POs are unaffected.`],
+      ["System", "Field changes", d.openedAt, `Incident created from Trading Grid alert. Priority 2 - High. Assignment group ${d.assignmentGroup}.`],
+    ];
+    return `<div class="ws-area sn">
+      <header class="sn-top"><span class="sn-logo">servicenow</span><span class="sn-ws">Service Operations Workspace</span><span class="cl-sp"></span><span class="sn-search">${ic("search")}Search</span>${ic("bell")}<span class="cl-av round sm">JL</span></header>
+      <div class="sn-body"><nav class="sn-rail">${["home", "list", "chart", "bell"].map((i, n) => `<span class="${n === 1 ? "on" : ""}">${ic(i)}</span>`).join("")}</nav>
+        <div class="sn-main"><div class="sn-tabs"><span>Home</span><span class="on">${esc(d.number)} ${ic("x")}</span></div>
+          <div class="sn-rec"><div class="sn-rh"><div><div class="sn-type">Incident</div><h1>${esc(d.number)}</h1><div class="sn-sd">${esc(d.shortDescription)}</div></div><span class="cl-sp"></span><button class="sn-b">Update</button><button class="sn-b pri">Resolve</button></div>
+            <div class="sn-hl"><div><span>Priority</span><b class="p2">${esc(d.priority)}</b></div><div><span>State</span><b>${esc(d.state)}</b></div><div><span>Assignment group</span><b>${esc(d.assignmentGroup)}</b></div><div><span>Opened</span><b>${ago(d.openedAt)}</b></div></div>
+            <div class="sn-cols"><div class="sn-form"><div class="sn-ftabs"><b>Details</b><span>Related records</span><span>Resolution</span></div>
+              <div class="sn-grid">${fld("Caller", d.caller, 1)}${fld("Category", d.category)}${fld("Service", d.service)}${fld("Subcategory", d.subcategory)}${fld("Configuration item", d.ci)}${fld("Impact", d.impact)}${fld("Assigned to", d.assignedTo)}${fld("Urgency", d.urgency)}</div>
+              ${fld("Short description", d.shortDescription, 1)}
+              <div class="sn-f"><label>Description</label><div class="sn-in ta">${esc(`Inbound EDI from ${d.partner} is rejected at AS2 receipt. ${d.failed} documents failed so far (${fails}). Partner signing certificate expired.`)}</div></div></div>
+              <div class="sn-act"><div class="sn-acth">Activity</div>${notes.map(([who, kind, at, txt]) => `<div class="sn-note ${kind === "Work notes" ? "wn" : ""}"><div class="sn-nh"><b>${esc(who)}</b><span>${esc(kind)} · ${ago(at)}</span></div><div>${esc(txt)}</div></div>`).join("")}</div></div></div></div></div></div>`;
+  }
   function pageClient(id) {
     const K = CLIENTS[id];
     if (!K) return shellCs(`<div class="content"><div class="empty">Client not found.</div></div>`);
@@ -863,6 +912,7 @@
     mounts[key] = (cc) => clChat(id, K, cc, agentId, avail, blocked);
     const others = avail.filter((x) => x.id !== "context-assistant");
     const list = [["context-assistant", K.auto], ...others.map((x) => [x.id, x.name])];
+    if (K.ws) return `<div class="cl cl-${id} ws">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
     return `<div class="cl cl-${id} ${S.cps.side ? "side-open" : ""}">
       ${K.rail ? `<nav class="cl-rail">${K.rail.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
       <aside class="cl-side"><div class="cl-brand"><span>${esc(K.name)}</span><span class="cl-tiny">simulated</span><button class="cl-ib sm" data-copside="0" title="Close">${ic("x")}</button></div>
@@ -878,7 +928,7 @@
   const STAGE_CLIENTS = [
     { id: "copilot", name: "Microsoft Copilot", src: "/copilot", bg: "#f5f2ee" },
     { id: "teams", name: "Microsoft Teams", src: "/c/teams", bg: "#ffffff" },
-    { id: "joule", name: "SAP Joule Work", src: "/c/joule", bg: "#f5f6f7" },
+    { id: "joule", name: "SAP S/4HANA with Joule", src: "/c/joule", bg: "#f5f6f7" },
     { id: "gemini", name: "Gemini Enterprise", src: "/c/gemini", bg: "#ffffff" },
     { id: "servicenow", name: "ServiceNow", src: "/c/servicenow", bg: "#032d42", foot: "#ffffff", dark: 1 },
     { id: "chatgpt", name: "ChatGPT Enterprise", src: "/c/chatgpt", bg: "#ffffff" },
@@ -959,7 +1009,7 @@
     else if (p === "/copilot") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageCopilot(); }
     else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; if ((qs().get("eco") ?? "copilot-studio") === "copilot-studio") { S.audit = await api("/api/audit"); html = pageCopilot(); } else html = pageExt(); }
     else if (p === "/stage") html = pageStage();
-    else if (p.startsWith("/c/")) { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageClient(p.slice(3)); }
+    else if (p.startsWith("/c/")) { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; const K = CLIENTS[p.slice(3)]; if (K?.ws) S.scene[K.ws] = await api(`/api/scene/${K.ws}`); html = pageClient(p.slice(3)); }
     else html = shellCs(`<div class="content"><div class="empty">Page not found. Return to the demo journey.</div></div>`);
     app.innerHTML = html;
     if (STAGE) mirror({ nav: location.pathname + location.search });
@@ -973,10 +1023,11 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-s4po]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.stagego) return stageShow(d.stagego);
+    if (d.s4po) { const u = new URLSearchParams(location.search); u.set("po", d.s4po); return go(`${location.pathname}?${u}`); }
     if (d.copside) { S.cps.side = d.copside === "1"; return render(); }
     if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`${location.pathname}?${u}`); }
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }

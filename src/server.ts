@@ -1,4 +1,5 @@
 // HTTP server: console (password gate), agent API, tool API and the remote MCP endpoint.
+import { sceneS4, sceneServiceNow } from "./data/scenes.js";
 import express from "express";
 import path from "node:path";
 import { readFileSync } from "node:fs";
@@ -93,6 +94,9 @@ app.post("/api/tools/:name/invoke", (req, res) => {
   const { out, ms } = invoke(req.params.name, req.body?.args ?? {}, { host, sessionId: "console-try", baseUrl: baseUrl(req) }, "console");
   res.json({ ms, envelope: out });
 });
+
+app.get("/api/scene/s4", (_req, res) => res.json(sceneS4()));
+app.get("/api/scene/servicenow", (_req, res) => res.json(sceneServiceNow()));
 
 app.post("/api/chat", async (req, res) => {
   const { sessionId, host, agentId, message } = req.body ?? {};
