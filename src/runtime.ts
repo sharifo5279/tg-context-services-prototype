@@ -40,9 +40,10 @@ export const HOSTS: Record<HostKey, any> = {
   },
   "gemini-enterprise": {
     key: "gemini-enterprise", exposure: "External", route: EXT("Gemini Enterprise"), name: "Google Gemini Enterprise", shortName: "Gemini Enterprise",
-    authPattern: "Custom MCP connector, OAuth with PKCE; Streamable HTTP",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-gemini-hrg-b2b-ops",
-    note: "Executes as the signed-in user. Only selected tools are enabled.",
+    authPattern: "Custom MCP connector, OAuth client credentials for agents built in Gemini Enterprise; Streamable HTTP",
+    principalType: "SERVICE_IDENTITY", principal: "agent-hrg-supplier-ops", clientApplication: "app-gemini-hrg-b2b-ops",
+    persona: { name: "Priya Raman", title: "AI transformation lead" },
+    note: "Agents built by the Harborview AI transformation team run with their own service identity under the Harborview grant.",
     operations: BASE_OPS,
   },
   "sap-joule": {

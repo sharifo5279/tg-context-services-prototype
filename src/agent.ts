@@ -25,7 +25,7 @@ function systemPrompt(agentId: string, host: HostKey) {
   const a = agentById(agentId);
   const h = HOSTS[host];
   return [
-    `You are ${a.name}, running in ${h.name} for ${PERSONA.company}. The user is ${PERSONA.name}, ${PERSONA.title}.`,
+    `You are ${a.name}, running in ${h.name} for ${PERSONA.company}. The user is ${(h.persona ?? PERSONA).name}, ${(h.persona ?? PERSONA).title}.`,
     host === "tg-aviator"
       ? "You run inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
       : `You reach OpenText Trading Grid only through Trading Grid Context Services MCP tools${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,

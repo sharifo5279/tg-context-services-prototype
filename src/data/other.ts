@@ -37,6 +37,7 @@ export const maps = [
   map("M-1010", "CRL_214_4010_IN", 3, "INBOUND", "X12 004010 214", "SAP IDoc TRXSTA", "ACTIVE", true, "ACCEPTED", "j.patel", 30, 29, ["C20013"], { lookups: ["CARRIER_STATUS_CODE"], characteristics: { targetFields: 41, unmappedTargetFields: 1, lookups: 1 } }),
   map("M-1011", "HRG_940_4010_OUT", 6, "OUTBOUND", "SAP IDoc SHPORD", "X12 004010 940", "ACTIVE", true, "ACCEPTED", "edi.team", 120, 119, ["C20013"]),
   map("M-1012", "HRG_812_4010_OUT", 2, "OUTBOUND", "SAP FI chargeback", "X12 004010 812", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, PROFILES.filter((p) => p.flow === "X12_SUPPLIER").map((p) => p.id)),
+  map("M-1014", "AAF_856_4010_IN", 1, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "IN_TEST", false, "PENDING", "j.patel", 4, null, ["C20032"]),
   map("M-1013", "HRG_856_4010_STORE_IN", 2, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "s.okafor", 45, 44, ["C20017", "C20021"], { lookups: ["STORE_TO_GLN"], characteristics: { targetFields: 205, unmappedTargetFields: 7, lookups: 1 } }),
 ];
 
@@ -129,6 +130,13 @@ export const changeRequests: any[] = [
 // Certificate renewal for the Northfield Foods AS2 incident; times are relative to the current time.
 export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN connectivity", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }] }] };
 changeRequests.push(JSON.parse(JSON.stringify(CERT_CR)));
+// Alder and Ash Furniture go-live (Oct 29): production move and connection in flight; no inbound 810 map requested yet.
+export const FIXTURE_CRS: any[] = [
+  { statusId: "ST-10512", requestId: "REQ-10512", title: "Move Alder and Ash Furniture to production", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(3), submittedBy: "m.chen", submissionState: "ACCEPTED", partnerCompanyId: "C20032", workOrders: [{ workOrderId: "WO-5612", type: "TRADING_PARTNER", state: "IN_PROGRESS", stateSince: dAgo(2), assignedTeam: "BN onboarding", attachments: [] }] },
+  { statusId: "ST-10509", requestId: "REQ-10509", title: "AS2 production connection for Alder and Ash Furniture", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(5), submittedBy: "m.chen", submissionState: "ACCEPTED", partnerCompanyId: "C20032", workOrders: [{ workOrderId: "WO-5606", type: "AS2_CONNECTION", state: "COMPLETED", stateSince: dAgo(2), assignedTeam: "BN connectivity", attachments: [{ fileName: "alder_ash_as2_cert.cer" }] }] },
+  { statusId: "ST-10510", requestId: "REQ-10510", title: "New 856 map for Alder and Ash Furniture", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(5), submittedBy: "m.chen", submissionState: "ACCEPTED", partnerCompanyId: "C20032", workOrders: [{ workOrderId: "WO-5608", type: "MAP_NEW", state: "IN_PROGRESS", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "alder_ash_856_spec.pdf" }] }] },
+];
+changeRequests.push(...JSON.parse(JSON.stringify(FIXTURE_CRS)));
 
 // History of change requests and their work orders over the last six months (deterministic).
 {
@@ -191,8 +199,10 @@ export const provisioningTemplates = [
 
 export const provisionings: any[] = [
   { trackingId: "TRK-MRC-0042", templateName: "HRG_DROPSHIP_VENDOR", invitationId: 7720, submittedAt: dAgo(160), _completeAt: Date.parse(dAgo(158)), resultRefs: { companyId: "C20014", mailboxId: "MB-HRG-WEBEDI-01", tradingAddress: "ZZ:MAPLERIDGEWEB", tradingPartnerRelationshipIds: ["TPR-70131"] } },
+  { trackingId: "TRK-AAF-0107", templateName: "HRG_SUPPLIER_STD", invitationId: null, submittedAt: dAgo(4), _completeAt: Date.parse(dAgo(3)), resultRefs: { companyId: "C20032", mailboxId: "MB-AAF-01", tradingAddress: "ZZ:ALDERASHFURN", tradingPartnerRelationshipIds: ["TPR-70371", "TPR-70372"] } },
   { trackingId: "TRK-PGH-0091", templateName: "HRG_SUPPLIER_STD", invitationId: 7702, submittedAt: dAgo(68), _completeAt: Date.parse(dAgo(67)), resultRefs: { companyId: "C20005", mailboxId: "MB-PGH-01", tradingAddress: "ZZ:PINEGATEHOME", tradingPartnerRelationshipIds: ["TPR-70051", "TPR-70052"] } },
 ];
+export const SEED_PROVISIONINGS = provisionings.map((p) => ({ ...p }));
 
 // ---- Trading Grid Data Platform catalog -----------------------------------------------------------
 

@@ -1,6 +1,7 @@
 // Mutable demo state: everything users and agents can change. Serialized for persistence and for
 // isolating test runs; the startup snapshot is the seeded baseline used by Reset demo.
-import { changeRequests, provisionings, deliverySchedules, xrefEntities, CERT_CR } from "./data/other.js";
+import { changeRequests, provisionings, deliverySchedules, xrefEntities, CERT_CR, FIXTURE_CRS } from "./data/other.js";
+import { SEED_PROVISIONINGS } from "./data/other.js";
 import { plans, clientStatus } from "./runtime.js";
 import { audit } from "./tools/index.js";
 import { tickets } from "./tools/aviator.js";
@@ -26,7 +27,7 @@ export type State = ReturnType<typeof getState>;
 /** Replaces the mutable state with a serialized copy. */
 export function setState(raw: any) {
   const v = typeof raw === "string" ? JSON.parse(raw) : JSON.parse(JSON.stringify(raw));
-  setArr(changeRequests, v.changeRequests); if (!changeRequests.some((c) => c.statusId === CERT_CR.statusId)) changeRequests.unshift(JSON.parse(JSON.stringify(CERT_CR))); setArr(provisionings, v.provisionings); setArr(deliverySchedules, v.deliverySchedules);
+  setArr(changeRequests, v.changeRequests); if (!changeRequests.some((c) => c.statusId === CERT_CR.statusId)) changeRequests.unshift(JSON.parse(JSON.stringify(CERT_CR))); for (const f of FIXTURE_CRS) if (!changeRequests.some((c) => c.statusId === f.statusId)) changeRequests.push(JSON.parse(JSON.stringify(f))); for (const k of ["ST-10466"]) { const i = changeRequests.findIndex((c) => c.statusId === k); if (i >= 0) changeRequests.splice(i, 1); } setArr(provisionings, v.provisionings); for (const p of SEED_PROVISIONINGS) if (!provisionings.some((x) => x.trackingId === p.trackingId)) provisionings.push({ ...p }); setArr(deliverySchedules, v.deliverySchedules);
   setObj(xrefEntities, v.xrefEntities); setArr(tickets, v.tickets); setArr(alertRules, v.alertRules); setArr(ccpmRules, v.ccpmRules);
   setObj(findingState, v.findingState); setObj(clientStatus, v.clientStatus);
   plans.clear(); for (const p of v.plans ?? []) plans.set(p.planId, p);

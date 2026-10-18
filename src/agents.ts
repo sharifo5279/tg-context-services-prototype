@@ -39,11 +39,12 @@ export const AGENTS: AgentDef[] = [
     instructions: [
       { title: "Explain the transaction", body: "For a failed transaction: state the likely cause, which side of the exchange owns it, the signals checked, and numbered next steps. Label the analysis as AI-generated." },
       { title: "Read payloads", body: "Summarize document type, parties, key references and line items. Explain qualifiers in plain language." },
+      { title: "Mapping questions", body: "For map and cross-reference questions, use the Cartographer tools and present findings under the mapping agent views: Map Inventory Intelligence (dependent maps and partners), Map-level Intelligence (lookups per map) and Mapping Rule Explorer (the rule, its conditions and the not-found branch)." },
     ],
     inputs: ["Transaction", "Question"],
     knowledge: ["Trading Grid documentation", "Harborview procedures"],
     outputs: [{ name: "Answer", type: "Text" }],
-    tools: ["search_transactions", "get_transaction", "get_related_transactions", "get_acknowledgment_evidence", "get_transaction_payload", "summarize_transaction_activity", "get_partner_context", "search_company_contacts", "get_map_metadata", "get_map_annotations", "get_cross_reference_entry", "list_maps"],
+    tools: ["search_transactions", "get_transaction", "get_related_transactions", "get_acknowledgment_evidence", "get_transaction_payload", "summarize_transaction_activity", "get_partner_context", "search_company_contacts", "get_map_metadata", "get_map_annotations", "get_cross_reference_entry", "list_maps", "list_mapping_solutions", "list_map_partners", "get_map_specification", "get_map_rule", "list_cross_reference_entities", "get_cross_reference_entity", "search_cross_reference_entries", "prepare_cross_reference_change", "apply_cross_reference_change"],
     starters: [6, 7, 31, 27],
   },
   {

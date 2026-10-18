@@ -235,6 +235,10 @@ F("Add a missing store: prepare, approve, apply", "Approval flow", [
 
 // ---------------------------------------------------------------- Community Projects and Provisioning
 S("list_change_request_types", "Change request types", "Happy path", {}, "OK");
+S("tgi_get_quantity_reconciliation", "Ordered, shipped and invoiced by PO", "Happy path", {}, "OK", { check: ["Supplier totals", (o) => R(o).suppliers.length > 10 && R(o).rows.length > 0] });
+S("tgi_get_quantity_reconciliation", "Invoices before ASN for Meridian", "Filter", { partner: "Meridian Personal Care" }, "OK", { check: ["Invoice before ASN flagged", (o) => R(o).rows.some((x: any) => x.invoiceBeforeAsn)] });
+S("ccpm_get_scorecard", "Weekly acknowledgment trend for Pinegate", "Happy path", { partner: "Pinegate Home" }, "OK", { check: ["Weekly rows with 997 and 855 separate", (o) => R(o).weeklyAcknowledgments.length >= 8 && "functionalAck997Received" in R(o).weeklyAcknowledgments[0]] });
+S("list_change_requests", "Open requests for Alder and Ash", "Filter", { partner: "Alder and Ash Furniture", state: "OPEN" }, "OK", { check: ["Production move in progress", (o) => JSON.stringify(R(o)).includes("ST-10512")] });
 S("list_change_requests", "All change requests", "Happy path", {}, "OK", { check: ["Seeded history", (o) => R(o).total >= 40] });
 S("list_change_requests", "Open work orders", "Filter", { state: "OPEN" }, "OK", { check: ["Only unfinished", (o) => R(o).changeRequests.every((c: any) => c.workOrders.some((w: any) => !["COMPLETED", "CANCELLED", "REJECTED"].includes(w.state)))] });
 S("list_change_requests", "Rejected requests", "Filter", { state: "REJECTED" }, "OK", { check: ["Reason present", (o) => R(o).changeRequests.length > 0 && R(o).changeRequests.every((c: any) => c.submissionState === "REJECTED" || c.workOrders.some((w: any) => w.state === "REJECTED"))] });

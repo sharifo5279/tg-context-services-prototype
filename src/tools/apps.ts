@@ -319,6 +319,33 @@ export const ccimTools: ToolDef[] = [
 ];
 
 export const tgiAppTools: ToolDef[] = [
+  { name: "tgi_get_quantity_reconciliation", domain: "TG Insights application", product: TGI, title: "Get quantity reconciliation", description: "Per purchase order: ordered quantity (850), shipped quantity (856) and invoiced quantity (810), with variances, invoices received before the ASN, and the document IDs for drill-down. Supplier totals included.", operation: "transaction.read", kind: "read", binding: "TG Insights document correlation by PO", basis: BASIS_GA,
+    inputSchema: s.obj({ days: s.int("Look-back window in days (default 30, max 60).", { minimum: 1, maximum: 60 }), partner: s.str("Supplier name or ID."), only_exceptions: s.bool("Return only POs with a variance or an invoice before the ASN (default true).") }),
+    handler: (a, ctx) => {
+      const p = partnerArg(ctx, "tgi_get_quantity_reconciliation", "transaction.read", a.partner); if (p.early) return p.early;
+      const days = Math.min(60, Math.max(1, Number(a.days) || 30));
+      const onlyEx = a.only_exceptions !== false;
+      const pos = within(days * D).filter((t) => t.direction === "OUTBOUND" && t.documentType === "850" && t.refs.quantityOrdered != null && (!p.id || t.partnerCompanyId === p.id));
+      const sup: Record<string, any> = {};
+      const rows: any[] = [];
+      for (const po of pos) {
+        const docs = docsByPo(po.refs.poNumber!).filter((d) => d.partnerCompanyId === po.partnerCompanyId);
+        const asn = docs.find((d) => d.documentType === "856"), inv = docs.find((d) => d.documentType === "810");
+        const ordered = po.refs.quantityOrdered!, shipped = asn?.refs.quantityShipped ?? null, invoiced = inv?.refs.quantityInvoiced ?? null;
+        const before = !!(asn && inv && inv._t < asn._t) || !!(inv && !asn);
+        const name = companyById(po.partnerCompanyId)?.companyName ?? po.partnerCompanyId;
+        const s0 = (sup[name] ??= { supplier: name, purchaseOrders: 0, ordered: 0, shipped: 0, invoiced: 0, shortShipped: 0, overInvoiced: 0, invoiceBeforeAsn: 0 });
+        s0.purchaseOrders++; s0.ordered += ordered; s0.shipped += shipped ?? 0; s0.invoiced += invoiced ?? 0;
+        const short = shipped != null && shipped < ordered, over = invoiced != null && shipped != null && invoiced > shipped;
+        if (short) s0.shortShipped++; if (over) s0.overInvoiced++; if (before) s0.invoiceBeforeAsn++;
+        if (onlyEx && !short && !over && !before) continue;
+        rows.push({ po: po.refs.poNumber, supplier: name, orderedAt: new Date(po._t).toISOString(), ordered, shipped, invoiced, shipVariance: shipped == null ? null : shipped - ordered, invoiceVariance: invoiced == null || shipped == null ? null : invoiced - shipped, invoiceBeforeAsn: before,
+          documents: { "850": po.transactionId, "856": asn?.transactionId ?? null, "810": inv?.transactionId ?? null }, status: { "856": asn?.sourceStatus ?? "NOT_RECEIVED", "810": inv?.sourceStatus ?? "NOT_RECEIVED" } });
+      }
+      rows.sort((x, y) => y.orderedAt.localeCompare(x.orderedAt));
+      return ok(ctx, "tgi_get_quantity_reconciliation", "transaction.read", { window: { days }, purchaseOrders: pos.length, exceptions: rows.length, suppliers: Object.values(sup).sort((x: any, y: any) => y.purchaseOrders - x.purchaseOrders), rows: rows.slice(0, 80) },
+        { sources: r(TGI, "Transactions correlated by PO number (850, 856, 810)"), interpretation: "Quantities are document totals. A missing 856 or 810 is not yet received, not a zero quantity. Rows are limited to 80; supplier totals cover every PO in the window." });
+    } },
   { name: "tgi_get_dashboard", domain: "TG Insights application", product: TGI, title: "Get dashboard", description: "The EDI operations dashboard: partner volumes, critical errors, recent alerts and saved filters.", operation: "tgi.read", kind: "read", binding: "TG Insights configurable dashboards", basis: BASIS_GA,
     inputSchema: s.obj({}),
     handler: (_a, ctx) => { const day = within(24 * H); return ok(ctx, "tgi_get_dashboard", "tgi.read", { dashboard: "EDI operations", widgets: [{ widget: "Volume by partner, 24 hours", data: top(count(day.filter((t) => !isAck(t)), (t) => partnerName(t.partnerCompanyId)), 10) }, { widget: "Critical errors, 24 hours", data: day.filter((t) => t.sourceStatus === "FAIL").map((t) => ({ transactionId: t.transactionId, partner: partnerName(t.partnerCompanyId), documentType: t.documentType, error: t.errors[0]?.code })) }, { widget: "Recent alerts", data: alertRules.map((x) => ({ alert: x.name, lastTriggered: x.lastTriggered })) }, { widget: "Saved filters", data: SAVED_FILTERS.map((f) => f.name) }] }, { sources: r(TGI, "Dashboards") }); } },

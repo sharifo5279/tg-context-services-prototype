@@ -119,7 +119,7 @@ export const STATUS_TEXT: Record<string, string> = {
 const STEPS = ["Receive", "Check", "Transform", "Route", "Deliver"];
 type Err = { code: string; category: string; message: string; service: string; step: string };
 type Party = { companyId: string; companyName: string; tradingAddress: string; orgId: string };
-type Refs = { poNumber?: string; shipmentId?: string; invoiceNumber?: string; shipToGLN?: string; ackForTransactionId?: string; ackForControlNumber?: string; storeNumber?: string; shippingOrder?: string; statusCode?: string; adjustmentNumber?: string; traceNumber?: string; quantityOrdered?: number; quantityShipped?: number; amount?: number; reason?: string; channel?: string };
+type Refs = { poNumber?: string; shipmentId?: string; invoiceNumber?: string; shipToGLN?: string; ackForTransactionId?: string; ackForControlNumber?: string; storeNumber?: string; shippingOrder?: string; statusCode?: string; adjustmentNumber?: string; traceNumber?: string; quantityOrdered?: number; quantityShipped?: number; quantityInvoiced?: number; amount?: number; reason?: string; channel?: string };
 
 const partyCache = new Map<string, Party>();
 const addrOf = (id: string) => { const a = addresses.find((x) => x.companyId === id); return a ? `${a.qualifier}:${a.address}` : "ZZ:UNKNOWN"; };
@@ -255,12 +255,23 @@ function inboundBlocked(p: Profile, t: number) { return !!incidentAt(p.id, "OUTA
 
 const REJECT_DETAIL = ["AK3*DTM*4 / AK4*2*374*7: DTM02 date invalid", "AK3*N1*9 / AK4*4*67*1: N104 mandatory element missing", "AK3*PO1*6 / AK4*7*235*7: PO107 qualifier invalid"];
 
+/** Line quantities per PO, derived from the PO number (does not consume the day's random stream). */
+function poQty(po: string, invoiceFirst: boolean) {
+  const q = rng(hash("qty", po));
+  const ordered = 12 * (2 + Math.floor(q() * 18));
+  const short = q() < 0.07 ? 12 * (1 + Math.floor(q() * 2)) : 0;
+  const shipped = Math.max(12, ordered - short);
+  const x = q();
+  const invoiced = x < 0.04 ? ordered : x < 0.06 ? shipped + 12 : invoiceFirst ? ordered : shipped;
+  return { ordered, shipped, invoiced };
+}
 function genSupplierOrder(g: Gen, p: Profile, t850: number, k: number) {
   const r = g.r;
   const ed = p.flow === "EDIFACT_SUPPLIER", web = p.flow === "WEB_EDI";
   const store = pick(r, storesOpen(dayOf(t850)));
   const poNum = ed ? `HRG-ORD-${pad(g.day % 1000, 3)}${pad(k, 3)}` : `45${pad(g.day - BASE_DAY, 4)}${pad(k, 4)}`;
-  const po = emit(g, { t: t850, p: p.id, dir: "OUTBOUND", doc: ed ? "ORDERS" : "850", refs: { poNumber: poNum, shipToGLN: store.gln }, mapId: ed ? "M-1004" : web ? undefined : "M-1003", err: web ? undefined : deliveryErr(p, t850) });
+  const qty = poQty(poNum, false);
+  const po = emit(g, { t: t850, p: p.id, dir: "OUTBOUND", doc: ed ? "ORDERS" : "850", refs: { poNumber: poNum, shipToGLN: store.gln, quantityOrdered: qty.ordered }, mapId: ed ? "M-1004" : web ? undefined : "M-1003", err: web ? undefined : deliveryErr(p, t850) });
   if (po._err) return; // held for redelivery; no partner documents follow
   const ackOut = incidentAt(p.id, "ACK_OUTAGE", t850) || incidentAt(p.id, "PICKUP_STALL", t850);
   if (!web && !ackOut) { const rej = r() < 0.004; ack(g, po, 0.2 + r() * (p.protocol === "SFTP" ? 3 : 1.2), rej ? "REJECTED" : "ACCEPTED", rej ? pick(r, REJECT_DETAIL) : undefined); }
@@ -287,7 +298,7 @@ function genSupplierOrder(g: Gen, p: Profile, t850: number, k: number) {
   const d810 = new Date(t810);
   if (!isMonthEnd(t810) && d810.getUTCDate() >= 20 && r() < 0.35) { const last = lastDayOfMonth(t810); t810 = Date.UTC(d810.getUTCFullYear(), d810.getUTCMonth(), last - Math.floor(r() * 2), 14 + r() * 8); }
   if (!web || r() < 0.7) {
-    const refs: Refs = { shipmentId: shipId, poNumber: poNum, ...(p.storeNumbers ? { storeNumber: store.number } : { shipToGLN: store.gln }) };
+    const refs: Refs = { shipmentId: shipId, poNumber: poNum, quantityShipped: qty.shipped, ...(p.storeNumbers ? { storeNumber: store.number } : { shipToGLN: store.gln }) };
     let err: Err | undefined;
     if (p.storeNumbers && dayOf(t856) < store.xrefDay) err = xrefErr(store.number, MAP_NAME[p.map856 ?? "M-1013"] ?? "HRG_856_4010_STORE_IN v2");
     else if (p.map856 && incidentAt(p.id, "MAP_REGRESSION", t856) && r() < 0.6) err = mapRegErr("856", MAP_NAME[p.map856]);
@@ -299,14 +310,14 @@ function genSupplierOrder(g: Gen, p: Profile, t850: number, k: number) {
   const invNo = ed ? `HOLINV-${poNum.slice(-9)}` : `INV-${p.prefix}-${poNum.slice(-8)}`;
   const x = r();
   const err810 = x < 0.004 ? ERR.it104 : x < 0.006 ? ERR.poNotFound : x < 0.0075 ? ERR.dupInv : x < 0.009 ? ERR.price : p.map810 && incidentAt(p.id, "MAP_REGRESSION", t810) && r() < 0.6 ? mapRegErr("810", MAP_NAME[p.map810]) : undefined;
-  inbound(t810, ed ? "INVOIC" : "810", { invoiceNumber: invNo, poNumber: r() < 0.002 ? `45${pad(Math.floor(r() * 9999), 8)}` : poNum, shipToGLN: store.gln }, err810, p.map810);
+  inbound(t810, ed ? "INVOIC" : "810", { invoiceNumber: invNo, poNumber: r() < 0.002 ? `45${pad(Math.floor(r() * 9999), 8)}` : poNum, shipToGLN: store.gln, quantityInvoiced: invFirst ? qty.ordered : qty.invoiced }, err810, p.map810);
 }
 
 function gen3plOrder(g: Gen, p: Profile, t: number, k: number) {
   const r = g.r;
   const order = `WSO-${pad(g.day - BASE_DAY, 4)}${pad(k, 3)}`;
   const store = pick(r, storesOpen(dayOf(t)));
-  const o = emit(g, { t, p: p.id, dir: "OUTBOUND", doc: "940", refs: { shippingOrder: order, poNumber: `45${pad(g.day - BASE_DAY, 4)}9${pad(k, 3)}`, shipToGLN: store.gln }, mapId: "M-1011", err: deliveryErr(p, t) });
+  const o = emit(g, { t, p: p.id, dir: "OUTBOUND", doc: "940", refs: { shippingOrder: order, poNumber: `45${pad(g.day - BASE_DAY, 4)}9${pad(k, 3)}`, shipToGLN: store.gln, quantityOrdered: 24 }, mapId: "M-1011", err: deliveryErr(p, t) });
   if (o._err) return;
   if (!incidentAt(p.id, "ACK_OUTAGE", t)) ack(g, o, 0.3 + r());
   const ts = t + hours(16 + r() * 26);
