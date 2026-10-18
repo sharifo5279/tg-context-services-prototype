@@ -1116,7 +1116,7 @@ body:has(.cl) .bl-dot, body:has(.stage) .bl-dot { display: none; }
   .cl-col { padding: 12px 16px 18px; gap: 18px; }
   .cl-ub { max-width: 86%; }
   .cl-md table { display: block; overflow-x: auto; white-space: normal; }
-  .cl-md th, .cl-md td { min-width: 7em; }
+  .cl-md th, .cl-md td { min-width: 7em; } .cl-md th:first-child, .cl-md td:first-child { min-width: 0; }
   .cl-foot { padding: 0 10px 4px; gap: 8px; }
   .cl-hello h1 { font-size: 26px; }
   .cl-sim { margin-top: -4px; }
