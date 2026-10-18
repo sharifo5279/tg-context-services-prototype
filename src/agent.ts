@@ -141,7 +141,7 @@ async function runCore(s: Session, ctx: Ctx, agentId: string, channel: string, e
       emit({
         type: "tool_result", id: c.id, name: c.name, ms, status: out.status, by,
         decision: out.access?.decision, product: tool?.product, binding: tool?.binding, basis: tool?.basis,
-        completeness: out.evidence?.completeness, summary: r.sub ? r.sub.name : summarize(out), envelope: out, route: HOSTS[ctx.host].route,
+        completeness: out.evidence?.completeness, summary: r.sub ? r.sub.name : summarize(out), envelope: out, route: agentId === TG_AGENT ? HOSTS[ctx.host].route.map((x) => x.replace("Trading Grid Context Connectors", "Trading Grid Agent Connectors")) : HOSTS[ctx.host].route,
       });
       if (out.status === "APPROVAL_REQUIRED") emit({ type: "approval", plan: out.result });
       const text = JSON.stringify(out);

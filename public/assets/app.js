@@ -223,8 +223,15 @@
       const ta = el.querySelector("textarea"); if (ta) { ta.value = draft; if (focused) ta.focus(); }
       document.querySelectorAll(`[data-side="${key}"]`).forEach((s) => (s.innerHTML = sideMounts[key]?.(S.convs[key]) ?? ""));
       const cnt = String(S.convs[key]?.items.length ?? 0); const grew = el.dataset.n !== cnt; el.dataset.n = cnt;
+      // Keep the reader at the start of the latest exchange: the last question sits at the top while the answer streams below it.
+      // Following stops once the reader scrolls.
       const sc = find();
-      sc.scrollTop = near || grew ? sc.scrollHeight : top;
+      const follow = grew || el._set == null || Math.abs(top - el._set) < 2;
+      const us = el.querySelectorAll(".msg.user, .avmsg.user, .cop-u, .cl-u, .cl-b.other");
+      const u = us[us.length - 1];
+      if (follow && u) sc.scrollTop = sc.scrollTop + u.getBoundingClientRect().top - (sc === document.scrollingElement ? 0 : sc.getBoundingClientRect().top) - 12;
+      else sc.scrollTop = top;
+      el._set = sc.scrollTop;
     });
   }
   const sideMounts = {};
@@ -1179,7 +1186,7 @@
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
     return `<div class="stage${STAGE_MOBILE() ? " mob" : ""}"><div class="stage-row"></div>
-      <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><button class="stage-fs" data-stagefs="1" aria-label="Full screen">${ic("expand")}</button><div class="stage-scn"></div><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name" data-stageplay="1"></div></footer></div>`;
+      <footer class="stage-foot"${STAGE_MOBILE() ? ' data-stageplay="1"' : ""}><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><button class="stage-fs" data-stagefs="1" aria-label="Full screen">${ic("expand")}</button><div class="stage-scn"></div><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name" data-stageplay="1"></div></footer></div>`;
   }
   function stageScenario(id) {
     const sc = SCN[id];

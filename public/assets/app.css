@@ -1378,3 +1378,15 @@ html.nocur, html.nocur * { cursor: none !important; }
 .stage.mob .si-tgcc h2 { font-size: 17px; }
 .stage.mob .si-tgcc p { font-size: 14.5px; }
 .stage.mob .si-foot { font-size: 13px; }
+
+/* iOS: no automatic text inflation inside scaled stage frames */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Activity steps stay inside the message bubble on narrow screens */
+.activity, .activity .alist, .astep { min-width: 0; max-width: 100%; }
+.activity .aroute { overflow-wrap: anywhere; }
+@media (max-width: 600px) { .astep .ar { flex-wrap: wrap; row-gap: 2px; } .astep .as { flex-basis: 100%; padding-left: 20px; } }
+.cl-bb { min-width: 0; max-width: 100%; }
+/* Stage on a phone: the whole footer outside the navigation plays the next turn; larger play target */
+.stage.mob .stage-foot { padding-bottom: env(safe-area-inset-bottom, 0); }
+.stage.mob .stage-play { width: 44px; height: 44px; background: none; left: 4px !important; }
+.stage.mob .stage-play::after { content: ""; position: absolute; left: 18px; top: 18px; width: 8px; height: 8px; border-radius: 50%; background: #dfe3e8; }
