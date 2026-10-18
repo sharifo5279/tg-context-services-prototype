@@ -189,6 +189,23 @@ function findings() {
   return all.sort((a, b) => b.detectedAt.localeCompare(a.detectedAt));
 }
 
+/** Weekly PO acknowledgment trend: 997 receipt and 855 response tracked separately, with 855 response time. */
+function ackTrend(id: string, weeks = 10) {
+  const now = Date.now();
+  const pos = within(weeks * 7 * D).filter((t) => t.partnerCompanyId === id && t.direction === "OUTBOUND" && t.documentType === "850");
+  if (!pos.length) return [];
+  const rows: any[] = [];
+  for (let w = weeks - 1; w >= 0; w--) {
+    const end = now - w * 7 * D, start = end - 7 * D;
+    const list = pos.filter((p) => p._t >= start && p._t < end);
+    if (!list.length) continue;
+    const settled = list.filter((p) => now - p._t > 96 * H);
+    const lag = list.map((p) => { const r = docFor("855", p.refs.poNumber); return r ? (r._t - p._t) / H : null; }).filter((x) => x != null) as number[];
+    const med = lag.length ? [...lag].sort((x, y) => x - y)[Math.floor(lag.length / 2)] : null;
+    rows.push({ weekEnding: new Date(end).toISOString().slice(0, 10), posSent: list.length, functionalAck997Received: list.filter((p) => ackOfT(p)).length, poResponse855Received: list.filter((p) => docFor("855", p.refs.poNumber)).length, awaitingResponseUnder96h: list.length - settled.length, response855RatePct: settled.length ? Math.round((settled.filter((p) => docFor("855", p.refs.poNumber)).length / settled.length) * 100) : null, median855ResponseHours: med != null ? Math.round(med) : null });
+  }
+  return rows;
+}
 function scorecard(id: string) {
   const list = within(30 * D).filter((t) => t.partnerCompanyId === id);
   const pos = list.filter((t) => t.direction === "OUTBOUND" && (t.documentType === "850" || t.documentType === "ORDERS"));
@@ -400,9 +417,9 @@ export const ccpmTools: ToolDef[] = [
   { name: "ccpm_get_dashboard", domain: "Command Center Performance Monitor", product: CCPM, title: "Get dashboard", description: "Top rules by findings, open actions, and agent metrics for inspections, findings, resolutions and running cost.", operation: "ccpm.read", kind: "read", binding: "CCPM dashboard", basis: BASIS_INC,
     inputSchema: s.obj({}),
     handler: (_a, ctx) => { const fs = findings(); return ok(ctx, "ccpm_get_dashboard", "ccpm.read", { topRules: top(count(fs, (f) => `${f.ruleId} ${f.rule}`), 10).map(([rule, n]) => ({ rule, findings: n })), openActions: fs.filter((f) => f.status === "ASSIGNED" || f.status === "NEW").length, assignedToMe: fs.filter((f) => f.assignee === "jordan.lee@harborviewretail.com" && f.status === "ASSIGNED").length, metrics: { inspections30d: ccpmRules.length * 412, findings14d: fs.length, resolved: fs.filter((f) => f.status === "RESOLVED").length, runningCostUsd: round(ccpmRules.reduce((x, y) => x + y.budget.spentUsd, 0), 2) } }, { sources: r(CCPM, "Dashboard") }); } },
-  { name: "ccpm_get_scorecard", domain: "Command Center Performance Monitor", product: CCPM, title: "Get supplier scorecard", description: "A supplier's weighted scorecard: KPIs with actual, target, weight and score.", operation: "ccpm.read", kind: "read", binding: "CCPM scorecard", basis: BASIS_INC,
+  { name: "ccpm_get_scorecard", domain: "Command Center Performance Monitor", product: CCPM, title: "Get supplier scorecard", description: "A supplier's weighted scorecard: KPIs with actual, target, weight and score, plus a weekly PO acknowledgment trend (997 receipt, 855 response rate and response time).", operation: "ccpm.read", kind: "read", binding: "CCPM scorecard", basis: BASIS_INC,
     inputSchema: s.obj({ partner: s.str("Partner name or ID.") }, ["partner"]),
-    handler: (a, ctx) => { const p = partnerArg(ctx, "ccpm_get_scorecard", "ccpm.read", a.partner); if (p.early) return p.early; return ok(ctx, "ccpm_get_scorecard", "ccpm.read", scorecard(p.id!), { sources: r(CCPM, "Scorecard", [p.id!]), interpretation: "Weights are set by the client. Scores are computed from observed transactions." }); } },
+    handler: (a, ctx) => { const p = partnerArg(ctx, "ccpm_get_scorecard", "ccpm.read", a.partner); if (p.early) return p.early; return ok(ctx, "ccpm_get_scorecard", "ccpm.read", { ...scorecard(p.id!), weeklyAcknowledgments: ackTrend(p.id!) }, { sources: r(CCPM, "Scorecard", [p.id!]), interpretation: "Weights are set by the client. Scores are computed from observed transactions. weeklyAcknowledgments tracks 997 receipt and 855 response separately; a missing 855 is unknown, not a rejection. 855 rate counts POs older than 96 hours." }); } },
   { name: "ccpm_get_supplier_analytics", domain: "Command Center Performance Monitor", product: CCPM, title: "Get supplier analytics", description: "All suppliers ranked by weighted score, with the lowest-scoring KPI for each and category averages.", operation: "ccpm.read", kind: "read", binding: "CCPM analytics", basis: BASIS_INC,
     inputSchema: s.obj({}),
     handler: (_a, ctx) => { const cards = tradingPartners().filter((c) => partnerMetrics(c.companyId).volume > 0).map((c) => scorecard(c.companyId)); const cats: Record<string, number[]> = {}; cards.forEach((c) => c.kpis.forEach((k) => k.score != null && (cats[k.category] ??= []).push(k.score))); return ok(ctx, "ccpm_get_supplier_analytics", "ccpm.read", { suppliers: cards.sort((x, y) => x.weightedScore - y.weightedScore).map((c) => ({ partner: c.partner, weightedScore: c.weightedScore, weakestKpi: [...c.kpis].filter((k) => k.score != null).sort((x, y) => (x.score as number) - (y.score as number))[0] })), categoryAverages: Object.entries(cats).map(([k, v]) => ({ category: k, average: Math.round(v.reduce((x, y) => x + y, 0) / v.length) })) }, { sources: r(CCPM, "Analytics") }); } },

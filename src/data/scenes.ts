@@ -18,7 +18,7 @@ export function sceneS4() {
     if (t._t < now - 7 * DAY) break;
     if (t.documentType !== "850" || t.direction !== "OUTBOUND" || t.environment !== "PRODUCTION" || !/^45\d{8}$/.test(t.refs.poNumber ?? "")) continue;
     const dayKey = `${t.partnerCompanyId}|${Math.floor(t._t / DAY)}`;
-    if (seen.has(dayKey)) continue;
+    if (seen.has(dayKey) && t.partnerCompanyId !== "C20005") continue;
     seen.add(dayKey);
     const docs = docsByPo(t.refs.poNumber!).filter((x) => x.partnerCompanyId === t.partnerCompanyId);
     const has = (d: string) => docs.some((x) => x.documentType === d && x.sourceStatus === "DLVD");
@@ -26,10 +26,15 @@ export function sceneS4() {
     const status = has("810") ? "Invoiced" : asn ? "Shipped" : has("855") ? "Confirmed" : "Not confirmed";
     cand.push({ po: t.refs.poNumber, supplier: name(t.partnerCompanyId), supplierId: t.partnerCompanyId, orderedAt: new Date(t._t).toISOString(), requestedDelivery: new Date(t._t + 6 * DAY).toISOString().slice(0, 10), status, transitDays: transitDays(t.partnerCompanyId), asnAt: asn ? new Date(asn._t).toISOString() : null, shipmentId: asn?.refs.shipmentId ?? null });
   }
-  const quota: Record<string, number> = { "Not confirmed": 3, Confirmed: 4, Shipped: 4, Invoiced: 3 };
-  const used = new Set<string>();
-  const rows = cand.filter((c) => { if (!quota[c.status] || used.has(c.supplierId)) return false; quota[c.status]--; used.add(c.supplierId); return true; }).sort((a, b) => b.orderedAt.localeCompare(a.orderedAt));
-  const pick = rows.find((r) => r.status === "Shipped" && r.supplierId !== CERT_INCIDENT.partnerCompanyId) ?? rows[0];
+  // Scenario: compliance review of Pinegate Home, a supplier new to EDI with an inconsistent 855 rate.
+  const FOCUS = "C20005";
+  const fAll = cand.filter((c) => c.supplierId === FOCUS);
+  const focus = [...fAll.filter((c) => c.status === "Not confirmed").slice(0, 4), ...fAll.filter((c) => c.status !== "Not confirmed").slice(0, 3)];
+  const quota: Record<string, number> = { "Not confirmed": 1, Confirmed: 2, Shipped: 2, Invoiced: 2 };
+  const used = new Set<string>([FOCUS]);
+  const rows = [...focus, ...cand.filter((c) => { if (!quota[c.status] || used.has(c.supplierId)) return false; quota[c.status]--; used.add(c.supplierId); return true; })].sort((a, b) => b.orderedAt.localeCompare(a.orderedAt));
+  for (const r of rows) r.plannedShipDate = new Date(Date.parse(r.requestedDelivery + "T12:00:00Z") - r.transitDays * DAY).toISOString().slice(0, 10);
+  const pick = rows.filter((r) => r.supplierId === FOCUS && r.status === "Not confirmed").sort((a, b) => a.orderedAt.localeCompare(b.orderedAt))[0] ?? rows.find((r) => r.status === "Shipped" && r.supplierId !== CERT_INCIDENT.partnerCompanyId) ?? rows[0];
   return { plant: "1710", purchasingGroup: "Home and Seasonal (H02)", rows, selected: pick?.po ?? null };
 }
 

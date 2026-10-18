@@ -184,11 +184,11 @@
         {
           "key": "TGCS-1107",
           "title": "Client scenarios for OTW stage",
-          "status": "Proposed",
+          "status": "In progress",
           "size": "M",
           "source": "Omar Sharif",
           "owner": "Omar Sharif",
-          "desc": "Scenarios for each of the seven stage clients: Copilot, Teams, Joule Work, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude. Onboarding focus; no customer-side fixes under managed services.",
+          "desc": "Scenarios 4 (SAP S/4HANA with Joule: Pinegate PO acknowledgments) and 6 (ChatGPT Enterprise: recurring on-hold follow-up) built with scenario card and discreet playback. Remaining clients pending Omar Sharif.",
           "accept": "One scenario per client, runnable on iPhone and laptop.",
           "reality": "Pending input"
         },

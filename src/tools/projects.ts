@@ -127,7 +127,7 @@ export const projectsTools: ToolDef[] = [
       for (const c of rows) for (const w of (c as any).workOrders) byState[w.state] = (byState[w.state] ?? 0) + 1;
       return ok(ctx, "list_change_requests", "request.read", {
         total: rows.length, workOrdersByState: byState,
-        changeRequests: page.map((c: any) => ({ statusId: c.statusId, title: c.title, partner: c.partnerCompanyId ? companyById(c.partnerCompanyId)?.companyName ?? c.partnerCompanyId : null, submittedAt: c.submittedAt, submittedBy: c.submittedBy, submissionState: c.submissionState, ...(c.rejectionReason ? { rejectionReason: c.rejectionReason } : {}), workOrders: c.workOrders.map((w: any) => ({ workOrderId: w.workOrderId, type: w.type, state: w.state, stateSince: w.stateSince, assignedTeam: w.assignedTeam, ...(w.holdReason ? { holdReason: w.holdReason } : {}) })) })),
+        changeRequests: page.map((c: any) => ({ statusId: c.statusId, title: c.title, partner: c.partnerCompanyId ? companyById(c.partnerCompanyId)?.companyName ?? c.partnerCompanyId : null, submittedAt: c.submittedAt, submittedBy: c.submittedBy, submissionState: c.submissionState, ...(c.rejectionReason ? { rejectionReason: c.rejectionReason } : {}), workOrders: c.workOrders.map((w: any) => ({ workOrderId: w.workOrderId, type: w.type, state: w.state, stateSince: w.stateSince, assignedTeam: w.assignedTeam, ...(w.holdReason ? { holdReason: w.holdReason, waitingOn: w.waitingOn ?? null } : {}) })) })),
       }, { sources: src(P, "GET /TGCP/v1/work-orders-requests"), pagination, interpretation: "Submission state shows whether the request was accepted. Work-order state shows delivery progress." });
     },
   },

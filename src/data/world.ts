@@ -273,9 +273,11 @@ function genSupplierOrder(g: Gen, p: Profile, t850: number, k: number) {
     return tx;
   };
   // 855
-  if (p.poAck > 0 && r() < p.poAck) {
+  const ackRate = p.poAckWeeks ? p.poAckWeeks[Math.min(p.poAckWeeks.length - 1, Math.max(0, Math.floor((dayOf(t850) - anchorDay(p.goLive)) / 7)))] : p.poAck;
+  if (ackRate > 0 && r() < ackRate) {
     const late = r() < 0.06;
-    inbound(t850 + hours(late ? 50 + r() * 40 : 2 + r() * 26), "855", { poNumber: poNum }, r() < 0.003 ? ERR.ref : undefined, p.map855);
+    const lag = p.ackLagH ? p.ackLagH[0] + r() * (p.ackLagH[1] - p.ackLagH[0]) : late ? 50 + r() * 40 : 2 + r() * 26;
+    inbound(t850 + hours(lag), "855", { poNumber: poNum }, r() < 0.003 ? ERR.ref : undefined, p.map855);
   }
   // 856
   const t856 = t850 + hours(20 + r() * 70);

@@ -229,6 +229,22 @@
   const bc = STAGE && "BroadcastChannel" in window ? new BroadcastChannel("tg-stage:" + location.pathname) : null;
   let remote = false;
   const fromRemote = new Set();
+  if (STAGE) {
+    const curKey = () => Object.keys(mounts).find((k) => document.querySelector(`[data-conv="${k}"]`));
+    /** Index of the next scenario turn not yet asked in the open conversation, or -1 while busy. */
+    window.__stageNext = (texts) => { const c = S.convs[curKey()]; if (!c) return 0; if (c.busy) return -1; const asked = new Set(c.items.filter((m) => m.role === "user").map((m) => m.text)); const i = texts.findIndex((t) => !asked.has(t)); return i < 0 ? texts.length : i; };
+    /** Types text into the composer at reading pace, then sends it. */
+    window.__stageType = (text) => {
+      const key = curKey(); const el = key && document.querySelector(`[data-conv="${key}"]`);
+      const ta = el?.querySelector("[data-compose] textarea"); if (!ta || S.convs[key]?.busy) return;
+      ta.focus(); ta.value = ""; let i = 0;
+      const step = () => {
+        if (i < text.length) { ta.value += text[i++]; ta.dispatchEvent(new Event("input", { bubbles: true })); return setTimeout(step, 38 + Math.random() * 45 + (text[i - 1] === " " ? 30 : 0)); }
+        setTimeout(() => ta.closest("form").requestSubmit(), 450);
+      };
+      step();
+    };
+  }
   const mirror = (msg) => { if (bc && !remote) bc.postMessage({ from: STAGE, ...msg }); };
   if (bc) bc.onmessage = (ev) => {
     const m = ev.data; if (m.from === STAGE) return;
@@ -831,6 +847,13 @@
   }
 
   // ---------- Ecosystem clients (simulated), one renderer with a skin per ecosystem ----------
+  // Stage scenarios (OTW 2026). Clients without an entry show "Scenario pending" on the stage.
+  const SCN = {
+    joule: { n: 4, title: "Supplier compliance: missing PO acknowledgments", setup: "Compliance opens a Pinegate Home PO marked Not confirmed. Pinegate went live 65 days ago and its 855 rate is inconsistent.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
+      turns: [{ text: "Is this a pattern for Pinegate?", on: "desktop" }, { text: "Which unconfirmed Pinegate POs ship this week?", on: "phone" }] },
+    chatgpt: { n: 6, title: "Recurring follow-up task", setup: "B2B operations schedules a weekday task to chase change requests that are on hold.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
+      turns: [{ text: "Every weekday at 8 AM, list on-hold change requests and who owes the next action.", on: "desktop" }, { text: "Draft the email to Sunfield requesting the test file.", on: "desktop" }] },
+  };
   const CLIENTS = {
     teams: { name: "Microsoft Teams", host: "copilot-studio", ph: "Type a message", auto: "Trading Grid", bot: "TG",
       hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid agent published to Teams through Copilot Studio" },
@@ -864,13 +887,15 @@
     gemini: [["thumbup", "Good response"], ["thumbdown", "Bad response"], ["refresh", "Redo"], ["share", "Share"], ["copy", "Copy"], ["more", "More"]],
     joule: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]],
     servicenow: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]] };
+  const nextWeekday8 = () => { const d = new Date(); d.setHours(8, 0, 0, 0); do d.setDate(d.getDate() + 1); while (d.getDay() === 0 || d.getDay() === 6); return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + ", 8:00 AM"; };
   function clItem(id, K, c, m, mi) {
     if (m.role === "user") return `<div class="cl-u">${id === "teams" ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}</div></div>`;
     const done = !m.thinking && (m.text || m.error);
     const last = mi === c.items.length - 1;
     const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
     const acts = (CL_ACTS[id] ?? []).map(([i, t]) => `<button title="${t}" ${i === "copy" ? `data-copy="${esc(m.text)}"` : i === "refresh" ? `data-prompt="${esc(prevUser)}"` : ""}>${ic(i)}</button>`).join("");
-    const body = `${activity(m, mi, m.route)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}`;
+    const task = id === "chatgpt" && /^every (weekday|day|week)/i.test(prevUser) ? `<div class="cl-task">${ic("calendar")}<div><b>Task scheduled</b><span>Weekdays at 8:00 AM · next run ${nextWeekday8()}</span></div></div>` : "";
+    const body = `${task}${activity(m, mi, m.route)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}`;
     if (id === "teams") return `<div class="cl-b"><div class="cl-av sq">${esc(initials(c.botName))}</div><div class="cl-bb"><div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>${body}${done ? `<div class="cl-aig">AI generated</div>` : ""}</div></div>`;
     const disc = id === "claude" && last && done ? `<span class="cl-sp"></span><span class="cl-disc">Claude can make mistakes. Please double-check responses.</span>` : "";
     return `<div class="cl-b">${id === "servicenow" ? `<div class="cl-bh">${ic("sparkle")}<b>Now Assist</b></div>` : ""}<div class="cl-bb">${body}${done && acts ? `<div class="cl-acts">${acts}${disc}</div>` : ""}</div></div>`;
@@ -975,7 +1000,7 @@
   function wsContext(K) {
     if (K.ws === "s4") {
       const sel = wsSelected(K); if (!sel) return "";
-      return [`Application: SAP S/4HANA, Monitor Supplier Confirmations (plant ${S.scene.s4.plant}).`, `Selected purchase order: ${sel.po}. Supplier: ${sel.supplier} (Trading Grid company ${sel.supplierId}).`, `Order date: ${sel.orderedAt.slice(0, 10)}. Requested delivery date: ${sel.requestedDelivery}. Confirmation status in SAP: ${sel.status}.`, `Inbound route transit time for this supplier (SAP TM route master): ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"} from receipt of the advance ship notice. Expected arrival = ASN receipt time plus ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"}.`].join("\n");
+      return [`Application: SAP S/4HANA, Monitor Supplier Confirmations (plant ${S.scene.s4.plant}).`, `Selected purchase order: ${sel.po}. Supplier: ${sel.supplier} (Trading Grid company ${sel.supplierId}).`, `Order date: ${sel.orderedAt.slice(0, 10)}. Requested delivery date: ${sel.requestedDelivery}. Planned ship date: ${sel.plannedShipDate}. Confirmation status in SAP: ${sel.status}.`, `Other ${sel.supplier} purchase orders on screen: ${S.scene.s4.rows.filter((r) => r.supplierId === sel.supplierId && r.po !== sel.po).map((r) => `${r.po} (${r.status}, planned ship ${r.plannedShipDate})`).join("; ") || "none"}.`, `Today: ${new Date().toISOString().slice(0, 10)}.`, `Inbound route transit time for this supplier (SAP TM route master): ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"} from receipt of the advance ship notice. Expected arrival = ASN receipt time plus ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"}.`].join("\n");
     }
     const d = S.scene.servicenow; if (!d) return "";
     return [`Application: ServiceNow Service Operations Workspace.`, `Open record: incident ${d.number}, "${d.shortDescription}". State ${d.state}, priority ${d.priority}, opened ${d.openedAt}.`, `Configuration item: ${d.ci} (Trading Grid company ${d.partnerCompanyId}, ${d.partner}). Service: ${d.service}.`, `Related Trading Grid change request in work notes: ${d.changeRequest}.`].join("\n");
@@ -1044,7 +1069,23 @@
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
     return `<div class="stage"><div class="stage-row"></div>
-      <footer class="stage-foot"><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><div class="stage-name"></div></footer></div>`;
+      <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name"></div></footer></div>`;
+  }
+  function stageScenario(id) {
+    const sc = SCN[id];
+    if (!sc) return `<div class="stage-scn pending"><div class="stage-scn-h"><span>Scenario</span><b>Pending</b></div></div>`;
+    return `<div class="stage-scn"><div class="stage-scn-h"><span>Scenario ${sc.n}</span><b>${esc(sc.title)}</b></div>
+      <div class="stage-scn-b"><div>${esc(sc.setup)}</div><div class="env">${sc.env.map(esc).join(" · ")}</div></div></div>`;
+  }
+  // Scenario playback: a discreet control types the next turn into the right device, then sends it.
+  const stageFrame = (id, dev) => document.querySelector(`.stage-pair[data-sg="${id}"] .dev-${dev === "phone" ? "phone" : "laptop"} iframe`);
+  function stagePlay() {
+    const id = qs().get("client") ?? STAGE_CLIENTS[0].id;
+    const sc = SCN[id]; if (!sc) return;
+    const probe = stageFrame(id, "desktop")?.contentWindow;
+    const next = probe?.__stageNext?.(sc.turns.map((t) => t.text));
+    if (next == null || next < 0 || next >= sc.turns.length) return;
+    stageFrame(id, sc.turns[next].on)?.contentWindow?.__stageType?.(sc.turns[next].text);
   }
   function stageFrames(cur) {
     const row = document.querySelector(".stage-row");
@@ -1053,7 +1094,7 @@
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
         <div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>
-        <div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div></div>`);
+        <div class="dev-laptop">${stageScenario(cur.id)}<div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div></div>`);
       g = row.lastElementChild;
     }
     row.querySelectorAll(".stage-pair").forEach((x) => x.classList.toggle("on", x === g));
@@ -1074,7 +1115,7 @@
     const W = st.clientWidth - 72, H = st.clientHeight * 0.9;
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     let sP = H / ph;
-    let sL = Math.min((W - pw * sP - 56) / lw, H / lh);
+    let sL = Math.min((W - pw * sP - 56) / lw, (H - 125) / lh);
     st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
   }
   window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });
@@ -1130,10 +1171,12 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-s4po]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-s4po]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.stagego) return stageShow(d.stagego);
+    if (d.stagemove) return stageMove(Number(d.stagemove));
+    if (d.stageplay) return stagePlay();
     if (d.s4po) { const u = new URLSearchParams(location.search); u.set("po", d.s4po); return go(`${location.pathname}?${u}`); }
     if (d.copside) { S.cps.side = d.copside === "1"; return render(); }
     if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`${location.pathname}?${u}`); }

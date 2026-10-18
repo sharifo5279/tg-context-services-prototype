@@ -17,6 +17,10 @@ export type Profile = {
   orders: number;
   /** Share of POs answered with an 855. 0 = not enrolled. */
   poAck: number;
+  /** Optional 855 share per week since go-live (overrides poAck), for partners new to EDI. */
+  poAckWeeks?: number[];
+  /** Optional 855 response time range in hours. */
+  ackLagH?: [number, number];
   /** Ship-to sent as store number (N103=92) and resolved through STORE_TO_GLN. */
   storeNumbers?: boolean;
   /** Share of invoices sent before the ASN. */
@@ -61,7 +65,7 @@ export const PROFILES: Profile[] = [
   { id: "C20002", prefix: "NFR", flow: "X12_SUPPLIER", protocol: "SFTP", orders: 6, poAck: 0, goLive: -690 },
   { id: "C20003", prefix: "CST", flow: "X12_SUPPLIER", protocol: "VAN_INTERCONNECT", orders: 14, poAck: 0.9, map856: "M-1005", goLive: -1590 },
   { id: "C20004", prefix: "BW", flow: "X12_SUPPLIER", protocol: "AS2", orders: 13, poAck: 0.92, storeNumbers: true, map856: "M-1001", goLive: -1290 },
-  { id: "C20005", prefix: "PGH", flow: "X12_SUPPLIER", protocol: "AS2", orders: 3, poAck: 0.8, map810: "M-1006", goLive: -5 },
+  { id: "C20005", prefix: "PGH", flow: "X12_SUPPLIER", protocol: "AS2", orders: 3, poAck: 0.7, poAckWeeks: [0.95, 0.55, 0.9, 0.35, 0.85, 0.5, 0.95, 0.3, 0.8, 0.45], ackLagH: [8, 96], map810: "M-1006", goLive: -65 },
   { id: "C20006", prefix: "HOL", flow: "EDIFACT_SUPPLIER", protocol: "AS2", orders: 4, poAck: 0, goLive: -1090 },
   { id: "C20007", prefix: "SMB", flow: "X12_SUPPLIER", protocol: "SFTP", orders: 11, poAck: 0.85, map855: "M-1008", goLive: -1240 },
   { id: "C20008", prefix: "ATL", flow: "X12_SUPPLIER", protocol: "AS2", orders: 9, poAck: 0.9, goLive: -1440 },

@@ -30,7 +30,7 @@ export const maps = [
   map("M-1003", "HRG_850_4010_OUT", 12, "OUTBOUND", "SAP IDoc ORDERS", "X12 004010 850", "ACTIVE", true, "ACCEPTED", "edi.team", 60, 59, PROFILES.filter((p) => p.flow === "X12_SUPPLIER").map((p) => p.id), { lookups: ["VENDOR_NUMBER_BY_PARTNER"], characteristics: { targetFields: 190, unmappedTargetFields: 2, lookups: 1 } }),
   map("M-1004", "HOL_ORDERS_D96A_OUT", 3, "OUTBOUND", "SAP IDoc ORDERS", "EDIFACT D96A ORDERS", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, ["C20006"]),
   map("M-1005", "CST_856_4010_IN", 5, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "j.patel", 90, 88, ["C20003"]),
-  map("M-1006", "PGH_810_4010_IN", 1, "INBOUND", "X12 004010 810", "SAP IDoc INVOIC", "IN_TEST", false, "PENDING", "j.patel", 3, null, ["C20005"]),
+  map("M-1006", "PGH_810_4010_IN", 1, "INBOUND", "X12 004010 810", "SAP IDoc INVOIC", "ACTIVE", true, "ACCEPTED", "j.patel", 66, 65, ["C20005"]),
   map("M-1007", "ATL_846_4010_IN", 2, "INBOUND", "X12 004010 846", "Inventory feed CSV", "RETIRED", false, "ACCEPTED", "edi.team", 500, 700, ["C20008"]),
   map("M-1008", "SMB_855_4010_IN", 2, "INBOUND", "X12 004010 855", "SAP IDoc ORDRSP", "ACTIVE", true, "ACCEPTED", "j.patel", 220, 219, ["C20007"]),
   map("M-1009", "CRL_945_4010_IN", 4, "INBOUND", "X12 004010 945", "SAP IDoc SHPCON", "ACTIVE", true, "ACCEPTED", "j.patel", 75, 74, ["C20013"], { lookups: [], characteristics: { targetFields: 96, unmappedTargetFields: 3, lookups: 0 } }),
@@ -61,7 +61,7 @@ export const mapAnnotations: Record<string, any[]> = {
     { annotationId: "AN-501", author: "s.okafor", createdOn: dAgo(4), text: "v7: ship-to N1*ST with N103=92 now resolves the store number through STORE_TO_GLN instead of a hardcoded table. Work order WO-5488.", replies: [{ author: "edi.team", createdOn: dAgo(3), text: "Promoted to production." }], attachments: [{ name: "WO-5488_change_summary.pdf" }] },
     { annotationId: "AN-502", author: "j.patel", createdOn: dAgo(3), text: "Reminder: confirm the STORE_TO_GLN entry before the first receipts at every new store or DC opening.", replies: [], attachments: [] },
   ],
-  "M-1006": [{ annotationId: "AN-601", author: "j.patel", createdOn: dAgo(3), text: "Initial map for Pinegate 810. Test file INV-PGH-0001 translated successfully.", replies: [], attachments: [] }],
+  "M-1006": [{ annotationId: "AN-601", author: "j.patel", createdOn: dAgo(70), text: "Initial map for Pinegate 810. Test file INV-PGH-0001 translated successfully.", replies: [], attachments: [] }],
 };
 
 // ---- Cartographer: cross-reference ----------------------------------------------------------------
@@ -123,7 +123,6 @@ export const changeRequestTypes = [
 
 export const changeRequests: any[] = [
   { statusId: "ST-10421", requestId: "REQ-10421", title: "SFTP connection for Coastline Apparel test", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(9), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5521", type: "SFTP_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(8), assignedTeam: "BN connectivity", attachments: [] }] },
-  { statusId: "ST-10466", requestId: "REQ-10466", title: "AS2 certificate renewal for Brightwell Home Goods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(3), submittedBy: "s.okafor", submissionState: "REJECTED", rejectionReason: "Certificate file missing; attach the partner public certificate and resubmit.", workOrders: [{ workOrderId: "WO-5560", type: "AS2_CONNECTION", state: "REJECTED", stateSince: dAgo(2), assignedTeam: "BN connectivity", attachments: [] }] },
   { statusId: "ST-10471", requestId: "REQ-10471", title: "New 945 map version for Crestline short-ship reasons", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(1), submittedBy: "j.patel", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5571", type: "MAP_CHANGE", state: "NEW", stateSince: dAgo(1), assignedTeam: "BN mapping", attachments: [{ fileName: "crestline_945_w12_codes.xlsx" }] }] },
   { statusId: "ST-10388", requestId: "REQ-10388", title: "Brightwell 856 ship-to store resolution", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(14), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5488", type: "MAP_CHANGE", state: "COMPLETED", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "store_resolution_spec.xlsx" }] }] },
 ];
@@ -170,10 +169,15 @@ changeRequests.push(JSON.parse(JSON.stringify(CERT_CR)));
     });
     changeRequests.push({ statusId: `ST-${10100 + k}`, requestId: `REQ-${10100 + k}`, title: title(type, pid, doc), projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(days), submittedBy: pick(people), submissionState: rejected ? "REJECTED" : "ACCEPTED", partnerCompanyId: pid, ...(rejected ? { rejectionReason: pick(["Required attachment missing; attach the file and resubmit.", "Duplicate of an open request.", "Partner company is not in the selected project."]) } : {}), workOrders: wos });
   }
-  // Guarantee examples of every work-order state in the seeded history.
+  // On-hold work orders are fixed so the follow-up scenario is stable: who owes the next action is recorded.
   const gen = changeRequests.filter((c) => /^ST-101/.test(c.statusId) && c.submissionState === "ACCEPTED");
-  const holds = ["Waiting for partner test file", "Waiting for partner certificate", "Waiting for specification approval"];
-  gen.filter((c) => Date.parse(c.submittedAt) > Date.now() - 45 * 864e5).slice(0, 3).forEach((c, i) => { const w = c.workOrders[0]; w.state = "ON_HOLD"; w.holdReason = holds[i]; w.stateSince = dAgo(2 + i * 3); });
+  for (const c of gen) for (const w of c.workOrders) if (w.state === "ON_HOLD") { w.state = "IN_PROGRESS"; delete w.holdReason; }
+  const HOLDS: [string, string, string, number][] = [
+    ["ST-10107", "Waiting for specification approval", "Harborview Retail Group", 8],
+    ["ST-10101", "Waiting for partner test file", "Sunfield Produce Partners", 2],
+    ["ST-10104", "Waiting for partner certificate", "Rocky Coast Beverages", 5],
+  ];
+  for (const [id, reason, owner, days] of HOLDS) { const c = changeRequests.find((x) => x.statusId === id); if (!c) continue; const w = c.workOrders[0]; w.state = "ON_HOLD"; w.holdReason = reason; w.waitingOn = owner; w.stateSince = dAgo(days); }
   gen.filter((c) => c.workOrders[0].state === "COMPLETED").slice(-2).forEach((c) => { c.workOrders[0].state = "CANCELLED"; });
   for (const c of changeRequests) if (!c.partnerCompanyId) c.partnerCompanyId = c.title.includes("Coastline") ? "C20003" : c.title.includes("Brightwell") ? "C20004" : c.title.includes("Crestline") ? "C20013" : null;
   changeRequests.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
@@ -187,7 +191,7 @@ export const provisioningTemplates = [
 
 export const provisionings: any[] = [
   { trackingId: "TRK-MRC-0042", templateName: "HRG_DROPSHIP_VENDOR", invitationId: 7720, submittedAt: dAgo(160), _completeAt: Date.parse(dAgo(158)), resultRefs: { companyId: "C20014", mailboxId: "MB-HRG-WEBEDI-01", tradingAddress: "ZZ:MAPLERIDGEWEB", tradingPartnerRelationshipIds: ["TPR-70131"] } },
-  { trackingId: "TRK-PGH-0091", templateName: "HRG_SUPPLIER_STD", invitationId: 7702, submittedAt: dAgo(5), _completeAt: Date.parse(dAgo(4)), resultRefs: { companyId: "C20005", mailboxId: "MB-PGH-01", tradingAddress: "ZZ:PINEGATEHOME", tradingPartnerRelationshipIds: ["TPR-70051", "TPR-70052"] } },
+  { trackingId: "TRK-PGH-0091", templateName: "HRG_SUPPLIER_STD", invitationId: 7702, submittedAt: dAgo(68), _completeAt: Date.parse(dAgo(67)), resultRefs: { companyId: "C20005", mailboxId: "MB-PGH-01", tradingAddress: "ZZ:PINEGATEHOME", tradingPartnerRelationshipIds: ["TPR-70051", "TPR-70052"] } },
 ];
 
 // ---- Trading Grid Data Platform catalog -----------------------------------------------------------

@@ -15,6 +15,8 @@ export type Scenario = { id: string; title: string; kind: string; host?: HostKey
 
 import { findExamples } from "./data/examples.js";
 import { STORES } from "./data/insights.js";
+import { changeRequests } from "./data/other.js";
+const rejectedCr = () => need(changeRequests.find((c) => c.submissionState === "REJECTED")).statusId;
 
 class Skip extends Error {}
 let exCache: ReturnType<typeof findExamples> | null = null;
@@ -53,7 +55,7 @@ S("get_operation_status", "Status of an accepted change request", "Happy path", 
 S("get_operation_status", "Status of a completed provisioning", "Happy path", { operation_ref: "TRK-PGH-0091" }, "OK", { check: ["Kind partner_provisioning", (o) => R(o).kind === "partner_provisioning"] });
 S("get_operation_status", "Unknown operation reference", "Not found", { operation_ref: "ST-99999" }, "ERROR", { code: "NOT_FOUND" });
 S("get_operation_result", "Result of a change request", "Happy path", { operation_ref: "ST-10388" }, "OK", { check: ["Result returned", (o) => !!R(o).result] });
-S("get_operation_result", "Result of a rejected change request", "Happy path", { operation_ref: "ST-10466" }, "OK", { check: ["Rejected", (o) => JSON.stringify(R(o)).includes("REJECTED")] });
+S("get_operation_result", "Result of a rejected change request", "Happy path", () => ({ operation_ref: rejectedCr() }), "OK", { check: ["Rejected", (o) => JSON.stringify(R(o)).includes("REJECTED")] });
 S("get_operation_result", "Unknown operation reference", "Not found", { operation_ref: "EXP-0000" }, "ERROR", { code: "NOT_FOUND" });
 
 // ---------------------------------------------------------------- Transaction evidence (TG Insights)
@@ -67,7 +69,7 @@ S("search_transactions", "Window beyond the 183-day search limit", "Partial evid
 S("search_transactions", "Paginate results", "Pagination", { from: "30d", page_size: 10 }, "OK", { check: ["Next cursor returned", (o) => !!(R(o).nextCursor ?? o.evidence?.pagination?.nextCursor)] });
 S("search_transactions", "3PL shipment status messages", "Filter", { partner: "Crestline Logistics", document_type: "214", from: "2d" }, "OK", { check: ["214s found", (o) => R(o).counts.documents >= 1], prompt: "Show Crestline 214 shipment status messages from the last 2 days." });
 S("search_transactions", "Remittances in the last 30 days", "Filter", { document_type: "820", from: "30d" }, "OK", { check: ["820s found", (o) => R(o).counts.documents >= 1] });
-S("search_transactions", "In-process documents older than 6 hours", "Filter", { status: "IN_PROCESS", modified_before: "6h", from: "7d" }, "OK", { check: ["Current stuck file listed", (o) => JSON.stringify(R(o)).includes(need(EX().stuckInProcess).transactionId)], prompt: "Which documents have been in process for more than 6 hours?" });
+S("search_transactions", "In-process documents older than 6 hours", "Filter", () => (need(EX().stuckInProcess), { status: "IN_PROCESS", modified_before: "6h", from: "7d" }), "OK", { check: ["Current stuck file listed", (o) => JSON.stringify(R(o)).includes(need(EX().stuckInProcess).transactionId)], prompt: "Which documents have been in process for more than 6 hours?" });
 S("get_transaction", "Read a failed ASN", "Happy path", () => ({ key_value: need(EX().failedAsn).shipmentId }), "OK", { check: ["FAIL with error", (o) => R(o).sourceStatus === "FAIL" && !!R(o).errors?.[0]?.code] });
 S("get_transaction", "Read by transaction ID", "Happy path", () => ({ transaction_id: need(EX().deliveredAsn).transactionId }), "OK", { check: ["856", (o) => R(o).documentType === "856"] });
 S("get_transaction", "Unknown key", "Not found", { key_value: "SH-00000" }, "ERROR");
@@ -193,7 +195,7 @@ S("get_workflow_template", "Unknown template", "Not found", { workflow_template_
 S("list_mapping_solutions", "Mapping solutions", "Happy path", {}, "OK");
 S("list_maps", "All maps", "Happy path", {}, "OK", { check: ["12 maps", (o) => JSON.stringify(R(o)).includes("M-1012")] });
 S("list_maps", "Inbound maps", "Filter", { direction: "INBOUND" }, "OK");
-S("list_maps", "Maps in test", "Filter", { status: "IN_TEST" }, "OK", { check: ["M-1006", (o) => JSON.stringify(R(o)).includes("M-1006")] });
+S("list_maps", "Active maps", "Filter", { status: "ACTIVE" }, "OK", { check: ["M-1006", (o) => JSON.stringify(R(o)).includes("M-1006")] });
 S("list_maps", "Maps changed in 7 days", "Filter", { modified_within_days: 7 }, "OK", { check: ["M-1001", (o) => JSON.stringify(R(o)).includes("M-1001")], prompt: "Which maps changed this week?" });
 S("list_maps", "Maps for a partner", "Filter", { partner: "Crestline Logistics" }, "OK");
 S("list_maps", "Paginate maps", "Pagination", { page_size: 4, page_no: 2 }, "OK");
@@ -241,7 +243,7 @@ S("list_change_requests", "Requests for Coastline Apparel", "Filter", { partner:
 S("list_change_requests", "Second page", "Pagination", { page_size: 10, cursor: Buffer.from("10").toString("base64url") }, "OK", { check: ["Page of 10", (o) => R(o).changeRequests.length === 10] });
 S("list_change_requests", "Unknown partner", "Not found", { partner: "Zzyzx Nonexistent" }, "ERROR");
 S("get_change_request_status", "Accepted request in progress", "Happy path", { status_id: "ST-10421" }, "OK");
-S("get_change_request_status", "Rejected request", "Happy path", { status_id: "ST-10466" }, "OK", { check: ["Reason", (o) => JSON.stringify(R(o)).includes("Certificate")] });
+S("get_change_request_status", "Rejected request", "Happy path", () => ({ status_id: rejectedCr() }), "OK", { check: ["Reason", (o) => !!R(o).rejectionReason] });
 S("get_change_request_status", "Unknown request", "Not found", { status_id: "ST-00000" }, "ERROR");
 S("get_work_order_status", "Work order status", "Happy path", { work_order_id: "WO-5571" }, "OK");
 S("get_work_order_status", "Unknown work order", "Not found", { work_order_id: "WO-0000" }, "ERROR");
