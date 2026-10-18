@@ -1172,13 +1172,11 @@
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
     return `<div class="stage"><div class="stage-row"></div>
-      <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name"></div></footer></div>`;
+      <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><div class="stage-scn"></div><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name"></div></footer></div>`;
   }
   function stageScenario(id) {
     const sc = SCN[id];
-    if (!sc) return `<div class="stage-scn pending"><div class="stage-scn-h"><span>Scenario</span><b>Pending</b></div></div>`;
-    return `<div class="stage-scn"><div class="stage-scn-h"><span>Scenario ${sc.n}</span><b>${esc(sc.title)}</b></div>
-      <div class="stage-scn-b"><div>${esc(sc.setup)}</div><div class="env">${sc.env.map(esc).join(" · ")}</div></div></div>`;
+    return sc ? `<b>${sc.n}</b><span title="${esc(sc.setup)}">${esc(sc.title)}</span>` : "";
   }
   // Scenario playback: a discreet control types the next turn into the right device, then sends it.
   const stageFrame = (id, dev) => document.querySelector(`.stage-pair[data-sg="${id}"] .dev-${dev === "phone" ? "phone" : "laptop"} iframe`);
@@ -1205,12 +1203,13 @@
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
         ${cur.laptopOnly ? "" : `<div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>`}
-        <div class="dev-laptop">${stageScenario(cur.id)}<div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div></div>`);
+        <div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div></div>`);
       g = row.lastElementChild;
     }
     row.querySelectorAll(".stage-pair").forEach((x) => x.classList.toggle("on", x === g));
     document.querySelectorAll("[data-stagego]").forEach((b) => b.classList.toggle("on", b.dataset.stagego === cur.id));
     document.querySelector(".stage-name").textContent = cur.name;
+    document.querySelector(".stage-scn").innerHTML = stageScenario(cur.id);
   }
   function stageShow(id) {
     const cur = STAGE_CLIENTS.find((x) => x.id === id) ?? STAGE_CLIENTS[0];
@@ -1226,12 +1225,12 @@
     const W = st.clientWidth - 72, H = st.clientHeight * 0.9;
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client"));
-    if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 125) / lh); st.style.setProperty("--sl", sl); st.style.setProperty("--pb", `${Math.max(8, ((st.querySelector(".stage-row")?.clientHeight ?? H) - lh * sl - 112) / 2)}px`); return; }
+    if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 20) / lh); st.style.setProperty("--sl", sl); st.style.setProperty("--pb", `${Math.max(8, ((st.querySelector(".stage-row")?.clientHeight ?? H) - lh * sl) / 2)}px`); return; }
     // Phone and laptop share one visual height; the scenario card sits above the laptop.
-    const Hc = Math.min(H - 125, (W - 56) / (pw / ph + lw / lh));
+    const Hc = Math.min(H - 20, (W - 56) / (pw / ph + lw / lh));
     const sP = Hc / ph, sL = Hc / lh;
     const rowH = st.querySelector(".stage-row")?.clientHeight ?? H;
-    st.style.setProperty("--pb", `${Math.max(8, (rowH - Hc - 112) / 2)}px`);
+    st.style.setProperty("--pb", `${Math.max(8, (rowH - Hc) / 2)}px`);
     st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
   }
   window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });

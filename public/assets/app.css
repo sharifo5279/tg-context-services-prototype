@@ -1228,17 +1228,10 @@ body:has(.cl) .bl-dot, body:has(.stage) .bl-dot { display: none; }
 .dev-laptop-base { width: calc(1372px * var(--sl, .5)); height: calc(22px * var(--sl, .5)); background: #0b0b0c; border-radius: 0 0 calc(18px * var(--sl, .5)) calc(18px * var(--sl, .5)); }
 
 /* Stage: scenario card above the laptop, previous and next controls */
-.dev-laptop { position: relative; }
-.stage-scn { align-self: stretch; margin: 0 calc(70px * var(--sl, .5)) 12px; background: #fff; border: 1px solid #e7eaef; border-left: 3px solid #0066ff; border-radius: 0 8px 8px 0; padding: 10px 16px; font-family: Inter, sans-serif; color: #101c2f; }
-.stage-scn.pending { color: #8a94a6; border-left-color: #c9cfd8; }
-.stage-scn-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
-.stage-scn-h span { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #0066ff; white-space: nowrap; }
-.stage-scn.pending .stage-scn-h span { color: #8a94a6; }
-.stage-scn-h b { font-size: 17px; font-weight: 600; }
-.stage-scn-b { display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; line-height: 1.4; color: #3f4d62; }
-.stage-scn-b i { font-style: normal; font-weight: 600; color: #101c2f; margin-right: 6px; }
-.stage-scn-b i.fu { margin-left: 10px; }
-.stage-scn-b .env { color: #6b7686; font-size: 12.5px; }
+.stage-scn { position: absolute; left: 60px; max-width: calc(50% - 260px); display: flex; align-items: baseline; gap: 8px; white-space: nowrap; overflow: hidden; font-size: 13px; color: #8a94a6; }
+.stage-scn b { font-weight: 600; color: #6b7686; }
+.stage-scn span { color: #6b7686; font-weight: 500; }
+.stage-scn i { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
 .stage-nav { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #d5dae1; background: #fff; color: #3f4d62; display: grid; place-items: center; cursor: pointer; padding: 0; }
 .stage-nav svg { width: 16px; height: 16px; transform: rotate(90deg); }
 .stage-nav.nx svg { transform: rotate(-90deg); }
