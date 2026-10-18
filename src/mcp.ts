@@ -52,11 +52,12 @@ export function hostForToken(token?: string | null): HostKey | null {
   return (Object.keys(HOSTS) as HostKey[]).filter((h) => h !== "tg-aviator").find((h) => tokenFor(h) === token) ?? null;
 }
 
-function buildServer(ctx: Ctx) {
-  const server = new Server({ name: "trading-grid-context-connectors", version: "0.2.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Connectors. Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
+export type Connector = "agents" | "context";
+function buildServer(ctx: Ctx, connector: Connector) {
+  const server = new Server({ name: connector === "agents" ? "trading-grid-agent-connectors" : "trading-grid-context-connectors", version: "0.3.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: (connector === "agents" ? "Trading Grid Agent Connectors: Trading Grid Aviator agents and Trading Grid tools." : "Trading Grid Context Connectors: Trading Grid data and action tools for agents you build.") + " Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [...(checkOperation(ctx, "agent.invoke") ? [] : agentsFor(ctx.host).map(agentToolDef)), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({
+    tools: [...(connector !== "agents" || checkOperation(ctx, "agent.invoke") ? [] : agentsFor(ctx.host).map(agentToolDef)), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({
       name: t.name,
       title: t.title,
       description: t.description,
@@ -66,7 +67,7 @@ function buildServer(ctx: Ctx) {
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
-    const ag = agentForTool(req.params.name);
+    const ag = connector === "agents" ? agentForTool(req.params.name) : undefined;
     if (ag) {
       const denial = checkOperation(ctx, "agent.invoke");
       const allowed = agentsFor(ctx.host).some((x) => x.id === ag.id);
@@ -99,9 +100,9 @@ function buildServer(ctx: Ctx) {
   return server;
 }
 
-export async function handleMcp(req: any, res: any, host: HostKey, baseUrl: string) {
+export async function handleMcp(req: any, res: any, host: HostKey, baseUrl: string, connector: Connector = "agents") {
   const ctx: Ctx = { host, sessionId: `mcp-${host}`, baseUrl };
-  const server = buildServer(ctx);
+  const server = buildServer(ctx, connector);
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   res.on("close", () => { transport.close(); server.close(); });
   await server.connect(transport);

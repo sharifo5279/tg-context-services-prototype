@@ -287,7 +287,7 @@
     c.items.push(m);
     refreshConv(key);
     try {
-      const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: c.id, host: c.host, agentId: c.agentId, message: text, context: S.ctxFor[key]?.() }) });
+      const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: c.id, host: c.host, agentId: c.agentId, message: text, context: S.ctxFor[key]?.(), connector: S.conFor?.[key] }) });
       if (r.status === 401) { location.href = "/login"; return; }
       const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = "";
       for (;;) {
@@ -550,8 +550,8 @@
           <tr><td class="muted">Granted by</td><td>${esc(S.meta.grant.grantedBy)} on ${esc(S.meta.grant.grantedAt.slice(0, 10))}; expires ${esc(S.meta.grant.expiresAt.slice(0, 10))}</td></tr>
         </tbody></table>
         <div class="section-title">Connected agent applications</div>
-        <div style="overflow:auto"><table class="t"><thead><tr><th>Application</th><th>Exposure</th><th>Execution principal</th><th>Operations</th><th>Last used</th><th>Status</th><th></th></tr></thead><tbody>
-        ${ext.map((h) => { const st = S.meta.clientStatus[h.key] ?? "ACTIVE"; return `<tr><td><strong>${esc(h.name)}</strong><div class="small muted">${esc(h.authPattern)}</div></td><td class="small">${esc(h.exposure)}${h.exposure === "External" ? "<div class=\"muted\">via Aviator AKS gateway</div>" : ""}</td><td class="mono small">${esc(h.principal)}<div class="muted">${esc(h.principalType.replace("_", " ").toLowerCase())}</div></td><td>${h.operations.length} of ${Math.max(...S.meta.hosts.map((x) => x.operations.length))}</td><td class="small">${last[h.key] ? esc(new Date(last[h.key]).toLocaleTimeString()) : '<span class="muted">Not used</span>'}</td><td><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Active" : "Suspended"}</span></td><td>${st === "ACTIVE" ? `<button class="btn sm danger" data-suspend="${h.key}">Suspend access</button>` : `<button class="btn sm" data-restore="${h.key}">Restore access</button>`}</td></tr>`; }).join("")}
+        <div style="overflow:auto"><table class="t"><thead><tr><th>Application</th><th>Connectors</th><th>Exposure</th><th>Execution principal</th><th>Operations</th><th>Last used</th><th>Status</th><th></th></tr></thead><tbody>
+        ${ext.map((h) => { const st = S.meta.clientStatus[h.key] ?? "ACTIVE"; return `<tr><td><strong>${esc(h.name)}</strong><div class="small muted">${esc(h.authPattern)}</div></td><td class="small">${(h.connectors ?? []).map((c) => c === "agents" ? "Agent Connectors" : "Context Connectors").join("<br>") || "-"}</td><td class="small">${esc(h.exposure)}${h.exposure === "External" ? "<div class=\"muted\">via Aviator AKS gateway</div>" : ""}</td><td class="mono small">${esc(h.principal)}<div class="muted">${esc(h.principalType.replace("_", " ").toLowerCase())}</div></td><td>${h.operations.length} of ${Math.max(...S.meta.hosts.map((x) => x.operations.length))}</td><td class="small">${last[h.key] ? esc(new Date(last[h.key]).toLocaleTimeString()) : '<span class="muted">Not used</span>'}</td><td><span class="pill ${st === "ACTIVE" ? "ok" : "bad"}">${st === "ACTIVE" ? "Active" : "Suspended"}</span></td><td>${st === "ACTIVE" ? `<button class="btn sm danger" data-suspend="${h.key}">Suspend access</button>` : `<button class="btn sm" data-restore="${h.key}">Restore access</button>`}</td></tr>`; }).join("")}
         </tbody></table></div>
         <p class="small muted">Suspension applies on the next call. All operations are denied while suspended.</p>
         <div class="section-title">Agents available to each application</div>
@@ -846,7 +846,7 @@
       <div class="cop-msgs"><div class="cop-col">${empty}${c.items.map((m, mi) => cpsItem(c, m, mi)).join("")}</div></div>
       <div class="cop-foot">${starters}<form class="cop-comp" data-compose><textarea rows="1" placeholder="Message Copilot" ${dis}></textarea>
           <div class="cop-crow"><button type="button" class="cop-plus" title="Add content">${ic("plus")}</button><button type="button" class="cop-tool" title="Tools">${ic("sliders")}<span>Tools</span></button><span class="cop-sp"></span><button type="button" class="cop-mic" title="Dictate">${ic("mic")}</button><button class="cop-send" ${dis} title="Send">${ic("up")}</button></div></form>
-        <div class="cop-sim">Simulated client · Trading Grid via Aviator AKS gateway</div></div>`;
+        <div class="cop-sim">Simulated client · Trading Grid Context Connectors</div></div>`;
   }
   function pageCopilot() {
     const eco = "copilot-studio";
@@ -856,6 +856,7 @@
     const c = conv(key, agentId, eco);
     const blocked = (S.meta.clientStatus[eco] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => cpsChat(cc, agentId, avail, blocked);
+    (S.conFor ??= {})[key] = "context";
     const chats = Object.values(S.convs).filter((x) => x.host === eco && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
     const nav = [["compose", "New chat", `data-newconv="${key}"`], ["search", "Search", ""], ["apps", "Agents", ""], ["notebook", "Notebooks", ""], ["task", "Tasks", ""]];
     return `<div class="cop ${S.cps.side ? "side-open" : ""}">
@@ -871,41 +872,41 @@
   // ---------- Ecosystem clients (simulated), one renderer with a skin per ecosystem ----------
   // Stage scenarios (OTW 2026). Clients without an entry show "Scenario pending" on the stage.
   const SCN = {
-    teams: { n: 1, title: "Colleagues onboarding a trading partner", setup: "Jordan Lee and Morgan Chen work the Alder and Ash Furniture go-live (Oct 29) in a group chat with the Trading Grid agent.", env: ["Microsoft Teams group chat", "Trading Grid agent via Copilot Studio", "Delegated users"],
+    teams: { n: 1, connector: "agents", title: "Colleagues onboarding a trading partner", setup: "Jordan Lee and Morgan Chen work the Alder and Ash Furniture go-live (Oct 29) in a group chat with the Trading Grid agent.", env: ["Microsoft Teams group chat", "Trading Grid agent via Copilot Studio", "Delegated users"],
       turns: [{ text: "What's left before Alder and Ash Furniture goes live?", as: "Jordan Lee" }, { text: "Request the missing item.", as: "Morgan Chen" }, { approve: true }] },
-    servicenow: { n: 2, title: "AS2 certificate failure for one partner", setup: "Jordan has incident INC0041873 open in Service Operations Workspace with the Now Assist panel.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
+    servicenow: { n: 2, connector: "agents", title: "AS2 certificate failure for one partner", setup: "Jordan has incident INC0041873 open in Service Operations Workspace with the Now Assist panel.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
       turns: [{ text: "What's failing for Northfield Foods, and who is fixing it?" }, { text: "Add this as a work note." }, { text: "When will the new certificate be live?" }] },
-    copilot: { n: 5, title: "Building a monitoring agent in Copilot Studio", setup: "Jordan reviews Crestline Logistics shipment confirmations in Copilot, then builds a daily monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
+    copilot: { n: 5, connector: "context", title: "Building a monitoring agent in Copilot Studio", setup: "Jordan reviews Crestline Logistics shipment confirmations in Copilot, then builds a daily monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Show yesterday's Crestline shipment confirmations." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { text: "Run it for yesterday." }] },
-    joule: { n: 4, title: "Supplier compliance: missing PO acknowledgments", setup: "Compliance opens a Pinegate Home PO marked Not confirmed. Pinegate went live 65 days ago and its 855 rate is inconsistent.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
+    joule: { n: 4, connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Compliance opens a Pinegate Home PO marked Not confirmed. Pinegate went live 65 days ago and its 855 rate is inconsistent.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
       turns: [{ text: "Is this a pattern for Pinegate?" }, { text: "Which unconfirmed Pinegate POs ship this week?", on: "phone" }, { text: "Who is Pinegate's EDI contact?", on: "phone" }] },
-    gemini: { n: 6, title: "Agents that work with Trading Grid agents", setup: "Harborview's AI transformation team builds a Supplier Operations agent that calls Trading Grid agents through TG Context Services.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
+    gemini: { n: 6, connector: "agents", title: "Agents that work with Trading Grid agents", setup: "Harborview's AI transformation team builds a Supplier Operations agent that calls Trading Grid agents through TG Context Services.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
       turns: [{ text: "Which Trading Grid agents can our agent call, and under what access?" }, { text: "Build an agent that sends failed inbound documents to TG Error Analysis." }, { text: "Test it on a failed Northfield 856." }] },
-    chatgpt: { n: 3, title: "Recurring follow-up task", setup: "B2B operations schedules a weekday task to chase change requests that are on hold.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
+    chatgpt: { n: 3, connector: "context", title: "Recurring follow-up task", setup: "B2B operations schedules a weekday task to chase change requests that are on hold.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Every weekday at 8 AM, list on-hold change requests and who owes the next action." }, { text: "Draft the email to Sunfield requesting the test file." }, { text: "Who is the contact at Rocky Coast for the certificate?" }] },
-    claude: { n: 7, title: "Rapid prototype: AP quantity dashboard", setup: "Accounts payable needs PO, ASN and invoice quantities side by side for the last 30 days.", env: ["Claude", "Trading Grid connector", "Jordan Lee, delegated"],
+    claude: { n: 7, connector: "context", title: "Rapid prototype: AP quantity dashboard", setup: "Accounts payable needs PO, ASN and invoice quantities side by side for the last 30 days.", env: ["Claude", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Build an AP dashboard for the last 30 days comparing PO ordered quantity with ASN shipped quantity and invoiced quantity, by PO and supplier." }, { text: "Flag invoices received before the ASN." }, { text: "Show the documents for Meridian's latest flagged PO." }] },
-    tgo: { n: 8, title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must cover it before the first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
+    tgo: { n: 8, connector: "native", title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must cover it before the first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
       turns: [{ text: "Which maps and partners use STORE_TO_GLN, and what happens to an ASN for a store that isn't in it?" }, { text: "Prepare the STORE_TO_GLN entry for store 0844 Lynchburg, GLN 0614141084470." }, { approve: true }] },
   };
   const CLIENTS = {
-    teams: { name: "Microsoft Teams", host: "copilot-studio", ph: "Type a message", auto: "Alder and Ash go-live", bot: "TG",
-      hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid agent published to Teams through Copilot Studio" },
-    joule: { name: "SAP S/4HANA", host: "sap-joule", ph: "Message Joule", auto: "Joule", ws: "s4",
-      hello: (n) => `Hello ${n}, how can I help you?`, sim: "Simulated client · Trading Grid via SAP BTP destination and Aviator AKS gateway",
+    teams: { connector: "agents", name: "Microsoft Teams", host: "copilot-studio", ph: "Type a message", auto: "Alder and Ash go-live", bot: "TG",
+      hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid Agent Connectors, published to Teams through Copilot Studio" },
+    joule: { connector: "agents", name: "SAP S/4HANA", host: "sap-joule", ph: "Message Joule", auto: "Joule", ws: "s4",
+      hello: (n) => `Hello ${n}, how can I help you?`, sim: "Simulated client · Trading Grid Agent Connectors via SAP BTP destination",
       starters: (d, sel) => sel ? [`When will purchase order ${sel.po} from ${sel.supplier} arrive?`, `Has ${sel.supplier} confirmed purchase order ${sel.po}?`, `Show every document exchanged for purchase order ${sel.po}.`] : [] },
-    gemini: { name: "Gemini Enterprise", host: "gemini-enterprise", ph: "Ask Gemini", auto: "Gemini", who: "Priya Raman",
-      hello: (n) => `Hi ${n}`, sub: "Where should we start?", sim: "Simulated client · Trading Grid custom MCP connector via Aviator AKS gateway" },
-    servicenow: { name: "ServiceNow", host: "servicenow", ph: "Ask Now Assist", auto: "Now Assist", ws: "servicenow",
+    gemini: { connector: "agents", name: "Gemini Enterprise", host: "gemini-enterprise", ph: "Ask Gemini", auto: "Gemini", who: "Priya Raman",
+      hello: (n) => `Hi ${n}`, sub: "Where should we start?", sim: "Simulated client · Trading Grid Agent Connectors" },
+    servicenow: { connector: "agents", name: "ServiceNow", host: "servicenow", ph: "Ask Now Assist", auto: "Now Assist", ws: "servicenow",
       tabs: [["home", "Home"], ["inbox", "My work"], ["sparkle", "Now Assist", 1], ["agent", "Profile"]],
-      hello: (n) => `Hi ${n}, how can I help?`, sim: "Simulated client · Trading Grid via AI Agent Fabric MCP client and Aviator AKS gateway",
+      hello: (n) => `Hi ${n}, how can I help?`, sim: "Simulated client · Trading Grid Agent Connectors via AI Agent Fabric",
       starters: (d) => d ? [`Summarize incident ${d.number} with Trading Grid evidence.`, `Which ${d.partner.replace(/ Inc$/, "")} documents failed, and what business is affected?`, `What is the status of certificate renewal ${d.changeRequest}?`] : [] },
-    copilotstudio: { name: "Copilot Studio", host: "copilot-studio", ph: "Type your message", auto: "Test your agent", ws: "studio",
-      hello: () => "Test your agent", noStarters: true, sim: "Simulated client · Copilot Studio agent with the Trading Grid connector via Aviator AKS gateway" },
-    chatgpt: { name: "ChatGPT Enterprise", host: "chatgpt-enterprise", ph: "Ask anything", auto: "ChatGPT",
-      hello: () => "What can I help with?", sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
-    claude: { name: "Claude", host: "claude-ui", ph: "Reply to Claude", ph0: "How can I help you today?", auto: "Claude",
-      hello: (n) => `${new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 18 ? "Afternoon" : "Evening"}, ${n}`, sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
+    copilotstudio: { connector: "context", name: "Copilot Studio", host: "copilot-studio", ph: "Type your message", auto: "Test your agent", ws: "studio",
+      hello: () => "Test your agent", noStarters: true, sim: "Simulated client · Trading Grid Context Connectors" },
+    chatgpt: { connector: "context", name: "ChatGPT Enterprise", host: "chatgpt-enterprise", ph: "Ask anything", auto: "ChatGPT",
+      hello: () => "What can I help with?", sim: "Simulated client · Trading Grid Context Connectors" },
+    claude: { connector: "context", name: "Claude", host: "claude-ui", ph: "Reply to Claude", ph0: "How can I help you today?", auto: "Claude",
+      hello: (n) => `${new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 18 ? "Afternoon" : "Evening"}, ${n}`, sim: "Simulated client · Trading Grid Context Connectors" },
   };
   function clCard(p) {
     const st = S.plans.find((x) => x.planId === p.planId)?.status ?? p.planStatus ?? p.status;
@@ -1039,7 +1040,7 @@
     const when = /every morning|daily|every day/i.test(desc) ? "Every day at 7:00 AM" : /weekday/i.test(desc) ? "Weekdays at 7:00 AM" : "Every day at 7:00 AM";
     return { name: `${partner} short shipment monitor`, description: desc,
       instructions: [`Get yesterday's ${partner} Logistics ${a} shipment confirmations from Trading Grid.`, `Match each ${a} to its ${b} shipping order and compare ordered and shipped quantities.`, `Post a short message to the ${channel} channel listing each short-shipped order with ordered, shipped and short quantities.`, "If nothing was short shipped, post that all orders shipped complete."],
-      tools: ["Trading Grid (MCP): search_transactions", "Trading Grid (MCP): get_related_transactions", "Microsoft Teams: Post message in a channel"], trigger: `Recurrence: ${when}`, channel: `Microsoft Teams: ${channel}` };
+      tools: ["Trading Grid Context Connectors (MCP): search_transactions", "Trading Grid Context Connectors (MCP): get_related_transactions", "Microsoft Teams: Post message in a channel"], trigger: `Recurrence: ${when}`, channel: `Microsoft Teams: ${channel}` };
   }
   function wsArea(K) {
     if (K.ws === "studio") {
@@ -1146,6 +1147,7 @@
     mounts[key] = (cc) => clChat(id, K, cc, agentId, avail, blocked);
     const others = avail.filter((x) => x.id !== "context-assistant");
     const list = [["context-assistant", K.auto], ...others.map((x) => [x.id, x.name])];
+    (S.conFor ??= {})[key] = K.connector;
     if (K.ws) S.ctxFor[key] = () => wsContext(K);
     if (id === "teams") S.ctxFor[key] = () => `Application: Microsoft Teams group chat "Alder and Ash go-live". Members: Jordan Lee (jordan.lee), Morgan Chen (m.chen) and the Trading Grid agent. Latest message from: ${S.lastAs ?? "Jordan Lee"}.`;
     if (K.ws) return `<div class="cl cl-${id} ws">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
@@ -1177,7 +1179,8 @@
   }
   function stageScenario(id) {
     const sc = SCN[id];
-    return sc ? `<b>${sc.n}</b><span title="${esc(sc.setup)}">${esc(sc.title)}</span>` : "";
+    const con = { agents: "Trading Grid Agent Connectors", context: "Trading Grid Context Connectors", native: "Trading Grid Aviator" }[sc?.connector];
+    return sc ? `<b>${sc.n}</b><span title="${esc(sc.setup)}">${esc(sc.title)}</span>${con ? `<em>${esc(con)}</em>` : ""}` : "";
   }
   // Scenario playback: a discreet control types the next turn into the right device, then sends it.
   const stageFrame = (id, dev) => document.querySelector(`.stage-pair[data-sg="${id}"] .dev-${dev === "phone" ? "phone" : "laptop"} iframe`);
@@ -1205,7 +1208,10 @@
       <h1>Harborview Retail Group</h1>
       <p class="si-lead">Mid-size US retailer headquartered in Charlotte, NC. Runs its supplier community on OpenText Trading Grid, with integration work delivered by OpenText Business Network managed services.</p>
       <div class="si-facts">${fact("Trading partners", "31")}${fact("Stores and distribution", "40 stores, 1 DC, 3PL Crestline Logistics")}${fact("EDI volume", "About 1,500 documents a day")}${fact("On stage", "Jordan Lee, B2B operations analyst")}</div>
-      <section class="si-tgcc"><h2>Trading Grid Context Connectors</h2><p>Bring Trading Grid data, ${live} Trading Grid Aviator agents and approved actions into the AI assistants and business applications Harborview already uses: Microsoft Copilot and Teams, SAP S/4HANA with Joule, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude and Trading Grid Aviator. Access is granted in Trading Grid Online, changes require approval, and every answer cites its Trading Grid source.</p></section></div></div>`;
+      <div class="si-two">
+        <section class="si-tgcc"><h2>Trading Grid Agent Connectors</h2><p>Bring ${live} Trading Grid Aviator agents into Microsoft Teams, ServiceNow, SAP Joule and Gemini Enterprise. Agents arrive as callable tools, together with the Trading Grid tools they use.</p></section>
+        <section class="si-tgcc alt"><h2>Trading Grid Context Connectors</h2><p>Work directly with the same Trading Grid data and actions our agents use, and build your own agents in Copilot Studio, ChatGPT Enterprise and Claude.</p></section></div>
+      <div class="si-foot">Access is granted in Trading Grid Online. Changes require approval. Every answer cites its Trading Grid source.</div></div></div>`;
   }
   function stageFrames(cur) {
     const row = document.querySelector(".stage-row");

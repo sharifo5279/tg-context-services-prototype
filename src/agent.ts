@@ -130,11 +130,11 @@ function session(id: string, host: HostKey, agentId: string) {
   return s;
 }
 
-export async function runTurn(opts: { sessionId: string; host: HostKey; agentId: string; message: string; baseUrl: string; context?: string }, emit: (e: any) => void) {
+export async function runTurn(opts: { sessionId: string; host: HostKey; agentId: string; message: string; baseUrl: string; context?: string; connector?: "agents" | "context" }, emit: (e: any) => void) {
   if (!client) { emit({ type: "error", message: "Agent runtime unavailable. Model API key not configured. Tools remain available in the Tools catalog." }); return; }
   const s = session(opts.sessionId, opts.host, opts.agentId);
   s.messages.push({ role: "user", content: opts.context ? `<screen_context>\n${String(opts.context).slice(0, 2000)}\n</screen_context>\n\n${opts.message}` : opts.message });
-  await runCore(s, { host: opts.host, sessionId: opts.sessionId, baseUrl: opts.baseUrl }, opts.agentId, "console", emit);
+  await runCore(s, { host: opts.host, sessionId: opts.sessionId, baseUrl: opts.baseUrl }, opts.agentId, "console", emit, opts.connector === "context" ? 1 : 0);
 }
 
 /** Invokes another Trading Grid agent as a tool and returns its answer as an evidence envelope. */
