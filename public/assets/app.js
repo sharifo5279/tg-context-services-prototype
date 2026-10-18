@@ -160,6 +160,24 @@
       </div>` : ""}</div>`;
   }
   /** One quiet activity line per answer; expands to the tool calls and route. */
+  // Each client shows work in progress the way the real product does. Claude and Trading Grid Aviator keep the step trace.
+  const NATIVE = { teams: "dots", joule: "dots", servicenow: "Now Assist is thinking", copilot: "Generating response", copilotstudio: "Generating response", chatgpt: "Thinking", gemini: "Thinking" };
+  function nativeActivity(id, m, mi) {
+    const kind = NATIVE[id];
+    if (!kind) return activity(m, mi, m.route);
+    const busy = m.thinking || m.steps.some((x) => !x.done);
+    if (busy) return kind === "dots" ? `<div class="na-dots"><i></i><i></i><i></i></div>` : `<div class="activity busy na"><span class="al">${esc(kind)}</span></div>`;
+    if (!m.steps.length || (id !== "chatgpt" && id !== "gemini")) return "";
+    const secs = m.elapsed ? Math.max(1, Math.round(m.elapsed / 1000)) : null;
+    const label = id === "chatgpt" ? `Thought for ${secs ?? m.steps.length} ${secs ? "s" : "steps"}` : "Show thinking";
+    const list = m.showSteps ? `<div class="na-list">${m.steps.map((x) => `<div>${esc(x.name === "engage_subagent" ? `Engaged ${x.summary ?? "sub-agent"}` : `Trading Grid: ${toolTitle(x.name)}`)}${x.by ? `<span> · ${esc(x.by)}</span>` : ""}</div>`).join("")}</div>` : "";
+    return `<div class="na na-${id}"><button class="na-t" data-togglesteps="${mi}">${esc(label)}<span class="chev">${id === "gemini" ? (m.showSteps ? "⌃" : "⌄") : "›"}</span></button>${list}</div>`;
+  }
+  // Stage: the suggestion card is the scenario's opening prompt.
+  function stagePrompts(sid) {
+    const t = STAGE && SCN[sid]?.turns.find((x) => x.text);
+    return t ? [t.text] : null;
+  }
   function activity(m, mi, route) {
     if (!m.steps.length && !m.thinking) return "";
     const running = m.steps.find((x) => !x.done);
@@ -426,7 +444,7 @@
       intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><div class="avcard"><p>Welcome to Ask Aviator. The file you selected has been loaded.</p><p>Select one of the actions below to begin. Follow-up questions must relate only to this payload.</p>
         ${[["Create a tabulated view", "Create a tabulated view of the line items: quantities, units, prices and product codes, with totals."], ["Parse the data", "Parse the data segment by segment and explain each qualifier and code in plain language."], ["Summarize payload details", "Summarize the payload: document type and purpose, sender and receiver roles, and key references."]].map(([l, q]) => `<button class="avradio" data-avask="${esc(`${q} Transaction ${S.av.txId}.`)}"><span class="rb"></span>${l}</button>`).join("")}</div></div></div>`;
     } else {
-      intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><p style="margin:2px 0 8px">Hi! I'm Aviator. How can I help you today?</p>${!c.items.length && a.starters?.length ? `<div class="avsugg">${a.starters.map((n) => `<button data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div>` : ""}</div></div>`;
+      intro = `<div class="avmsg bot">${AV_AVATAR}<div class="avbody"><p style="margin:2px 0 8px">Hi! I'm Aviator. How can I help you today?</p>${!c.items.length && a.starters?.length ? `<div class="avsugg">${(stagePrompts("tgo") ?? a.starters.map(promptOf)).map((p) => `<button data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : ""}</div></div>`;
     }
     return `<div class="avstream">${intro}${c.items.map((m, mi) => aviatorItem(c, m, mi)).join("")}</div>
       <form class="avcompose" data-compose><textarea rows="2" placeholder="Ask Aviator" ${c.busy ? "disabled" : ""}></textarea><button ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
@@ -836,7 +854,7 @@
     const done = !m.thinking && (m.text || m.error);
     const last = mi === c.items.length - 1;
     const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
-    return `<div class="cop-b">${activity(m, mi, m.route)}
+    return `<div class="cop-b">${nativeActivity("copilot", m, mi)}
       ${m.error ? `<div class="cop-err">${esc(m.error)}</div>` : ""}
       ${m.text ? `<div class="cop-md md">${md(m.text)}</div>` : ""}
       ${m.plans.map(cpsCard).join("")}
@@ -847,7 +865,7 @@
     const first = (S.meta.persona.name || "").split(" ")[0];
     const label = agentId === "context-assistant" ? "Copilot" : a?.name ?? "Copilot";
     const empty = !c.items.length ? `<div class="cop-hello"><h1>Hi ${esc(first)}, how can I help?</h1></div>` : "";
-    const starters = !c.items.length ? `<div class="cop-starters">${(a?.starters ?? []).slice(0, 4).map((n) => `<button class="cop-starter" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div>` : "";
+    const starters = !c.items.length ? `<div class="cop-starters">${(stagePrompts("copilot") ?? (a?.starters ?? []).slice(0, 4).map(promptOf)).map((p) => `<button class="cop-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : "";
     const dis = c.busy ? "disabled" : "";
     return `<header class="cop-top"><button class="cop-round cop-menu" data-copside="1" title="Menu">${ic("menu")}</button>
         <label class="cop-pick"><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "Copilot" : x.name)}</option>`).join("")}</select><span>${esc(label)}</span>${ic("chev")}</label>
@@ -945,7 +963,7 @@
     const acts = (CL_ACTS[id] ?? []).map(([i, t]) => `<button title="${t}" ${i === "copy" ? `data-copy="${esc(m.text)}"` : i === "refresh" ? `data-prompt="${esc(prevUser)}"` : ""}>${ic(i)}</button>`).join("");
     const task = id === "chatgpt" && /^every (weekday|day|week)/i.test(prevUser) ? `<div class="cl-task">${ic("calendar")}<div><b>Task scheduled</b><span>Weekdays at 8:00 AM · next run ${nextWeekday8()}</span></div></div>` : "";
     const artCard = id === "claude" && m.steps?.some((x) => x.name === "tgi_get_quantity_reconciliation" && x.done) ? `<div class="cl-artcard">${ic("chart")}<div><b>AP quantity variance</b><span>Interactive artifact</span></div></div>` : "";
-    const body = `${task}${subLine(m, id === "teams")}${activity(m, mi, m.route)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}${artCard}`;
+    const body = `${task}${subLine(m, id === "teams")}${nativeActivity(id, m, mi)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}${artCard}`;
     if (id === "teams") return `<div class="cl-b"><div class="cl-av sq">${esc(initials(c.botName))}</div><div class="cl-bb"><div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>${body}${done ? `<div class="cl-aig">AI generated</div>` : ""}</div></div>`;
     const disc = id === "claude" && last && done ? `<span class="cl-sp"></span><span class="cl-disc">Claude can make mistakes. Please double-check responses.</span>` : "";
     return `<div class="cl-b">${id === "servicenow" ? `<div class="cl-bh">${ic("sparkle")}<b>Now Assist</b></div>` : ""}<div class="cl-bb">${body}${done && acts ? `<div class="cl-acts">${acts}${disc}</div>` : ""}</div></div>`;
@@ -1014,7 +1032,7 @@
     const title = agentId === "context-assistant" || agentId === "tg-aviator" ? K.auto : a?.name ?? K.auto;
     c.botName = id === "teams" ? (agentId === "tg-aviator" ? "Trading Grid Agent" : agentId === "context-assistant" ? "Trading Grid" : title) : K.auto;
     const custom = K.starters ? K.starters(S.scene?.[K.ws], wsSelected(K)) : null;
-    const prompts = K.noStarters ? [] : custom?.length ? custom : (a?.starters ?? []).slice(0, 4).map(promptOf);
+    const prompts = K.noStarters ? [] : stagePrompts(id) ?? (custom?.length ? custom : (a?.starters ?? []).slice(0, 4).map(promptOf));
     const starters = !c.items.length && prompts.length ? `<div class="cl-starters">${prompts.map((p) => `<button class="cl-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : "";
     const hello = !c.items.length ? `<div class="cl-hello">${id === "teams" ? `<div class="cl-av sq lg">${esc(initials(title))}</div><h2>${esc(title)}</h2>` : ""}<h1>${esc(K.hello(first))}</h1>${K.sub ? `<div class="cl-sub">${esc(K.sub)}</div>` : ""}</div>` : "";
     const disc = { chatgpt: "ChatGPT can make mistakes. Check important info.", gemini: "Gemini can make mistakes, so double-check it" }[id];
