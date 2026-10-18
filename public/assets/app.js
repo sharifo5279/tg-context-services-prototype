@@ -1004,7 +1004,7 @@
   function clChat(id, K, c, agentId, avail, blocked) {
     const a = agent(agentId);
     const first = (K.who ?? S.meta.persona.name ?? "").split(" ")[0];
-    const title = agentId === "context-assistant" ? K.auto : a?.name ?? K.auto;
+    const title = agentId === "context-assistant" || agentId === "tg-aviator" ? K.auto : a?.name ?? K.auto;
     c.botName = id === "teams" ? (agentId === "tg-aviator" ? "Trading Grid Agent" : agentId === "context-assistant" ? "Trading Grid" : title) : K.auto;
     const custom = K.starters ? K.starters(S.scene?.[K.ws], wsSelected(K)) : null;
     const prompts = K.noStarters ? [] : custom?.length ? custom : (a?.starters ?? []).slice(0, 4).map(promptOf);
@@ -1150,7 +1150,7 @@
     const c = conv(key, agentId, K.host);
     const blocked = (S.meta.clientStatus[K.host] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => clChat(id, K, cc, agentId, avail, blocked);
-    const list = [[agentId, K.connector === "agents" ? "Trading Grid Agent" : K.auto]];
+    const list = [[agentId, K.auto]];
     (S.conFor ??= {})[key] = K.connector;
     if (K.ws) S.ctxFor[key] = () => wsContext(K);
     if (id === "teams") S.ctxFor[key] = () => `Application: Microsoft Teams group chat "Alder and Ash go-live". Members: Jordan Lee (jordan.lee), Morgan Chen (m.chen) and the Trading Grid Agent. Latest message from: ${S.lastAs ?? "Jordan Lee"}.`;
