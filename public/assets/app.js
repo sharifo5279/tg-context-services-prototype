@@ -47,6 +47,7 @@
     more: '<circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/>',
     chev: '<path d="M7 10l5 5 5-5"/>',
     mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
     copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
     speaker: '<path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6"/>',
     share: '<path d="M12 3v12M8 7l4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
@@ -107,6 +108,19 @@
   // ---------- markdown ----------
   const inline = (s) => s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
   // Visual blocks the agent can emit as fenced blocks: kpi, status, chart bar, chart line. One row per line, cells split by "|".
+  // Copyable content (drafted emails, messages, notes, entries) gets a card with a Copy button.
+  const cpBtn = (text, label = "Copy") => `<button class="rv-cpb" data-copy="${text}" title="Copy to clipboard">${ic("copy")}<span class="cp-l">${label}</span></button>`;
+  function copyBlock(kind, b) {
+    const text = b.replace(/\n+$/, "");
+    if (kind === "email") {
+      const lines = text.split("\n"); const hdr = []; let k = 0;
+      while (k < lines.length && /^(to|cc|subject):/i.test(lines[k])) hdr.push(lines[k++].match(/^(\w+):\s*(.*)$/));
+      const body = lines.slice(k).join("\n").replace(/^\n+/, "");
+      return `<div class="rv-copy mail"><div class="rv-cph"><span>${ic("mail")}Email draft</span>${cpBtn(text)}</div>${hdr.length ? `<div class="rv-mh">${hdr.map((m) => `<div><span>${m[1]}</span><b>${m[2]}</b></div>`).join("")}</div>` : ""}<div class="rv-mb">${body}</div></div>`;
+    }
+    const label = { message: "Message draft", note: "Work note", text: "Text", copy: "Text" }[kind] ?? (kind ? kind.toUpperCase() : "Text");
+    return `<div class="rv-copy"><div class="rv-cph"><span>${esc(label)}</span>${cpBtn(text)}</div><pre>${text}</pre></div>`;
+  }
   function visual(kind, rows) {
     const cells = rows.map((r) => r.split("|").map((c) => c.trim())).filter((c) => c[0]);
     const title = cells.find((c) => /^title:/i.test(c[0]))?.[0].replace(/^title:\s*/i, "");
@@ -148,7 +162,7 @@
     let out = "", i = 0;
     while (i < lines.length) {
       const l = lines[i];
-      if (/^```/.test(l)) { const kind = l.slice(3).trim().toLowerCase(); let b = ""; const rows = []; i++; while (i < lines.length && !/^```/.test(lines[i])) { rows.push(lines[i]); b += lines[i++] + "\n"; } i++; out += visual(kind, rows) ?? `<pre>${b}</pre>`; continue; }
+      if (/^```/.test(l)) { const kind = l.slice(3).trim().toLowerCase(); let b = ""; const rows = []; i++; while (i < lines.length && !/^```/.test(lines[i])) { rows.push(lines[i]); b += lines[i++] + "\n"; } i++; out += visual(kind, rows) ?? copyBlock(kind, b); continue; }
       if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
         const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((c) => inline(c.trim()));
         const head = cells(l); i += 2; let body = "";
@@ -1292,8 +1306,8 @@
     if (!g) {
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
-        ${cur.laptopOnly && !STAGE_MOBILE() ? "" : `<div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>`}
-        ${STAGE_MOBILE() ? "" : `<div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div>`}</div>`);
+        ${cur.laptopOnly && !STAGE_MOBILE() ? "" : `<div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe allow="clipboard-write" title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>`}
+        ${STAGE_MOBILE() ? "" : `<div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe allow="clipboard-write" title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div>`}</div>`);
       g = row.lastElementChild;
     }
     row.querySelectorAll(".stage-pair").forEach((x) => x.classList.toggle("on", x === g));
@@ -1398,7 +1412,12 @@
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }
     if (d.scall != null) { if (!confirm(`Run all ${S.sc.catalog.length} scenarios? Demo data is reset before each scenario and restored afterwards.`)) return; S.sc.running = true; render(); const r = await api("/api/scenarios/run", { method: "POST", body: { all: true } }); S.sc.running = false; for (const x of r.results ?? []) S.sc.results[x.id] = x; S.plans = await api("/api/plans"); return render(); }
     if (d.scrow) { S.sc.open[d.scrow] = !S.sc.open[d.scrow]; return render(); }
-    if (d.copy) { navigator.clipboard?.writeText(d.copy); const o = t.textContent; t.textContent = "Copied"; setTimeout(() => (t.textContent = o), 1200); return; }
+    if (d.copy) {
+      const done = () => { const lab = t.querySelector(".cp-l"); const el = lab ?? t; const o = el.textContent; el.textContent = "Copied"; t.classList.add("ok"); setTimeout(() => { el.textContent = o; t.classList.remove("ok"); }, 1400); };
+      const fallback = () => { const ta = document.createElement("textarea"); ta.value = d.copy; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;opacity:0;top:0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch {} ta.remove(); };
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(d.copy).catch(fallback); else fallback();
+      done(); return;
+    }
     if (d.reload != null) return render();
     if (d.domain) { S.toolDomain = d.domain; return go("/cs/tools"); }
     if (d.tool) return toolDrawer(d.tool);

@@ -1489,3 +1489,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .rv-sp::before { top: 14px; bottom: -2px; left: 5px; right: auto; width: 3px; height: auto; } .rv-sp:last-child::before { display: none; }
   .rv-sp i { top: 1px; } .rv-sp em { grid-column: 2; grid-row: 1; } .rv-sp span { grid-column: 1 / -1; }
 }
+/* Copyable drafts */
+.rv-copy { margin: 8px 0 12px; border: 1px solid #e3e6eb; border-radius: 10px; background: #fff; overflow: hidden; }
+.rv-cph { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 12px; background: #f6f7f9; border-bottom: 1px solid #e3e6eb; font-size: .8em; color: #5b6472; }
+.rv-cph > span { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; } .rv-cph > span svg { width: 15px; height: 15px; }
+.rv-cpb { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #d6dbe2; background: #fff; border-radius: 8px; padding: 7px 14px; font: inherit; font-size: 1.05em; font-weight: 600; color: #101c2f; cursor: pointer; min-height: 36px; }
+.rv-cpb svg { width: 16px; height: 16px; } .rv-cpb:hover { border-color: var(--rv-accent); color: var(--rv-accent); } .rv-cpb.ok { border-color: #1e8e3e; color: #1e8e3e; }
+.rv-copy pre { margin: 0; padding: 12px; white-space: pre-wrap; font-family: inherit; font-size: .95em; background: #fff; border: 0; }
+.rv-mh { padding: 8px 12px; border-bottom: 1px solid #eef0f3; display: grid; gap: 4px; font-size: .92em; } .rv-mh div { display: flex; gap: 8px; } .rv-mh span { color: #5b6472; min-width: 58px; } .rv-mh b { font-weight: 600; overflow-wrap: anywhere; }
+.rv-mb { padding: 12px; white-space: pre-wrap; line-height: 1.5; }
+.rv-copy .rv-cpb { display: inline-flex !important; align-items: center; gap: 6px; border: 1px solid #c9d0d9 !important; background: #fff !important; border-radius: 8px !important; padding: 8px 16px !important; min-height: 38px; font-size: 14px !important; font-weight: 600 !important; color: #101c2f !important; cursor: pointer; }
+.rv-copy .rv-cpb.ok { border-color: #1e8e3e !important; color: #1e8e3e !important; }
+.rv-copy .rv-cpb svg { width: 17px !important; height: 17px !important; }
