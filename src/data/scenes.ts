@@ -6,6 +6,8 @@ import { CERT_CR } from "./other.js";
 
 const DAY = 86400_000;
 const name = (id: string) => companyById(id)?.companyName ?? id;
+/** Route transit days per supplier, 1 to 4, as held in the SAP TM route master. */
+const transitDays = (id: string) => 1 + ([...id].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) % 4);
 
 /** Purchase orders for Monitor Supplier Confirmations: last 7 days, newest first, one or two per supplier. */
 export function sceneS4() {
@@ -22,7 +24,7 @@ export function sceneS4() {
     const has = (d: string) => docs.some((x) => x.documentType === d && x.sourceStatus === "DLVD");
     const asn = docs.find((x) => x.documentType === "856" && x.sourceStatus === "DLVD");
     const status = has("810") ? "Invoiced" : asn ? "Shipped" : has("855") ? "Confirmed" : "Not confirmed";
-    cand.push({ po: t.refs.poNumber, supplier: name(t.partnerCompanyId), supplierId: t.partnerCompanyId, orderedAt: new Date(t._t).toISOString(), requestedDelivery: new Date(t._t + 6 * DAY).toISOString().slice(0, 10), status, asnAt: asn ? new Date(asn._t).toISOString() : null, shipmentId: asn?.refs.shipmentId ?? null });
+    cand.push({ po: t.refs.poNumber, supplier: name(t.partnerCompanyId), supplierId: t.partnerCompanyId, orderedAt: new Date(t._t).toISOString(), requestedDelivery: new Date(t._t + 6 * DAY).toISOString().slice(0, 10), status, transitDays: transitDays(t.partnerCompanyId), asnAt: asn ? new Date(asn._t).toISOString() : null, shipmentId: asn?.refs.shipmentId ?? null });
   }
   const quota: Record<string, number> = { "Not confirmed": 3, Confirmed: 4, Shipped: 4, Invoiced: 3 };
   const used = new Set<string>();

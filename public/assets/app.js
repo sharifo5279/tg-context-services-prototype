@@ -904,7 +904,7 @@
   function wsContext(K) {
     if (K.ws === "s4") {
       const sel = wsSelected(K); if (!sel) return "";
-      return [`Application: SAP S/4HANA, Monitor Supplier Confirmations (plant ${S.scene.s4.plant}).`, `Selected purchase order: ${sel.po}. Supplier: ${sel.supplier} (Trading Grid company ${sel.supplierId}).`, `Order date: ${sel.orderedAt.slice(0, 10)}. Requested delivery date: ${sel.requestedDelivery}. Confirmation status in SAP: ${sel.status}.`, `Inbound route transit time (SAP TM route master): 2 days from receipt of the advance ship notice. Expected arrival = ASN receipt time plus 2 days.`].join("\n");
+      return [`Application: SAP S/4HANA, Monitor Supplier Confirmations (plant ${S.scene.s4.plant}).`, `Selected purchase order: ${sel.po}. Supplier: ${sel.supplier} (Trading Grid company ${sel.supplierId}).`, `Order date: ${sel.orderedAt.slice(0, 10)}. Requested delivery date: ${sel.requestedDelivery}. Confirmation status in SAP: ${sel.status}.`, `Inbound route transit time for this supplier (SAP TM route master): ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"} from receipt of the advance ship notice. Expected arrival = ASN receipt time plus ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"}.`].join("\n");
     }
     const d = S.scene.servicenow; if (!d) return "";
     return [`Application: ServiceNow Service Operations Workspace.`, `Open record: incident ${d.number}, "${d.shortDescription}". State ${d.state}, priority ${d.priority}, opened ${d.openedAt}.`, `Configuration item: ${d.ci} (Trading Grid company ${d.partnerCompanyId}, ${d.partner}). Service: ${d.service}.`, `Related Trading Grid change request in work notes: ${d.changeRequest}.`].join("\n");
