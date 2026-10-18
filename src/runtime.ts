@@ -3,7 +3,7 @@ import { randomUUID, createHash } from "node:crypto";
 import { HUB_BUID, HUB_ORG, HUB_ID, SOLUTION_ID, companyById, bprs, invitations } from "./data/cms.js";
 import { CARTO_SOLUTION } from "./data/other.js";
 
-export type HostKey = "tg-aviator" | "aviator-studio" | "copilot-studio" | "gemini-enterprise" | "sap-joule" | "claude-connector" | "claude-ui";
+export type HostKey = "tg-aviator" | "aviator-studio" | "copilot-studio" | "gemini-enterprise" | "sap-joule" | "servicenow" | "chatgpt-enterprise" | "claude-connector" | "claude-ui";
 
 const BASE_OPS = [
   "access.read", "community.read", "connectivity.read", "services.read", "contacts.read", "workflow.read",
@@ -51,6 +51,20 @@ export const HOSTS: Record<HostKey, any> = {
     principalType: "SERVICE_IDENTITY", principal: "svc-joule-hrg-procurement", clientApplication: "btp-dest-tgcs-hrg",
     note: "No user delegation on this route. Service identity grant excludes payload content.",
     operations: BASE_OPS.filter((o) => o !== "transaction.payload.read"),
+  },
+  servicenow: {
+    key: "servicenow", exposure: "External", route: EXT("ServiceNow"), name: "ServiceNow AI Agent Fabric", shortName: "ServiceNow",
+    authPattern: "MCP client in AI Agent Fabric, OAuth authorization code; Streamable HTTP",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-servicenow-hrg",
+    note: "Executes as the signed-in ServiceNow user.",
+    operations: BASE_OPS,
+  },
+  "chatgpt-enterprise": {
+    key: "chatgpt-enterprise", exposure: "External", route: EXT("ChatGPT Enterprise"), name: "ChatGPT Enterprise", shortName: "ChatGPT",
+    authPattern: "Custom MCP connector enabled by the workspace admin, OAuth; Streamable HTTP",
+    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-chatgpt-hrg",
+    note: "Executes as the signed-in user.",
+    operations: BASE_OPS,
   },
   "claude-connector": {
     key: "claude-connector", exposure: "External", route: EXT("Claude"), name: "Claude (MCP connector)", shortName: "Claude connector",

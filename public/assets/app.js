@@ -5,6 +5,13 @@
   const qs = () => new URLSearchParams(location.search);
 
   const I = {
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5M16 4.6a3.5 3.5 0 0 1 0 6.8M18 13.8c2.1.8 3.5 3 3.5 6.2"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    tasks: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    paperclip: '<path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7L10 17.4a1.7 1.7 0 0 1-2.4-2.4l8-8"/>',
+    sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+    video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
     home: '<path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/>',
     agent: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
     list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
@@ -64,7 +71,7 @@
   const uc = (n) => S.meta.useCases.find((u) => u.n === n);
   const promptOf = (n) => (typeof n === "number" ? uc(n).prompt : n);
   const ucLabel = (n) => (typeof n === "number" ? `UC${n}` : "");
-  const EXT = ["copilot-studio", "gemini-enterprise", "sap-joule", "claude-ui"];
+  const EXT = ["copilot-studio", "gemini-enterprise", "sap-joule", "servicenow", "chatgpt-enterprise", "claude-ui"];
 
   // ---------- markdown ----------
   const inline = (s) => s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
@@ -172,7 +179,7 @@
       raf[key] = 0;
       const el = document.querySelector(`[data-conv="${key}"]`);
       if (!el || !mounts[key]) return;
-      const find = () => el.querySelector(".chatframe.max .chatscroll") ?? el.querySelector(".cop-msgs") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
+      const find = () => el.querySelector(".chatframe.max .chatscroll") ?? el.querySelector(".cop-msgs") ?? el.querySelector(".cl-msgs") ?? el.closest("[data-scroll]") ?? document.scrollingElement;
       const old = find();
       const near = old.scrollTop + old.clientHeight >= old.scrollHeight - 160, top = old.scrollTop;
       const focused = document.activeElement === el.querySelector("textarea");
@@ -190,7 +197,7 @@
 
   // ---------- Stage mirroring: phone and desktop frames show one conversation ----------
   const STAGE = qs().get("stage");
-  const bc = STAGE && "BroadcastChannel" in window ? new BroadcastChannel("tg-stage") : null;
+  const bc = STAGE && "BroadcastChannel" in window ? new BroadcastChannel("tg-stage:" + location.pathname) : null;
   let remote = false;
   const fromRemote = new Set();
   const mirror = (msg) => { if (bc && !remote) bc.postMessage({ from: STAGE, ...msg }); };
@@ -208,7 +215,7 @@
     const c = S.convs[key];
     if (!c || c.busy || !text.trim()) return;
     c.busy = true;
-    c.items.push({ role: "user", text });
+    c.items.push({ role: "user", text, t: Date.now() });
     const m = { role: "agent", agentId: c.agentId, steps: [], text: "", plans: [], thinking: true, t0: Date.now() };
     c.items.push(m);
     refreshConv(key);
@@ -791,31 +798,136 @@
       <main class="cop-main" data-conv="${key}">${mounts[key](c)}</main></div>`;
   }
 
-  // ---------- Stage: each client on iPhone and laptop, one conversation ----------
-  const STAGE_CLIENTS = [{ id: "copilot", name: "Copilot", src: "/copilot", bg: "#f5f2ee" }];
-  const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1440, h: 900 };
+  // ---------- Ecosystem clients (simulated), one renderer with a skin per ecosystem ----------
+  const CLIENTS = {
+    teams: { name: "Microsoft Teams", host: "copilot-studio", bar: "#ffffff", ph: "Type a message", agents: "Chats", auto: "Trading Grid",
+      rail: [["bell", "Activity"], ["chat", "Chat", 1], ["users", "Teams"], ["calendar", "Calendar"], ["more", "More"]],
+      tabs: [["bell", "Activity"], ["chat", "Chat", 1], ["users", "Teams"], ["calendar", "Calendar"], ["more", "More"]],
+      bot: "TG", hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid agent published to Teams through Copilot Studio" },
+    joule: { name: "Joule Work", host: "sap-joule", bar: "#f5f6f7", ph: "Message Joule", agents: "Agents", auto: "Joule",
+      tabs: [["home", "Home"], ["tasks", "Tasks"], ["spark", "Joule", 1], ["grid", "Apps"]],
+      bot: "J", hello: (n) => `Hi ${n}, what do you want to get done?`, sim: "Simulated client · Trading Grid via SAP BTP destination and Aviator AKS gateway" },
+    gemini: { name: "Gemini Enterprise", host: "gemini-enterprise", bar: "#ffffff", ph: "Ask Gemini", agents: "Agents", auto: "Gemini",
+      hello: (n) => `Hello, ${n}`, sim: "Simulated client · Trading Grid custom MCP connector via Aviator AKS gateway" },
+    servicenow: { name: "ServiceNow", host: "servicenow", bar: "#032d42", dark: 1, ph: "Ask Now Assist", agents: "AI agents", auto: "Now Assist",
+      tabs: [["home", "Home"], ["list", "Requests"], ["spark", "Now Assist", 1], ["agent", "Profile"]],
+      bot: "NA", hello: (n) => `Hi ${n}. What can Now Assist help with?`, sim: "Simulated client · Trading Grid via AI Agent Fabric MCP client and Aviator AKS gateway" },
+    chatgpt: { name: "ChatGPT Enterprise", host: "chatgpt-enterprise", bar: "#ffffff", ph: "Ask anything", agents: "GPTs", auto: "ChatGPT",
+      hello: () => "What can I help with?", sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
+    claude: { name: "Claude", host: "claude-ui", bar: "#faf9f5", ph: "Reply to Claude", agents: "Trading Grid agents", auto: "Claude",
+      hello: (n) => `Hello, ${n}`, sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
+  };
+  function clCard(p) {
+    const st = S.plans.find((x) => x.planId === p.planId)?.status ?? p.planStatus ?? p.status;
+    const pending = st === "PENDING_APPROVAL";
+    const cks = p.validation?.checks ?? [];
+    const f = (k, v) => `<div class="k">${esc(k)}</div><div class="v">${v}</div>`;
+    return `<div class="cl-card"><div class="cl-card-h"><span>Approval required</span><span class="cl-st ${pending ? "p" : st === "REJECTED" ? "r" : "a"}">${pending ? "Pending" : esc(String(st).replace("_", " ").toLowerCase())}</span></div>
+      <div class="cl-card-t">${esc(p.summary)}</div><div class="cl-facts">${f("Target", `<span class="mono">${esc(p.target)}</span>`)}${cks.length ? f("Checks", `${cks.filter((c) => c.result === "PASS").length} of ${cks.length} passed`) : ""}${f("Plan", `<span class="mono">${esc(p.planId)}</span>`)}</div>
+      ${pending ? `<div class="cl-card-a"><button class="cl-btn pri" data-approve="${p.planId}">Approve</button><button class="cl-btn" data-reject="${p.planId}">Reject</button></div>` : ""}</div>`;
+  }
+  const hhmm = (t) => new Date(t ?? Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  function clItem(K, c, m, mi) {
+    if (m.role === "user") return `<div class="cl-u">${K.bot ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}</div></div>`;
+    const done = !m.thinking && (m.text || m.error);
+    return `<div class="cl-b">${K.bot ? `<div class="cl-av">${esc(K.bot)}</div>` : ""}<div class="cl-bb">${K.bot ? `<div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>` : ""}
+      ${activity(m, mi, m.route)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}
+      ${done && !K.bot ? `<div class="cl-acts"><button title="Copy" data-copy="${esc(m.text)}">${ic("copy")}</button><button title="Good response">${ic("thumbup")}</button><button title="Bad response">${ic("thumbdown")}</button><button title="Share">${ic("share")}</button></div>` : ""}</div></div>`;
+  }
+  function clChat(id, K, c, agentId, avail, blocked) {
+    const a = agent(agentId);
+    const first = (S.meta.persona.name || "").split(" ")[0];
+    const title = agentId === "context-assistant" ? K.auto : a?.name ?? K.auto;
+    c.botName = id === "teams" ? (agentId === "context-assistant" ? "Trading Grid" : a?.name) : K.auto;
+    const starters = (a?.starters ?? []).slice(0, 4).map((n) => `<button class="cl-starter" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("");
+    const empty = !c.items.length ? `<div class="cl-hello"><h1>${esc(K.hello(first))}</h1><div class="cl-starters">${starters}</div></div>` : "";
+    const icons = { teams: ["video", "phone", "more"], joule: ["expand", "more"], gemini: ["more"], servicenow: ["more"], chatgpt: ["share", "more"], claude: ["share", "more"] }[id];
+    return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Menu">${ic(id === "teams" ? "back" : "menu")}</button>
+        ${K.bot && id === "teams" ? `<div class="cl-av sq">${esc(K.bot)}</div>` : ""}
+        <div class="cl-title"><span>${esc(title)}</span>${id === "chatgpt" || id === "gemini" ? ic("chev") : ""}${id === "teams" ? `<nav class="cl-ttabs"><b>Chat</b><span>Shared</span></nav>` : ""}</div>
+        <span class="cl-sp"></span>${icons.map((i) => `<button class="cl-ib" ${i === "more" ? `data-newconv="${c.key}" title="New chat"` : ""}>${ic(i)}</button>`).join("")}</header>
+      ${blocked ? `<div class="cl-warn">Trading Grid access for this client is suspended by the Harborview administrator.</div>` : ""}
+      <div class="cl-msgs"><div class="cl-col">${empty}${c.items.map((m, mi) => clItem(K, c, m, mi)).join("")}</div></div>
+      <div class="cl-foot"><form class="cl-comp" data-compose><button type="button" class="cl-ib" title="Attach">${ic(id === "teams" ? "plus" : id === "claude" || id === "chatgpt" ? "plus" : "paperclip")}</button><textarea rows="1" placeholder="${esc(K.ph)}" ${c.busy ? "disabled" : ""}></textarea>${id === "claude" || id === "chatgpt" || id === "gemini" ? `<button type="button" class="cl-ib" title="Tools">${ic("sliders")}</button>` : ""}<button type="button" class="cl-ib" title="Voice">${ic("mic")}</button><button class="cl-send" ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
+        ${K.tabs ? `<nav class="cl-tabs">${K.tabs.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
+        <div class="cl-sim">${esc(K.sim)}</div></div>`;
+  }
+  function pageClient(id) {
+    const K = CLIENTS[id];
+    if (!K) return shellCs(`<div class="content"><div class="empty">Client not found.</div></div>`);
+    const avail = studioAgents().filter((a) => S.deploy?.agents.find((x) => x.agentId === a.id)?.clients[K.host]?.published && !S.deploy.agents.find((x) => x.agentId === a.id).clients[K.host].blocked);
+    const agentId = avail.some((a) => a.id === qs().get("agent")) ? qs().get("agent") : (avail.find((a) => a.id === "context-assistant") ?? avail[0])?.id;
+    const key = `cl:${id}:${agentId}`;
+    const c = conv(key, agentId, K.host);
+    const blocked = (S.meta.clientStatus[K.host] ?? "ACTIVE") !== "ACTIVE";
+    mounts[key] = (cc) => clChat(id, K, cc, agentId, avail, blocked);
+    const others = avail.filter((x) => x.id !== "context-assistant");
+    const list = [["context-assistant", K.auto], ...others.map((x) => [x.id, x.name])];
+    return `<div class="cl cl-${id} ${S.cps.side ? "side-open" : ""}">
+      ${K.rail ? `<nav class="cl-rail">${K.rail.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
+      <aside class="cl-side"><div class="cl-brand"><span>${esc(K.name)}</span><span class="cl-tiny">simulated</span><button class="cl-ib sm" data-copside="0" title="Close">${ic("x")}</button></div>
+        <button class="cl-new" data-newconv="${key}">${ic("edit")}<span>${id === "teams" ? "New chat" : id === "servicenow" ? "New conversation" : "New chat"}</span></button>
+        <div class="cl-sec">${esc(K.agents)}</div>
+        <div class="cl-list">${list.map(([aid, n]) => `<button class="cl-link ${aid === agentId ? "on" : ""}" data-cpsuse="${aid}">${id === "teams" ? `<span class="cl-av xs">TG</span>` : ""}<span>${esc(n)}</span></button>`).join("")}</div>
+        <div class="cl-prof"><div class="cl-av round">JL</div><div><div class="n">${esc(S.meta.persona.name)}</div><div class="s">Harborview Retail Group</div></div></div></aside>
+      <div class="cl-scrim" data-copside="0"></div>
+      <main class="cl-main" data-conv="${key}">${mounts[key](c)}</main></div>`;
+  }
+
+  // ---------- Stage: each client on iPhone and laptop, one conversation per client ----------
+  const STAGE_CLIENTS = [
+    { id: "copilot", name: "Microsoft Copilot", src: "/copilot", bg: "#f5f2ee" },
+    { id: "teams", name: "Microsoft Teams", src: "/c/teams", bg: "#ffffff" },
+    { id: "joule", name: "SAP Joule Work", src: "/c/joule", bg: "#f5f6f7" },
+    { id: "gemini", name: "Gemini Enterprise", src: "/c/gemini", bg: "#ffffff" },
+    { id: "servicenow", name: "ServiceNow", src: "/c/servicenow", bg: "#032d42", foot: "#ffffff", dark: 1 },
+    { id: "chatgpt", name: "ChatGPT Enterprise", src: "/c/chatgpt", bg: "#ffffff" },
+    { id: "claude", name: "Claude", src: "/c/claude", bg: "#faf9f5" },
+  ];
+  const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
-    const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client")) ?? STAGE_CLIENTS[0];
-    const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
-    return `<div class="stage">
-      <nav class="stage-tabs">${STAGE_CLIENTS.map((x) => `<button class="${x.id === cur.id ? "on" : ""}" data-href="/stage?client=${x.id}">${esc(x.name)}</button>`).join("")}</nav>
-      <div class="stage-row">
-        <div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg ?? "#fff"}"><div class="dev-status"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>
-        <div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div>
-      </div></div>`;
+    return `<div class="stage"><div class="stage-row"></div>
+      <footer class="stage-foot"><img src="/assets/opentext-logo.svg" alt="OpenText" class="stage-logo"><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><div class="stage-name"></div></footer></div>`;
+  }
+  function stageFrames(cur) {
+    const row = document.querySelector(".stage-row");
+    let g = row.querySelector(`[data-sg="${cur.id}"]`);
+    if (!g) {
+      const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
+      row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
+        <div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>
+        <div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div></div>`);
+      g = row.lastElementChild;
+    }
+    row.querySelectorAll(".stage-pair").forEach((x) => x.classList.toggle("on", x === g));
+    document.querySelectorAll("[data-stagego]").forEach((b) => b.classList.toggle("on", b.dataset.stagego === cur.id));
+    document.querySelector(".stage-name").textContent = cur.name;
+  }
+  function stageShow(id) {
+    const cur = STAGE_CLIENTS.find((x) => x.id === id) ?? STAGE_CLIENTS[0];
+    history.replaceState({}, "", `/stage?client=${cur.id}`);
+    stageFrames(cur); stageFit();
+  }
+  function stageMove(d) {
+    const i = STAGE_CLIENTS.findIndex((x) => x.id === (qs().get("client") ?? STAGE_CLIENTS[0].id));
+    stageShow(STAGE_CLIENTS[(i + d + STAGE_CLIENTS.length) % STAGE_CLIENTS.length].id);
   }
   function stageFit() {
     const st = document.querySelector(".stage"); if (!st) return;
-    const W = st.clientWidth - 64, H = st.clientHeight - 90;
-    // Laptop: screen plus 16px bezel and a 22px base; phone matches the laptop's visual height.
-    const lw = 1640, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
-    let sL = Math.min(H / lh, (W * 0.72) / lw);
-    let sP = (lh * sL) / ph;
-    const over = (pw * sP + lw * sL + 48) / W; if (over > 1) { sL /= over; sP /= over; }
+    const W = st.clientWidth - 72, H = st.clientHeight * 0.9;
+    const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
+    let sP = H / ph;
+    let sL = Math.min((W - pw * sP - 56) / lw, H / lh);
     st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
   }
   window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });
-
+  const arrowOk = (ev) => (ev.key === "ArrowLeft" || ev.key === "ArrowRight") && !ev.target.closest?.("textarea,input,select,[contenteditable]");
+  document.addEventListener("keydown", (ev) => {
+    if (!arrowOk(ev)) return;
+    if (location.pathname === "/stage") { ev.preventDefault(); stageMove(ev.key === "ArrowRight" ? 1 : -1); }
+    else if (STAGE && window.parent !== window) { ev.preventDefault(); window.parent.postMessage({ stageKey: ev.key }, location.origin); }
+  });
+  window.addEventListener("message", (ev) => { if (ev.origin === location.origin && ev.data?.stageKey && location.pathname === "/stage") stageMove(ev.data.stageKey === "ArrowRight" ? 1 : -1); });
   // ---------- router ----------
   let poll = 0;
   async function render() {
@@ -847,10 +959,11 @@
     else if (p === "/copilot") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageCopilot(); }
     else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; if ((qs().get("eco") ?? "copilot-studio") === "copilot-studio") { S.audit = await api("/api/audit"); html = pageCopilot(); } else html = pageExt(); }
     else if (p === "/stage") html = pageStage();
+    else if (p.startsWith("/c/")) { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageClient(p.slice(3)); }
     else html = shellCs(`<div class="content"><div class="empty">Page not found. Return to the demo journey.</div></div>`);
     app.innerHTML = html;
     if (STAGE) mirror({ nav: location.pathname + location.search });
-    if (p === "/stage") stageFit();
+    if (p === "/stage") stageShow(qs().get("client"));
     if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; S.txTab = "details"; return render(); }
     if (p === "/cs" || p === "/cs/access") poll = setTimeout(() => { if (location.pathname === p && !document.querySelector(".drawer")) render(); }, 4000);
   }
@@ -860,9 +973,10 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego]");
     if (!t || t.disabled) return;
     const d = t.dataset;
+    if (d.stagego) return stageShow(d.stagego);
     if (d.copside) { S.cps.side = d.copside === "1"; return render(); }
     if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`${location.pathname}?${u}`); }
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }

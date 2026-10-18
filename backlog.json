@@ -198,7 +198,7 @@
           "status": "Done",
           "size": "M",
           "source": "Demo request",
-          "desc": "/stage shows each client on an iPhone and a laptop silhouette; one conversation mirrors across both screens.",
+          "desc": "/stage shows seven clients (Copilot, Teams, Joule Work, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude) on an iPhone and a laptop; left and right arrow keys switch clients; one conversation mirrors across both screens.",
           "accept": "A prompt sent on either device appears on both.",
           "reality": "Demo construct"
         }
@@ -1236,7 +1236,7 @@
         {
           "key": "TGCS-1103",
           "title": "Claude style client",
-          "status": "Proposed",
+          "status": "Done",
           "size": "M",
           "source": "Omar request",
           "desc": "Claude chat layout with connector tool-use blocks.",
@@ -1246,7 +1246,7 @@
         {
           "key": "TGCS-1104",
           "title": "Google Gemini Enterprise style client",
-          "status": "Proposed",
+          "status": "Done",
           "size": "M",
           "source": "Omar request",
           "desc": "Gemini Enterprise assistant layout with custom MCP connector.",
