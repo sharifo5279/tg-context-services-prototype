@@ -52,6 +52,35 @@
     compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/>',
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
+    up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+    wave: '<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>',
+    side: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/>',
+    compose: '<path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M18.5 3.5a2.1 2.1 0 0 1 3 3L13 15l-4 1 1-4z"/>',
+    smile: '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/>',
+    format: '<path d="M4 19 9 5l5 14M6 14h6"/><path d="M15 19l5-5-2-2-5 5v2z"/>',
+    image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m20.5 16-5-5-9 8.5"/>',
+    folder: '<path d="M3.5 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+    star: '<path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.3L12 16l-4.9 2.6 1.1-5.3-4-3.7 5.4-.6z"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/>',
+    filter: '<path d="M4 6h16M7 12h10M10 18h4"/>',
+    popout: '<path d="M14 4h6v6M20 4l-8 8"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
+    right: '<path d="M9 6l6 6-6 6"/>',
+    left: '<path d="M15 6l-6 6 6 6"/>',
+    apps: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><path d="M16.75 13.5v6.5M13.5 16.75H20"/>',
+    book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
+    code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>',
+    inbox: '<path d="M4 13.5 6.5 5h11l2.5 8.5V19H4z"/><path d="M4 13.5h5a3 3 0 0 0 6 0h5"/>',
+    minus: '<path d="M5 12h14"/>',
+    drag: '<path d="M7 9h10M7 15h10"/>',
+    chats: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4 4v-4h0A2.5 2.5 0 0 1 4 13.5z"/>',
+    callbell: '<path d="M4 18h16M6 18a6 6 0 0 1 12 0M12 9V7M10 7h4"/>',
+    pin: '<path d="M9 4h6l-1 5 3 3H7l3-3zM12 12v8"/>',
+    teams: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3.5 19c0-3.2 2.4-5.5 5.5-5.5s5.5 2.3 5.5 5.5zM15 14c2.9-.5 5.5 1.3 5.5 4.5H15"/>',
+    notebook: '<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 3.5v17M12 8h4M12 11.5h4"/>',
+    task: '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    sparkle: '<path d="M12 3c.5 4.5 2.5 6.5 7 7-4.5.5-6.5 2.5-7 7-.5-4.5-2.5-6.5-7-7 4.5-.5 6.5-2.5 7-7z"/>',
   };
   const ic = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${I[n] ?? ""}</svg>`;
 
@@ -207,7 +236,7 @@
     try {
       if (m.conv) { S.convs[m.conv.key] = m.conv; fromRemote.add(m.conv.key); if (m.plans) S.plans = m.plans; refreshConv(m.conv.key); }
       if (m.reset) { delete S.convs[m.reset]; render(); }
-      if (m.nav && m.nav !== location.pathname + location.search) { history.replaceState({}, "", m.nav); render(); }
+      if (m.nav) { const u = new URL(m.nav, location.origin); u.searchParams.set("stage", STAGE); const nav = u.pathname + u.search; if (nav !== location.pathname + location.search) { history.replaceState({}, "", nav); render(); } }
     } finally { setTimeout(() => (remote = false), 0); }
   };
 
@@ -762,20 +791,23 @@
       ${m.error ? `<div class="cop-err">${esc(m.error)}</div>` : ""}
       ${m.text ? `<div class="cop-md md">${md(m.text)}</div>` : ""}
       ${m.plans.map(cpsCard).join("")}
-      ${done ? `<div class="cop-acts"><button title="Copy" data-copy="${esc(m.text)}">${ic("copy")}</button><button title="Regenerate" data-prompt="${esc(prevUser)}">${ic("refresh")}</button><button title="Read aloud">${ic("speaker")}</button><button title="Share">${ic("share")}</button></div>${last ? `<div class="cop-disc">AI can make mistakes. Check important information.</div>` : ""}` : ""}</div>`;
+      ${done ? `<div class="cop-acts"><button title="Copy" data-copy="${esc(m.text)}">${ic("copy")}</button><button title="Like">${ic("thumbup")}</button><button title="Dislike">${ic("thumbdown")}</button><button title="Regenerate" data-prompt="${esc(prevUser)}">${ic("refresh")}</button><button title="Share">${ic("share")}</button>${last ? `<span class="cop-disc">AI-generated content may be incorrect</span>` : ""}</div>` : ""}</div>`;
   }
   function cpsChat(c, agentId, avail, blocked) {
     const a = agent(agentId);
     const first = (S.meta.persona.name || "").split(" ")[0];
-    const empty = !c.items.length ? `<div class="cop-hello"><h1>Hello, ${esc(first)}. What do you need from Trading Grid today?</h1>
-      <div class="cop-starters">${(a?.starters ?? []).slice(0, 4).map((n) => `<button class="cop-starter" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div></div>` : "";
+    const label = agentId === "context-assistant" ? "Copilot" : a?.name ?? "Copilot";
+    const empty = !c.items.length ? `<div class="cop-hello"><h1>Hi ${esc(first)}, how can I help?</h1></div>` : "";
+    const starters = !c.items.length ? `<div class="cop-starters">${(a?.starters ?? []).slice(0, 4).map((n) => `<button class="cop-starter" data-prompt="${esc(promptOf(n))}">${esc(promptOf(n))}</button>`).join("")}</div>` : "";
+    const dis = c.busy ? "disabled" : "";
     return `<header class="cop-top"><button class="cop-round cop-menu" data-copside="1" title="Menu">${ic("menu")}</button>
-        <label class="cop-pick"><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "Auto" : x.name)}</option>`).join("")}</select><span>${esc(agentId === "context-assistant" ? "Auto" : a?.name ?? "Auto")}</span>${ic("chev")}</label>
-        <button class="cop-round" data-newconv="${c.key}" title="New chat">${ic("more")}</button></header>
+        <label class="cop-pick"><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "Copilot" : x.name)}</option>`).join("")}</select><span>${esc(label)}</span>${ic("chev")}</label>
+        <span class="cop-sp"></span><span class="cop-iq" title="Work IQ">Work IQ <i>Auto</i>${ic("chev")}</span>
+        <button class="cop-round" data-newconv="${c.key}" title="New chat">${ic("compose")}</button></header>
       ${blocked ? `<div class="cop-warn">Trading Grid access for this client is suspended by the Harborview administrator.</div>` : ""}
       <div class="cop-msgs"><div class="cop-col">${empty}${c.items.map((m, mi) => cpsItem(c, m, mi)).join("")}</div></div>
-      <div class="cop-foot"><form class="cop-comp" data-compose><button type="button" class="cop-plus" title="Add">${ic("plus")}</button><textarea rows="1" placeholder="Message Copilot" ${c.busy ? "disabled" : ""}></textarea><button type="button" class="cop-mic" title="Voice">${ic("mic")}</button><button class="cop-send" ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
-        <nav class="cop-tabs"><div class="cop-tabset"><button class="on">${ic("chat")}<span>Chat</span></button><button data-copside="1">${ic("agent")}<span>Agents</span></button><button>${ic("compass")}<span>Discover</span></button><button>${ic("chev")}<span>More</span></button></div><button class="cop-round lg" data-newconv="${c.key}" title="New chat">${ic("edit")}</button></nav>
+      <div class="cop-foot">${starters}<form class="cop-comp" data-compose><textarea rows="1" placeholder="Message Copilot" ${dis}></textarea>
+          <div class="cop-crow"><button type="button" class="cop-plus" title="Add content">${ic("plus")}</button><button type="button" class="cop-tool" title="Tools">${ic("sliders")}<span>Tools</span></button><span class="cop-sp"></span><button type="button" class="cop-mic" title="Dictate">${ic("mic")}</button><button class="cop-send" ${dis} title="Send">${ic("up")}</button></div></form>
         <div class="cop-sim">Simulated client · Trading Grid via Aviator AKS gateway</div></div>`;
   }
   function pageCopilot() {
@@ -787,12 +819,12 @@
     const blocked = (S.meta.clientStatus[eco] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => cpsChat(cc, agentId, avail, blocked);
     const chats = Object.values(S.convs).filter((x) => x.host === eco && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
-    const nav = [["chat", "Chat", "x"], ["compass", "Discover", ""], ["search", "Search", ""]];
+    const nav = [["compose", "New chat", `data-newconv="${key}"`], ["search", "Search", ""], ["apps", "Agents", ""], ["notebook", "Notebooks", ""], ["task", "Tasks", ""]];
     return `<div class="cop ${S.cps.side ? "side-open" : ""}">
-      <aside class="cop-side"><div class="cop-brand"><span>Copilot</span><span class="cop-tiny">simulated</span><button class="cop-round sm" data-copside="0" title="Close">${ic("x")}</button></div>
-        ${nav.map(([i, l, h]) => `<button class="cop-nav" ${h ? `data-cpsuse="context-assistant"` : ""}>${ic(i)}<span>${l}</span></button>`).join("")}
-        <div class="cop-sec">Agents</div><div class="cop-agents">${avail.filter((x) => x.id !== "context-assistant").map((x) => `<button class="cop-chatlink ${x.id === agentId ? "on" : ""}" data-cpsuse="${x.id}">${esc(x.name)}</button>`).join("")}</div>
-        ${chats.length ? `<div class="cop-sec">Chats</div>${chats.map(([id, t]) => `<button class="cop-chatlink" data-cpsuse="${id}">${esc(t.slice(0, 48))}</button>`).join("")}` : ""}
+      <aside class="cop-side"><div class="cop-brand"><span>Copilot</span><span class="cop-tiny">simulated</span><span class="cop-sp"></span><button class="cop-ib" title="Apps">${ic("grid")}</button><button class="cop-ib cop-x" data-copside="0" title="Close">${ic("x")}</button></div>
+        ${nav.map(([i, l, h]) => `<button class="cop-nav" ${h}>${ic(i)}<span>${l}</span></button>`).join("")}
+        <div class="cop-sec">Pinned</div><div class="cop-agents"><button class="cop-chatlink ${agentId === "context-assistant" ? "on" : ""}" data-cpsuse="context-assistant">${ic("sparkle")}<span>Copilot</span></button>${avail.filter((x) => x.id !== "context-assistant").map((x) => `<button class="cop-chatlink ${x.id === agentId ? "on" : ""}" data-cpsuse="${x.id}"><i>${esc(initials(x.name))}</i><span>${esc(x.name)}</span></button>`).join("")}</div>
+        ${chats.length ? `<div class="cop-sec">Chats</div>${chats.map(([id, t]) => `<button class="cop-chatlink" data-cpsuse="${id}"><span>${esc(t.slice(0, 48))}</span></button>`).join("")}` : ""}
         <div class="cop-prof"><div class="avatar sm">JL</div><div><div class="n">${esc(S.meta.persona.name)}</div><div class="s">Harborview Retail Group</div></div></div></aside>
       <div class="cop-scrim" data-copside="0"></div>
       <main class="cop-main" data-conv="${key}">${mounts[key](c)}</main></div>`;
@@ -800,24 +832,21 @@
 
   // ---------- Ecosystem clients (simulated), one renderer with a skin per ecosystem ----------
   const CLIENTS = {
-    teams: { name: "Microsoft Teams", host: "copilot-studio", bar: "#ffffff", ph: "Type a message", agents: "Chats", auto: "Trading Grid",
-      rail: [["bell", "Activity"], ["chat", "Chat", 1], ["users", "Teams"], ["calendar", "Calendar"], ["more", "More"]],
-      tabs: [["bell", "Activity"], ["chat", "Chat", 1], ["users", "Teams"], ["calendar", "Calendar"], ["more", "More"]],
-      bot: "TG", hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid agent published to Teams through Copilot Studio" },
-    joule: { name: "SAP S/4HANA", host: "sap-joule", bar: "#f5f6f7", ph: "Message Joule", agents: "Agents", auto: "Joule", ws: "s4",
-      tabs: [["home", "Home"], ["tasks", "Tasks"], ["spark", "Joule", 1], ["grid", "Apps"]],
-      bot: "J", hello: (n) => `Hi ${n}, what do you want to get done?`, sim: "Simulated client · Trading Grid via SAP BTP destination and Aviator AKS gateway",
+    teams: { name: "Microsoft Teams", host: "copilot-studio", ph: "Type a message", auto: "Trading Grid", bot: "TG",
+      hello: () => "Ask Trading Grid about partners, onboarding and transactions.", sim: "Simulated client · Trading Grid agent published to Teams through Copilot Studio" },
+    joule: { name: "SAP S/4HANA", host: "sap-joule", ph: "Message Joule", auto: "Joule", ws: "s4",
+      hello: (n) => `Hello ${n}, how can I help you?`, sim: "Simulated client · Trading Grid via SAP BTP destination and Aviator AKS gateway",
       starters: (d, sel) => sel ? [`When will purchase order ${sel.po} from ${sel.supplier} arrive?`, `Has ${sel.supplier} confirmed purchase order ${sel.po}?`, `Show every document exchanged for purchase order ${sel.po}.`] : [] },
-    gemini: { name: "Gemini Enterprise", host: "gemini-enterprise", bar: "#ffffff", ph: "Ask Gemini", agents: "Agents", auto: "Gemini",
-      hello: (n) => `Hello, ${n}`, sim: "Simulated client · Trading Grid custom MCP connector via Aviator AKS gateway" },
-    servicenow: { name: "ServiceNow", host: "servicenow", bar: "#032d42", dark: 1, ph: "Ask Now Assist", agents: "AI agents", auto: "Now Assist",
-      tabs: [["home", "Home"], ["list", "Requests"], ["spark", "Now Assist", 1], ["agent", "Profile"]],
-      bot: "NA", hello: (n) => `Hi ${n}. What can Now Assist help with?`, sim: "Simulated client · Trading Grid via AI Agent Fabric MCP client and Aviator AKS gateway", ws: "servicenow",
+    gemini: { name: "Gemini Enterprise", host: "gemini-enterprise", ph: "Ask Gemini", auto: "Gemini",
+      hello: (n) => `Hi ${n}`, sub: "Where should we start?", sim: "Simulated client · Trading Grid custom MCP connector via Aviator AKS gateway" },
+    servicenow: { name: "ServiceNow", host: "servicenow", ph: "Ask Now Assist", auto: "Now Assist", ws: "servicenow",
+      tabs: [["home", "Home"], ["inbox", "My work"], ["sparkle", "Now Assist", 1], ["agent", "Profile"]],
+      hello: (n) => `Hi ${n}, how can I help?`, sim: "Simulated client · Trading Grid via AI Agent Fabric MCP client and Aviator AKS gateway",
       starters: (d) => d ? [`Summarize incident ${d.number} with Trading Grid evidence.`, `Which ${d.partner.replace(/ Inc$/, "")} documents failed, and what business is affected?`, `What is the status of certificate renewal ${d.changeRequest}?`] : [] },
-    chatgpt: { name: "ChatGPT Enterprise", host: "chatgpt-enterprise", bar: "#ffffff", ph: "Ask anything", agents: "GPTs", auto: "ChatGPT",
+    chatgpt: { name: "ChatGPT Enterprise", host: "chatgpt-enterprise", ph: "Ask anything", auto: "ChatGPT",
       hello: () => "What can I help with?", sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
-    claude: { name: "Claude", host: "claude-ui", bar: "#faf9f5", ph: "Reply to Claude", agents: "Trading Grid agents", auto: "Claude",
-      hello: (n) => `Hello, ${n}`, sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
+    claude: { name: "Claude", host: "claude-ui", ph: "Reply to Claude", ph0: "How can I help you today?", auto: "Claude",
+      hello: (n) => `${new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 18 ? "Afternoon" : "Evening"}, ${n}`, sim: "Simulated client · Trading Grid connector via Aviator AKS gateway" },
   };
   function clCard(p) {
     const st = S.plans.find((x) => x.planId === p.planId)?.status ?? p.planStatus ?? p.status;
@@ -829,29 +858,69 @@
       ${pending ? `<div class="cl-card-a"><button class="cl-btn pri" data-approve="${p.planId}">Approve</button><button class="cl-btn" data-reject="${p.planId}">Reject</button></div>` : ""}</div>`;
   }
   const hhmm = (t) => new Date(t ?? Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  function clItem(K, c, m, mi) {
-    if (m.role === "user") return `<div class="cl-u">${K.bot ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}</div></div>`;
+  const initials = (n) => String(n).replace(/,.*$/, "").split(/\s+/).filter((w) => /^[A-Z]/.test(w)).slice(0, 2).map((w) => w[0]).join("") || "AG";
+  const CL_ACTS = { chatgpt: [["copy", "Copy"], ["thumbup", "Good response"], ["thumbdown", "Bad response"], ["speaker", "Read aloud"], ["share", "Share"], ["refresh", "Try again"]],
+    claude: [["copy", "Copy"], ["thumbup", "Give positive feedback"], ["thumbdown", "Give negative feedback"], ["refresh", "Retry"]],
+    gemini: [["thumbup", "Good response"], ["thumbdown", "Bad response"], ["refresh", "Redo"], ["share", "Share"], ["copy", "Copy"], ["more", "More"]],
+    joule: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]],
+    servicenow: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]] };
+  function clItem(id, K, c, m, mi) {
+    if (m.role === "user") return `<div class="cl-u">${id === "teams" ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}</div></div>`;
     const done = !m.thinking && (m.text || m.error);
-    return `<div class="cl-b">${K.bot ? `<div class="cl-av">${esc(K.bot)}</div>` : ""}<div class="cl-bb">${K.bot ? `<div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>` : ""}
-      ${activity(m, mi, m.route)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}
-      ${done && !K.bot ? `<div class="cl-acts"><button title="Copy" data-copy="${esc(m.text)}">${ic("copy")}</button><button title="Good response">${ic("thumbup")}</button><button title="Bad response">${ic("thumbdown")}</button><button title="Share">${ic("share")}</button></div>` : ""}</div></div>`;
+    const last = mi === c.items.length - 1;
+    const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
+    const acts = (CL_ACTS[id] ?? []).map(([i, t]) => `<button title="${t}" ${i === "copy" ? `data-copy="${esc(m.text)}"` : i === "refresh" ? `data-prompt="${esc(prevUser)}"` : ""}>${ic(i)}</button>`).join("");
+    const body = `${activity(m, mi, m.route)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}`;
+    if (id === "teams") return `<div class="cl-b"><div class="cl-av sq">${esc(initials(c.botName))}</div><div class="cl-bb"><div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>${body}${done ? `<div class="cl-aig">AI generated</div>` : ""}</div></div>`;
+    const disc = id === "claude" && last && done ? `<span class="cl-sp"></span><span class="cl-disc">Claude can make mistakes. Please double-check responses.</span>` : "";
+    return `<div class="cl-b">${id === "servicenow" ? `<div class="cl-bh">${ic("sparkle")}<b>Now Assist</b></div>` : ""}<div class="cl-bb">${body}${done && acts ? `<div class="cl-acts">${acts}${disc}</div>` : ""}</div></div>`;
+  }
+  function clComposer(id, K, c) {
+    const dis = c.busy ? "disabled" : "";
+    const ph = !c.items.length && K.ph0 ? K.ph0 : K.ph;
+    const ta = `<textarea rows="1" placeholder="${esc(ph)}" ${dis}></textarea>`;
+    const b = (i, t, cls = "") => `<button type="button" class="cl-ib ${cls}" title="${t}">${ic(i)}</button>`;
+    const send = (i) => `<button class="cl-send" ${dis} title="Send">${ic(i)}</button>`;
+    const parts = {
+      teams: `${b("plus", "Actions and apps", "cl-lead")}${ta}${b("smile", "Emoji", "dt")}${b("plus", "Actions and apps", "dt")}${b("format", "Format", "dt")}${b("mic", "Record audio", "ph")}<span class="cl-vsep dt"></span>${send("send")}`,
+      chatgpt: `${b("plus", "Add files and more", "cl-lead")}${ta}${b("mic", "Dictate")}<button type="button" class="cl-voice" title="Use voice mode">${ic("wave")}</button>${send("up")}`,
+      claude: `${ta}<div class="cl-crow">${b("plus", "Add files")}${b("sliders", "Search and tools")}${b("clock", "Extended thinking")}<span class="cl-sp"></span><span class="cl-model">Opus 5.5 ${ic("chev")}</span>${send("up")}</div>`,
+      gemini: `${ta}<div class="cl-crow">${b("plus", "Upload files")}<button type="button" class="cl-chip" title="Tools">${ic("sliders")}<span>Tools</span></button><span class="cl-sp"></span><span class="cl-model">Fast ${ic("chev")}</span>${b("mic", "Use microphone")}${send("up")}</div>`,
+      joule: `${b("plus", "Add attachment", "cl-lead")}${ta}${send("send")}`,
+      servicenow: `${b("plus", "Attach", "cl-lead")}${ta}${send("send")}`,
+    };
+    return `<form class="cl-comp" data-compose>${parts[id]}</form>`;
+  }
+  function clHeader(id, K, c, title, a) {
+    const nc = `data-newconv="${c.key}" title="New chat"`;
+    const titled = c.items.find((x) => x.role === "user")?.text ?? "";
+    switch (id) {
+      case "teams": return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Back">${ic("back")}</button><div class="cl-av sq">${esc(initials(title))}</div>
+        <div class="cl-title"><span>${esc(title)}</span><nav class="cl-ttabs"><b>Chat</b><span>About</span></nav></div><span class="cl-sp"></span><button class="cl-ib dt" title="Pop out chat">${ic("popout")}</button><button class="cl-ib" ${nc}>${ic("more")}</button></header>`;
+      case "chatgpt": return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Open sidebar">${ic("menu")}</button><div class="cl-title"><span>${esc(title)}</span>${ic("chev")}</div><span class="cl-sp"></span>
+        ${c.items.length ? `<button class="cl-pill dt" title="Share">${ic("share")}<span>Share</span></button>` : ""}<button class="cl-ib dt" title="More">${ic("more")}</button><button class="cl-ib ph" ${nc}>${ic("compose")}</button></header>`;
+      case "claude": return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Open sidebar">${ic("menu")}</button><div class="cl-title">${titled ? `<span>${esc(titled.length > 46 ? titled.slice(0, 46) + "..." : titled)}</span>${ic("chev")}` : `<span class="ph">${esc(title)}</span>`}</div><span class="cl-sp"></span>
+        ${c.items.length ? `<button class="cl-pill dt" title="Share">${ic("share")}<span>Share</span></button>` : ""}<button class="cl-ib ph" ${nc}>${ic("compose")}</button></header>`;
+      case "gemini": return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Main menu">${ic("menu")}</button><div class="cl-title"><span>${esc(title)}</span></div><span class="cl-sp"></span>
+        <button class="cl-ib ph" ${nc}>${ic("compose")}</button><div class="cl-av round">J</div></header>`;
+      case "joule": return `<header class="cl-top"><button class="cl-ib ph" title="Close">${ic("x")}</button><div class="cl-title"><span>${esc(title)}</span></div><span class="cl-sp"></span><button class="cl-ib" ${nc}>${ic("compose")}</button><button class="cl-ib dt" title="History">${ic("clock")}</button><button class="cl-ib dt" title="Expand">${ic("expand")}</button><button class="cl-ib dt" title="Close">${ic("x")}</button></header>`;
+      default: return `<header class="cl-top"><div class="cl-title">${ic("sparkle")}<span>${esc(title)}</span></div><span class="cl-sp"></span><button class="cl-ib" ${nc}>${ic("compose")}</button><button class="cl-ib dt" title="Conversation history">${ic("clock")}</button><button class="cl-ib dt" title="More">${ic("more")}</button><button class="cl-ib dt" title="Close">${ic("x")}</button></header>`;
+    }
   }
   function clChat(id, K, c, agentId, avail, blocked) {
     const a = agent(agentId);
     const first = (S.meta.persona.name || "").split(" ")[0];
     const title = agentId === "context-assistant" ? K.auto : a?.name ?? K.auto;
-    c.botName = id === "teams" ? (agentId === "context-assistant" ? "Trading Grid" : a?.name) : K.auto;
+    c.botName = id === "teams" ? title : K.auto;
     const custom = K.starters ? K.starters(S.scene?.[K.ws], wsSelected(K)) : null;
-    const starters = (custom?.length ? custom : (a?.starters ?? []).slice(0, 4).map(promptOf)).map((p) => `<button class="cl-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("");
-    const empty = !c.items.length ? `<div class="cl-hello"><h1>${esc(K.hello(first))}</h1><div class="cl-starters">${starters}</div></div>` : "";
-    const icons = { teams: ["video", "phone", "more"], joule: ["expand", "more"], gemini: ["more"], servicenow: ["more"], chatgpt: ["share", "more"], claude: ["share", "more"] }[id];
-    return `<header class="cl-top"><button class="cl-ib cl-menu" data-copside="1" title="Menu">${ic(id === "teams" ? "back" : "menu")}</button>
-        ${K.bot && id === "teams" ? `<div class="cl-av sq">${esc(K.bot)}</div>` : ""}
-        <div class="cl-title"><span>${esc(title)}</span>${id === "chatgpt" || id === "gemini" ? ic("chev") : ""}${id === "teams" ? `<nav class="cl-ttabs"><b>Chat</b><span>Shared</span></nav>` : ""}</div>
-        <span class="cl-sp"></span>${icons.map((i) => `<button class="cl-ib" ${i === "more" ? `data-newconv="${c.key}" title="New chat"` : ""}>${ic(i)}</button>`).join("")}</header>
+    const prompts = custom?.length ? custom : (a?.starters ?? []).slice(0, 4).map(promptOf);
+    const starters = !c.items.length && prompts.length ? `<div class="cl-starters">${prompts.map((p) => `<button class="cl-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : "";
+    const hello = !c.items.length ? `<div class="cl-hello">${id === "teams" ? `<div class="cl-av sq lg">${esc(initials(title))}</div><h2>${esc(title)}</h2>` : ""}<h1>${esc(K.hello(first))}</h1>${K.sub ? `<div class="cl-sub">${esc(K.sub)}</div>` : ""}</div>` : "";
+    const disc = { chatgpt: "ChatGPT can make mistakes. Check important info.", gemini: "Gemini can make mistakes, so double-check it" }[id];
+    return `${clHeader(id, K, c, title, a)}
       ${blocked ? `<div class="cl-warn">Trading Grid access for this client is suspended by the Harborview administrator.</div>` : ""}
-      <div class="cl-msgs"><div class="cl-col">${empty}${c.items.map((m, mi) => clItem(K, c, m, mi)).join("")}</div></div>
-      <div class="cl-foot"><form class="cl-comp" data-compose><button type="button" class="cl-ib" title="Attach">${ic(id === "teams" ? "plus" : id === "claude" || id === "chatgpt" ? "plus" : "paperclip")}</button><textarea rows="1" placeholder="${esc(K.ph)}" ${c.busy ? "disabled" : ""}></textarea>${id === "claude" || id === "chatgpt" || id === "gemini" ? `<button type="button" class="cl-ib" title="Tools">${ic("sliders")}</button>` : ""}<button type="button" class="cl-ib" title="Voice">${ic("mic")}</button><button class="cl-send" ${c.busy ? "disabled" : ""} title="Send">${ic("send")}</button></form>
+      <div class="cl-msgs"><div class="cl-col">${hello}${c.items.map((m, mi) => clItem(id, K, c, m, mi)).join("")}</div></div>
+      <div class="cl-foot">${starters}${clComposer(id, K, c)}${disc ? `<div class="cl-disc">${disc}</div>` : ""}
         ${K.tabs ? `<nav class="cl-tabs">${K.tabs.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
         <div class="cl-sim">${esc(K.sim)}</div></div>`;
   }
@@ -864,21 +933,23 @@
     return d.rows.find((r) => r.po === qs().get("po")) ?? d.rows.find((r) => r.po === d.selected) ?? d.rows[0];
   }
   const S4_ST = { "Not confirmed": "warn", Confirmed: "info", Shipped: "ok", Invoiced: "neutral" };
+  const S4_IC = { warn: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5M12 17.2h.01"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.8h.01"/>', ok: '<circle cx="12" cy="12" r="9"/><path d="m8 12.2 2.8 2.8L16 9.5"/>', neutral: "" };
+  const s4St = (st) => { const k = S4_ST[st] ?? "neutral"; return `<span class="s4-st ${k}">${S4_IC[k] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${S4_IC[k]}</svg>` : ""}${esc(st)}</span>`; };
   function wsArea(K) {
     if (K.ws === "s4") {
       const d = S.scene.s4, sel = wsSelected(K);
       if (!d) return `<div class="ws-area"></div>`;
-      const f = (l, v) => `<label class="s4-f"><span>${esc(l)}:</span><div>${esc(v)}</div></label>`;
+      const f = (l, v, i = "vh") => `<label class="s4-f"><span>${esc(l)}:</span><div><span>${esc(v)}</span>${i === "dd" ? ic("chev") : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>`}</div></label>`;
       return `<div class="ws-area s4">
-        <header class="s4-shell"><span class="s4-logo">SAP</span><span class="s4-app">Monitor Supplier Confirmations ${ic("chev")}</span><span class="cl-sp"></span>${ic("search")}<span class="s4-joule on">${ic("spark")}</span>${ic("bell")}<span class="cl-av round sm">JL</span></header>
+        <header class="s4-shell"><span class="s4-logo">SAP</span><span class="s4-app">Monitor Supplier Confirmations ${ic("chev")}</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span><span class="s4-search">${ic("search")}<span>Search in: Apps</span></span><span class="s4-joule on" title="Joule">${ic("sparkle")}</span><span class="s4-ib">${ic("bell")}</span><span class="cl-av round sm">JL</span></header>
         <div class="s4-page">
           <div class="s4-head"><h1>Standard ${ic("chev")}</h1>
-            <div class="s4-filters">${f("Purchasing Group", d.purchasingGroup)}${f("Plant", d.plant)}${f("Order Date", "Last 7 days")}${f("Confirmation Status", "All")}<button class="s4-go">Go</button></div></div>
-          <div class="s4-table"><div class="s4-tbar"><b>Purchase Orders (${d.rows.length})</b><span class="cl-sp"></span><button>Send Reminder</button><button>Export</button></div>
-            <table><thead><tr><th>Purchase Order</th><th>Supplier</th><th>Order Date</th><th>Requested Delivery</th><th>Confirmation Status</th><th>Inbound Shipment</th></tr></thead><tbody>
-            ${d.rows.map((r) => `<tr class="${sel && r.po === sel.po ? "sel" : ""}" data-s4po="${r.po}"><td class="lnk">${r.po}</td><td>${esc(r.supplier)}</td><td>${fdate(r.orderedAt)}</td><td>${fdate(r.requestedDelivery + "T12:00:00Z")}</td><td><span class="s4-st ${S4_ST[r.status]}">${esc(r.status)}</span></td><td>${esc(r.shipmentId ?? "")}</td></tr>`).join("")}
+            <div class="s4-filters">${f("Purchasing Group", d.purchasingGroup)}${f("Plant", d.plant)}${f("Order Date", "Last 7 days", "dd")}${f("Confirmation Status", "All", "dd")}<span class="cl-sp"></span><button class="s4-go">Go</button><button class="s4-lnk">Adapt Filters (4)</button></div></div>
+          <div class="s4-table"><div class="s4-tbar"><b>Purchase Orders (${d.rows.length})</b><span class="cl-sp"></span><button>Send Reminder</button><button>Export ${ic("chev")}</button><span class="s4-ib">${ic("gear")}</span></div>
+            <table><thead><tr><th class="cb"><i></i></th><th>Purchase Order</th><th>Supplier</th><th>Order Date</th><th>Req. Delivery</th><th>Confirmation Status</th><th>Inbound Shipment</th></tr></thead><tbody>
+            ${d.rows.map((r) => `<tr class="${sel && r.po === sel.po ? "sel" : ""}" data-s4po="${r.po}"><td class="cb"><i></i></td><td class="lnk">${r.po}</td><td>${esc(r.supplier)}</td><td>${fdate(r.orderedAt)}</td><td>${fdate(r.requestedDelivery + "T12:00:00Z")}</td><td>${s4St(r.status)}</td><td>${esc(r.shipmentId ?? "")}</td></tr>`).join("")}
             </tbody></table></div></div>
-        ${sel ? `<div class="s4-mcard"><div class="k">Purchase order</div><div class="t">${sel.po}</div><div class="s">${esc(sel.supplier)} · ordered ${fdate(sel.orderedAt)}</div><span class="s4-st ${S4_ST[sel.status]}">${esc(sel.status)}</span></div>` : ""}</div>`;
+        ${sel ? `<div class="s4-mcard"><div class="k">Purchase order</div><div class="t">${sel.po}</div><div class="s">${esc(sel.supplier)} · ordered ${fdate(sel.orderedAt)}</div>${s4St(sel.status)}</div>` : ""}</div>`;
     }
     const d = S.scene.servicenow;
     if (!d) return `<div class="ws-area"></div>`;
@@ -890,12 +961,12 @@
       ["System", "Field changes", d.openedAt, `Incident created from Trading Grid alert. Priority 2 - High. Assignment group ${d.assignmentGroup}.`],
     ];
     return `<div class="ws-area sn">
-      <header class="sn-top"><span class="sn-logo">servicenow</span><span class="sn-ws">Service Operations Workspace</span><span class="cl-sp"></span><span class="sn-search">${ic("search")}Search</span>${ic("bell")}<span class="cl-av round sm">JL</span></header>
-      <div class="sn-body"><nav class="sn-rail">${["home", "list", "chart", "bell"].map((i, n) => `<span class="${n === 1 ? "on" : ""}">${ic(i)}</span>`).join("")}</nav>
+      <header class="sn-top"><span class="sn-logo">servicenow</span><nav class="sn-menus">${["All", "Favorites", "Workspaces"].map((x) => `<span>${x}${ic("chev")}</span>`).join("")}</nav><span class="cl-sp"></span><span class="sn-pill">Service Operations Workspace ${ic("star")}</span><span class="cl-sp"></span><span class="sn-ib" title="Search">${ic("search")}</span><span class="sn-ib on" title="Now Assist">${ic("sparkle")}</span><span class="sn-ib">${ic("help")}</span><span class="sn-ib">${ic("bell")}</span><span class="cl-av round sm">JL</span></header>
+      <div class="sn-body"><nav class="sn-rail">${["home", "list", "inbox", "chart"].map((i, n) => `<span class="${n === 1 ? "on" : ""}">${ic(i)}</span>`).join("")}</nav>
         <div class="sn-main"><div class="sn-tabs"><span>Home</span><span class="on">${esc(d.number)} ${ic("x")}</span></div>
           <div class="sn-rec"><div class="sn-rh"><div><div class="sn-type">Incident</div><h1>${esc(d.number)}</h1><div class="sn-sd">${esc(d.shortDescription)}</div></div><span class="cl-sp"></span><button class="sn-b">Update</button><button class="sn-b pri">Resolve</button></div>
             <div class="sn-hl"><div><span>Priority</span><b class="p2">${esc(d.priority)}</b></div><div><span>State</span><b>${esc(d.state)}</b></div><div><span>Assignment group</span><b>${esc(d.assignmentGroup)}</b></div><div><span>Opened</span><b>${ago(d.openedAt)}</b></div></div>
-            <div class="sn-cols"><div class="sn-form"><div class="sn-ftabs"><b>Details</b><span>Related records</span><span>Resolution</span></div>
+            <div class="sn-cols"><div class="sn-form"><div class="sn-ftabs"><b>Details</b><span>Notes</span><span>Related records</span><span>Resolution information</span></div>
               <div class="sn-grid">${fld("Caller", d.caller, 1)}${fld("Category", d.category)}${fld("Service", d.service)}${fld("Subcategory", d.subcategory)}${fld("Configuration item", d.ci)}${fld("Impact", d.impact)}${fld("Assigned to", d.assignedTo)}${fld("Urgency", d.urgency)}</div>
               ${fld("Short description", d.shortDescription, 1)}
               <div class="sn-f"><label>Description</label><div class="sn-in ta">${esc(`Inbound EDI from ${d.partner} is rejected at AS2 receipt. ${d.failed} documents failed so far (${fails}). Partner signing certificate expired.`)}</div></div></div>
@@ -908,6 +979,35 @@
     }
     const d = S.scene.servicenow; if (!d) return "";
     return [`Application: ServiceNow Service Operations Workspace.`, `Open record: incident ${d.number}, "${d.shortDescription}". State ${d.state}, priority ${d.priority}, opened ${d.openedAt}.`, `Configuration item: ${d.ci} (Trading Grid company ${d.partnerCompanyId}, ${d.partner}). Service: ${d.service}.`, `Related Trading Grid change request in work notes: ${d.changeRequest}.`].join("\n");
+  }
+  function clSide(id, K, key, agentId, list, chats) {
+    const name = esc(S.meta.persona.name), org = "Harborview Retail Group";
+    const link = (aid, n, extra = "") => `<button class="cl-link ${aid === agentId ? "on" : ""}" data-cpsuse="${aid}">${extra}<span>${esc(n)}</span></button>`;
+    const nav = (i, l, attrs = "") => `<button class="cl-new" ${attrs}>${ic(i)}<span>${esc(l)}</span></button>`;
+    const close = `<button class="cl-ib cl-x" data-copside="0" title="Close">${ic("x")}</button>`;
+    const hist = chats.length ? `<div class="cl-sec">${id === "claude" ? "Recents" : id === "gemini" ? "Recent" : "Chats"}</div><div class="cl-list">${chats.map(([aid, t]) => `<button class="cl-link" data-cpsuse="${aid}"><span>${esc(t.slice(0, 60))}</span></button>`).join("")}</div>` : "";
+    const prof = (sub) => `<div class="cl-prof"><div class="cl-av round">JL</div><div><div class="n">${name}</div><div class="s">${esc(sub)}</div></div></div>`;
+    if (id === "teams") {
+      const prev = (aid) => { const cc = S.convs[`cl:teams:${aid}`]; const lastU = cc?.items.filter((x) => x.role === "agent" && x.text).pop(); return lastU ? lastU.text.replace(/[*#|`]/g, "").replace(/\s+/g, " ").trim() : agent(aid)?.role ?? "Trading Grid agent"; };
+      const when = (aid) => { const cc = S.convs[`cl:teams:${aid}`]; const t = cc?.items.at(-1)?.t0 ?? cc?.items.at(-1)?.t; return t ? hhmm(t) : ""; };
+      return `<aside class="cl-side"><div class="tm-lh"><h2>Chat</h2><span class="cl-sp"></span><button class="cl-ib dt" title="Filter">${ic("filter")}</button><button class="cl-ib dt" title="Meet now">${ic("video")}</button><button class="cl-ib" data-newconv="${key}" title="New chat">${ic("compose")}</button>${close}</div>
+        <div class="tm-chips"><span>Unread</span><span>Channels</span><span>Chats</span></div>
+        <div class="cl-sec">${ic("chev")}Chats</div>
+        <div class="cl-list">${list.map(([aid, n]) => `<button class="cl-link ${aid === agentId ? "on" : ""}" data-cpsuse="${aid}"><span class="cl-av sq sm">${esc(initials(n))}</span><span class="tm-li"><span class="tm-n"><b>${esc(n)}</b><i>${when(aid)}</i></span><span class="tm-p">${esc(prev(aid))}</span></span></button>`).join("")}</div></aside>`;
+    }
+    if (id === "chatgpt") return `<aside class="cl-side"><div class="cl-brand"><span class="cl-tiny">ChatGPT Enterprise, simulated</span><span class="cl-sp"></span><button class="cl-ib dt" title="Close sidebar">${ic("side")}</button>${close}</div>
+      ${nav("compose", "New chat", `data-newconv="${key}"`)}${nav("search", "Search chats")}${nav("image", "Library")}
+      <div class="cl-sec">GPTs</div><div class="cl-list">${list.map(([aid, n]) => link(aid, n, `<span class="cl-gi">${esc(initials(n).slice(0, 1))}</span>`)).join("")}</div>${hist}
+      ${prof(org)}</aside>`;
+    if (id === "claude") return `<aside class="cl-side"><div class="cl-brand"><span class="cl-wm">Claude</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span><button class="cl-ib dt" title="Close sidebar">${ic("side")}</button>${close}</div>
+      <button class="cl-new cl-newc" data-newconv="${key}"><span class="cl-plus">${ic("plus")}</span><span>New chat</span></button>${nav("chats", "Chats")}${nav("folder", "Projects")}${nav("code", "Artifacts")}
+      <div class="cl-sec">Projects</div><div class="cl-list">${list.map(([aid, n]) => link(aid, n)).join("")}</div>${hist}
+      ${prof("Enterprise plan")}</aside>`;
+    if (id === "gemini") return `<aside class="cl-side"><div class="cl-brand"><button class="cl-ib dt" title="Collapse menu">${ic("menu")}</button><span class="cl-wm">Gemini Enterprise</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span>${close}</div>
+      ${nav("compose", "New chat", `data-newconv="${key}"`)}${nav("apps", "Agents")}${nav("inbox", "Inbox")}
+      <div class="cl-sec">Agents</div><div class="cl-list">${list.map(([aid, n]) => link(aid, n)).join("")}</div>${hist}
+      <div class="cl-foot2">${nav("gear", "Settings and help")}</div></aside>`;
+    return "";
   }
   function pageClient(id) {
     const K = CLIENTS[id];
@@ -922,22 +1022,20 @@
     const list = [["context-assistant", K.auto], ...others.map((x) => [x.id, x.name])];
     if (K.ws) S.ctxFor[key] = () => wsContext(K);
     if (K.ws) return `<div class="cl cl-${id} ws">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
-    return `<div class="cl cl-${id} ${S.cps.side ? "side-open" : ""}">
-      ${K.rail ? `<nav class="cl-rail">${K.rail.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
-      <aside class="cl-side"><div class="cl-brand"><span>${esc(K.name)}</span><span class="cl-tiny">simulated</span><button class="cl-ib sm" data-copside="0" title="Close">${ic("x")}</button></div>
-        <button class="cl-new" data-newconv="${key}">${ic("edit")}<span>${id === "teams" ? "New chat" : id === "servicenow" ? "New conversation" : "New chat"}</span></button>
-        <div class="cl-sec">${esc(K.agents)}</div>
-        <div class="cl-list">${list.map(([aid, n]) => `<button class="cl-link ${aid === agentId ? "on" : ""}" data-cpsuse="${aid}">${id === "teams" ? `<span class="cl-av xs">TG</span>` : ""}<span>${esc(n)}</span></button>`).join("")}</div>
-        <div class="cl-prof"><div class="cl-av round">JL</div><div><div class="n">${esc(S.meta.persona.name)}</div><div class="s">Harborview Retail Group</div></div></div></aside>
+    const chats = Object.values(S.convs).filter((x) => x.key.startsWith(`cl:${id}:`) && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
+    const rail = id === "teams" ? `<header class="tm-bar"><span class="tm-l"><span class="cl-tiny">Microsoft Teams, simulated</span><span class="tm-nav">${ic("left")}${ic("right")}</span></span><span class="tm-search">${ic("search")}<span>Search</span></span><span class="tm-r"><button class="cl-ib" title="Settings and more">${ic("more")}</button><span class="cl-av round sm pres">JL</span></span></header>
+      <nav class="cl-rail">${[["bell", "Activity"], ["chats", "Chat", 1], ["teams", "Teams"], ["calendar", "Calendar"], ["phone", "Calls"], ["sparkle", "Copilot"], ["apps", "Apps", 0, 1]].map(([i, l, on, end]) => `<button class="${on ? "on" : ""}${end ? " end" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : "";
+    return `<div class="cl cl-${id} ${S.cps.side ? "side-open" : ""}">${rail}
+      ${clSide(id, K, key, agentId, list, chats)}
       <div class="cl-scrim" data-copside="0"></div>
       <main class="cl-main" data-conv="${key}">${mounts[key](c)}</main></div>`;
   }
 
   // ---------- Stage: each client on iPhone and laptop, one conversation per client ----------
   const STAGE_CLIENTS = [
-    { id: "copilot", name: "Microsoft Copilot", src: "/copilot", bg: "#f5f2ee" },
+    { id: "copilot", name: "Microsoft Copilot", src: "/copilot", bg: "#ffffff" },
     { id: "teams", name: "Microsoft Teams", src: "/c/teams", bg: "#ffffff" },
-    { id: "joule", name: "SAP S/4HANA with Joule", src: "/c/joule", bg: "#f5f6f7" },
+    { id: "joule", name: "SAP S/4HANA with Joule", src: "/c/joule", bg: "#f5f6f7", foot: "#ffffff" },
     { id: "gemini", name: "Gemini Enterprise", src: "/c/gemini", bg: "#ffffff" },
     { id: "servicenow", name: "ServiceNow", src: "/c/servicenow", bg: "#032d42", foot: "#ffffff", dark: 1 },
     { id: "chatgpt", name: "ChatGPT Enterprise", src: "/c/chatgpt", bg: "#ffffff" },
