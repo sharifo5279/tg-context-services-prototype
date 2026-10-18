@@ -107,7 +107,9 @@ app.post("/api/chat", async (req, res) => {
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
   const emit = (e: any) => res.write(JSON.stringify(e) + "\n");
-  if (HOSTS[host as HostKey].exposure === "External" && !agentsFor(host).some((a) => a.id === agentId)) {
+  const tgAgent = agentId === "tg-aviator";
+  if (tgAgent && connector === "context") { emit({ type: "error", message: "Trading Grid Agent is offered through Trading Grid Agent Connectors. Trading Grid Context Connectors expose tools only." }); return res.end(); }
+  if (!tgAgent && HOSTS[host as HostKey].exposure === "External" && !agentsFor(host).some((a) => a.id === agentId)) {
     emit({ type: "error", message: `Agent not available to ${HOSTS[host as HostKey].name}. Publish it in Aviator Studio Deployments or unblock it in Trading Grid Online Agent access.` });
     return res.end();
   }

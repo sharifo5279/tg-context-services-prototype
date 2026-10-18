@@ -1343,3 +1343,11 @@ html.nocur, html.nocur * { cursor: none !important; }
 .si-tgcc h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
 .si-tgcc p { margin: 0; font-size: 17px; line-height: 1.55; color: #3f4d62; }
 .stage-scn em { font-style: normal; color: #0066ff; font-size: 12px; margin-left: 4px; }
+
+/* Trading Grid Agent: sub-agent attribution */
+.sub-by { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 0.82em; color: #5b6472; line-height: 1.35; }
+.sub-by svg { width: 14px; height: 14px; color: #6f3cdc; flex: none; }
+.sub-by b { color: #1b2533; font-weight: 600; }
+.sub-by span { color: #5b6472; }
+.cl-servicenow .sub-by, .cl-servicenow .sub-by b { color: inherit; }
+.astep .aby { flex: none; font-size: 11px; padding: 1px 6px; border-radius: 9px; background: #efe9fb; color: #4b2a9a; margin-left: 6px; white-space: nowrap; max-width: 46%; overflow: hidden; text-overflow: ellipsis; }

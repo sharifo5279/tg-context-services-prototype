@@ -7,7 +7,7 @@ import { TOOLS, invoke } from "./tools/index.js";
 import { HOSTS, HostKey, checkOperation, Ctx } from "./runtime.js";
 import { AGENTS, USE_CASES, agentById } from "./agents.js";
 import { agentsFor, agentForTool, toolNameFor } from "./deployments.js";
-import { runAgentForCaller } from "./agent.js";
+import { runAgentForCaller, subagentsFor, TG_AGENT } from "./agent.js";
 import { audit } from "./tools/index.js";
 
 // Aviator AKS gateway: per-client agent call limit (demo value).
@@ -22,21 +22,23 @@ function gatewayAllow(host: string) {
   list.push(now); calls.set(host, list); return null;
 }
 
-function agentToolDef(a: any) {
+const TG_AGENT_TOOL = "trading_grid_agent";
+function agentToolDef(host: HostKey) {
+  const subs = subagentsFor(host);
   return {
-    name: toolNameFor(a.id),
-    title: a.name,
-    description: `Trading Grid Aviator agent. ${a.role} Runs on Trading Grid under your Trading Grid grant and returns the answer with its evidence trail. Pass conversation_id to continue a conversation, for example after approving a prepared change.`,
+    name: TG_AGENT_TOOL,
+    title: "Trading Grid Agent",
+    description: `Trading Grid Agent, the agent behind Trading Grid Aviator. Answers questions and prepares changes across transactions, errors, payloads, maps, connectivity, onboarding and the trading community, using specialist sub-agents: ${subs.map((x) => x.name).join(", ")}. Runs under your Trading Grid grant and returns the answer, the sub-agents used and the evidence trail. Pass conversation_id to continue a conversation, for example after approving a prepared change.`,
     inputSchema: { type: "object", properties: { request: { type: "string", description: "What you want the agent to do, in plain language." }, conversation_id: { type: "string", description: "Conversation ID returned by a previous call, to continue it." } }, required: ["request"], additionalProperties: false },
-    annotations: { title: a.name, readOnlyHint: false, openWorldHint: false },
+    annotations: { title: "Trading Grid Agent", readOnlyHint: false, openWorldHint: false },
   };
 }
 
-function formatAgentResult(a: any, host: HostKey, r: any) {
+function formatAgentResult(host: HostKey, r: any) {
   const route = HOSTS[host].route.join(" > ");
-  const lines = [`# ${a.name}`, "", r.text.trim() || "(no answer)", "", "---", `Evidence: ${r.steps.length} Trading Grid call(s) via ${route}, ${Math.round(r.ms / 1000)} s`];
-  for (const st of r.steps) lines.push(`- ${st.tool}: ${st.status}${st.completeness && st.completeness !== "COMPLETE" ? ` (${st.completeness})` : ""}${st.summary ? `, ${st.summary}` : ""}`);
-  for (const p of r.plans) lines.push("", `Approval required: plan ${p.planId} (${p.summary}). An authorized user approves it at ${p.approvalUrl}. Then call ${toolNameFor(a.id)} again with conversation_id "${r.conversationId}" and request "Plan ${p.planId} is approved. Submit it."`);
+  const lines = ["# Trading Grid Agent", r.subagents.length ? `Sub-agents: ${r.subagents.join(", ")}` : "", "", r.text.trim() || "(no answer)", "", "---", `Evidence: ${r.steps.length} Trading Grid call(s) via ${route}, ${Math.round(r.ms / 1000)} s`];
+  for (const st of r.steps) lines.push(`- ${st.tool}${st.subagent ? ` [${st.subagent}]` : ""}: ${st.status}${st.completeness && st.completeness !== "COMPLETE" ? ` (${st.completeness})` : ""}${st.summary ? `, ${st.summary}` : ""}`);
+  for (const p of r.plans) lines.push("", `Approval required: plan ${p.planId} (${p.summary}). An authorized user approves it at ${p.approvalUrl}. Then call ${TG_AGENT_TOOL} again with conversation_id "${r.conversationId}" and request "Plan ${p.planId} is approved. Submit it."`);
   lines.push("", `conversation_id: ${r.conversationId}`);
   return lines.join("\n");
 }
@@ -54,10 +56,10 @@ export function hostForToken(token?: string | null): HostKey | null {
 
 export type Connector = "agents" | "context";
 function buildServer(ctx: Ctx, connector: Connector) {
-  const server = new Server({ name: connector === "agents" ? "trading-grid-agent-connectors" : "trading-grid-context-connectors", version: "0.3.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: (connector === "agents" ? "Trading Grid Agent Connectors: Trading Grid Aviator agents and Trading Grid tools." : "Trading Grid Context Connectors: Trading Grid data and action tools for agents you build.") + " Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
+  const server = new Server({ name: connector === "agents" ? "trading-grid-agent-connectors" : "trading-grid-context-connectors", version: "0.3.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: (connector === "agents" ? "Trading Grid Agent Connectors: the Trading Grid Agent, with its specialist sub-agents, and Trading Grid tools." : "Trading Grid Context Connectors: Trading Grid data and action tools for agents you build.") + " Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [...(connector !== "agents" || checkOperation(ctx, "agent.invoke") ? [] : agentsFor(ctx.host).map(agentToolDef)), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({
+    tools: [...(connector !== "agents" || checkOperation(ctx, "agent.invoke") ? [] : [agentToolDef(ctx.host)]), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({
       name: t.name,
       title: t.title,
       description: t.description,
@@ -67,26 +69,25 @@ function buildServer(ctx: Ctx, connector: Connector) {
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
-    const ag = connector === "agents" ? agentForTool(req.params.name) : undefined;
-    if (ag) {
+    if (connector === "agents" && req.params.name === TG_AGENT_TOOL) {
       const denial = checkOperation(ctx, "agent.invoke");
-      const allowed = agentsFor(ctx.host).some((x) => x.id === ag.id);
+      const allowed = true;
       const t0 = Date.now();
       const rec = (decision: string, status: string, ms: number) => { audit.unshift({ at: new Date().toISOString(), route: HOSTS[ctx.host].route.join(" > "), host: ctx.host, principal: HOSTS[ctx.host].principal, sessionId: ctx.sessionId, channel: "mcp", tool: req.params.name, operation: "agent.invoke", decision, status, ms, args: { request: String((req.params.arguments as any)?.request ?? "").slice(0, 200) } }); };
-      if (denial || !allowed) { rec("DENY", "DENIED", 5); return { content: [{ type: "text", text: denial ?? `${ag.name} is not published to ${HOSTS[ctx.host].name}, or the customer administrator has blocked it in Trading Grid Online.` }], isError: true }; }
+      if (denial || !allowed) { rec("DENY", "DENIED", 5); return { content: [{ type: "text", text: denial ?? `Trading Grid Agent is not published to ${HOSTS[ctx.host].name}, or the customer administrator has blocked it in Trading Grid Online.` }], isError: true }; }
       const retry = gatewayAllow(ctx.host);
       if (retry) { rec("DENY", "RATE_LIMITED", 2); return { content: [{ type: "text", text: `Aviator AKS gateway: agent call limit reached for ${HOSTS[ctx.host].name} (${LIMIT} per minute). Retry after ${retry.toISOString()}.` }], isError: true }; }
       const args: any = req.params.arguments ?? {};
-      const r = await runAgentForCaller({ host: ctx.host, agentId: ag.id, request: String(args.request ?? ""), conversationId: args.conversation_id, baseUrl: ctx.baseUrl });
+      const r = await runAgentForCaller({ host: ctx.host, agentId: TG_AGENT, request: String(args.request ?? ""), conversationId: args.conversation_id, baseUrl: ctx.baseUrl });
       rec("PERMIT", r.error ? "ERROR" : "OK", Date.now() - t0);
-      return { content: [{ type: "text", text: formatAgentResult(ag, ctx.host, r) }], isError: !!r.error };
+      return { content: [{ type: "text", text: formatAgentResult(ctx.host, r) }], isError: !!r.error };
     }
     const { out } = invoke(req.params.name, req.params.arguments ?? {}, ctx, "mcp");
     return { content: [{ type: "text", text: JSON.stringify(out, null, 1) }], isError: out.status === "ERROR" || out.status === "DENIED" };
   });
 
   server.setRequestHandler(ListPromptsRequestSchema, async () => ({
-    prompts: agentsFor(ctx.host).map((a) => ({ name: a.id, title: a.name, description: a.role, arguments: [{ name: "request", description: "What to investigate", required: false }] })),
+    prompts: (connector === "agents" ? [AGENTS.find((a) => a.id === TG_AGENT)!] : []).map((a) => ({ name: a.id, title: a.name, description: a.role, arguments: [{ name: "request", description: "What to investigate", required: false }] })),
   }));
 
   server.setRequestHandler(GetPromptRequestSchema, async (req) => {
@@ -94,7 +95,7 @@ function buildServer(ctx: Ctx, connector: Connector) {
     if (!a) throw new Error("Unknown prompt");
     const st0 = a.starters[0];
     const starter = typeof st0 === "string" ? st0 : USE_CASES.find((u) => u.n === st0)?.prompt ?? "";
-    const text = [`Act as the ${a.name}. ${a.role}`, ...a.instructions.map((i) => `${i.title}: ${i.body.replace(/## /g, "")}`), `Use only Trading Grid Context Connectors tools.`, `Request: ${req.params.arguments?.request || starter}`].join("\n\n");
+    const text = [`Act as the ${a.name}. ${a.role}`, ...a.instructions.map((i) => `${i.title}: ${i.body.replace(/## /g, "")}`), `Use only Trading Grid Agent Connectors tools.`, `Request: ${req.params.arguments?.request || starter}`].join("\n\n");
     return { description: a.role, messages: [{ role: "user", content: { type: "text", text } }] };
   });
   return server;
