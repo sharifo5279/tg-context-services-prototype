@@ -271,7 +271,9 @@
       const key = curKey(); const el = key && document.querySelector(`[data-conv="${key}"]`);
       const ta = o.into ? document.querySelector(o.into) : el?.querySelector("[data-compose] textarea");
       if (!ta || (!o.into && S.convs[key]?.busy)) return false;
-      ta.focus(); ta.value = ""; let i = 0;
+      // Touch screens: type without focusing, so the on-screen keyboard stays closed.
+      if (!matchMedia("(pointer: coarse)").matches) ta.focus(); else ta.blur();
+      ta.value = ""; let i = 0;
       const step = () => {
         if (i < text.length) { ta.value += text[i++]; ta.dispatchEvent(new Event("input", { bubbles: true })); return setTimeout(step, 38 + Math.random() * 45 + (text[i - 1] === " " ? 30 : 0)); }
         setTimeout(() => { if (o.then) document.querySelector(o.then)?.click(); else { S.nextAs = o.as ?? null; ta.closest("form").requestSubmit(); } }, 450);
