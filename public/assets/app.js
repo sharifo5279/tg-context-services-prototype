@@ -1178,7 +1178,7 @@
   ];
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
-    return `<div class="stage"><div class="stage-row"></div>
+    return `<div class="stage${STAGE_MOBILE() ? " mob" : ""}"><div class="stage-row"></div>
       <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><button class="stage-fs" data-stagefs="1" aria-label="Full screen">${ic("expand")}</button><div class="stage-scn"></div><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name" data-stageplay="1"></div></footer></div>`;
   }
   function stageScenario(id) {
@@ -1187,20 +1187,24 @@
     return sc ? `<b>${sc.n}</b><span title="${esc(sc.setup)}">${esc(sc.title)}</span>${con ? `<em>${esc(con)}</em>` : ""}` : "";
   }
   // Scenario playback: a discreet control types the next turn into the right device, then sends it.
+  // On a phone-sized screen the stage shows only the iPhone version of each client.
+  const STAGE_MOBILE = () => matchMedia("(max-width: 820px)").matches;
   const stageFrame = (id, dev) => document.querySelector(`.stage-pair[data-sg="${id}"] .dev-${dev === "phone" ? "phone" : "laptop"} iframe`);
   S.stageStep = {};
   function stagePlay() {
     const id = qs().get("client") ?? STAGE_CLIENTS[0].id;
     const cur = STAGE_CLIENTS.find((x) => x.id === id); const sc = SCN[id]; if (!sc || !cur) return;
-    const lap = stageFrame(id, "desktop");
+    const mob = !stageFrame(id, "desktop");
+    const lap = stageFrame(id, mob ? "phone" : "desktop");
     const w = lap?.contentWindow; if (!w) return;
     if (w.__stageBusy?.()) return;
     let step = S.stageStep[id] ?? 0;
-    if (step > 0 && w.__stageEmpty?.() && w.location.pathname === cur.src.split("?")[0]) step = 0;
+    if (step > 0 && w.__stageEmpty?.() && (mob || w.location.pathname === cur.src.split("?")[0])) step = 0;
     const t = sc.turns[step]; if (!t) return;
     S.stageStep[id] = step + 1;
     if (t.approve) { w.__stageApprove?.(); return; }
-    const go = () => (t.on === "phone" ? stageFrame(id, "phone") : stageFrame(id, "desktop"))?.contentWindow?.__stageType?.(t.text, t);
+    const go = () => (mob || t.on === "phone" ? stageFrame(id, "phone") : stageFrame(id, "desktop"))?.contentWindow?.__stageType?.(t.text, mob ? { ...t, into: undefined, then: undefined } : t);
+    if (mob) return go();
     if (t.src && w.location.pathname !== t.src) { lap.addEventListener("load", () => setTimeout(go, 1800), { once: true }); lap.src = `${t.src}?stage=desktop`; return; }
     go();
   }
@@ -1224,8 +1228,8 @@
     if (!g) {
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
-        ${cur.laptopOnly ? "" : `<div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>`}
-        <div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div></div>`);
+        ${cur.laptopOnly && !STAGE_MOBILE() ? "" : `<div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>`}
+        ${STAGE_MOBILE() ? "" : `<div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div>`}</div>`);
       g = row.lastElementChild;
     }
     row.querySelectorAll(".stage-pair").forEach((x) => x.classList.toggle("on", x === g));
@@ -1248,6 +1252,7 @@
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client"));
     if (cur?.intro) return;
+    if (STAGE_MOBILE()) { const rowH = st.querySelector(".stage-row")?.clientHeight ?? H; const sP = Math.min(st.clientWidth / PHONE.w, rowH / (PHONE.h - 84)); st.style.setProperty("--sp", sP); st.style.setProperty("--pb", "0px"); return; }
     if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 20) / lh); st.style.setProperty("--sl", sl); st.style.setProperty("--pb", `${Math.max(8, ((st.querySelector(".stage-row")?.clientHeight ?? H) - lh * sl) / 2)}px`); return; }
     // Phone and laptop share one visual height; the scenario card sits above the laptop.
     const Hc = Math.min(H - 20, (W - 56) / (pw / ph + lw / lh));

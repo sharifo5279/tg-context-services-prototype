@@ -1351,3 +1351,30 @@ html.nocur, html.nocur * { cursor: none !important; }
 .sub-by span { color: #5b6472; }
 .cl-servicenow .sub-by, .cl-servicenow .sub-by b { color: inherit; }
 .astep .aby { flex: none; font-size: 11px; padding: 1px 6px; border-radius: 9px; background: #efe9fb; color: #4b2a9a; margin-left: 6px; white-space: nowrap; max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
+
+/* Stage on a phone-sized screen: iPhone version only, full bleed (the device is the frame). */
+.stage.mob .stage-row { bottom: 48px; }
+.stage.mob .stage-pair:not(.intro) { align-items: flex-start; justify-content: center; padding: 0; gap: 0; }
+.stage.mob .dev-phone { width: calc(393px * var(--sp, 1)); height: calc(768px * var(--sp, 1)); background: none; border-radius: 0; }
+.stage.mob .dev-phone-screen { inset: 0; border-radius: 0; }
+.stage.mob .dev-status, .stage.mob .dev-home, .stage.mob .dev-island { display: none; }
+.stage.mob .stage-foot { height: 48px; padding: 0 12px; gap: 10px; justify-content: center; }
+.stage.mob .stage-scn, .stage.mob .stage-fs { display: none; }
+.stage.mob .stage-play { position: absolute; left: 14px !important; }
+.stage.mob .stage-name { right: 12px; font-size: 13px; }
+.stage.mob .stage-dots { gap: 7px; }
+.stage.mob .stage-dots button { width: 7px; height: 7px; }
+.stage.mob .stage-name { display: none; }
+.stage.mob .stage-pair.on:has(.dev-laptop) { align-items: center; padding: 0; }
+.stage.mob .stage-pair.intro { align-items: flex-start; overflow-y: auto; padding: 24px 16px; }
+.stage.mob .si { width: 100%; }
+.stage.mob .si h1 { font-size: 30px; margin: 6px 0 8px; }
+.stage.mob .si-lead { font-size: 15px; margin-bottom: 18px; }
+.stage.mob .si-facts { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stage.mob .si-f { padding: 12px 14px; }
+.stage.mob .si-f b { font-size: 15px; }
+.stage.mob .si-two { grid-template-columns: 1fr; gap: 10px; }
+.stage.mob .si-tgcc { padding: 16px 18px; }
+.stage.mob .si-tgcc h2 { font-size: 17px; }
+.stage.mob .si-tgcc p { font-size: 14.5px; }
+.stage.mob .si-foot { font-size: 13px; }
