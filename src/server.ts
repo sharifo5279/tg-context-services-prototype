@@ -99,7 +99,7 @@ app.get("/api/scene/s4", (_req, res) => res.json(sceneS4()));
 app.get("/api/scene/servicenow", (_req, res) => res.json(sceneServiceNow()));
 
 app.post("/api/chat", async (req, res) => {
-  const { sessionId, host, agentId, message } = req.body ?? {};
+  const { sessionId, host, agentId, message, context } = req.body ?? {};
   if (!sessionId || !message || !HOSTS[host as HostKey]) return res.status(400).json({ error: "sessionId, host and message are required." });
   res.setHeader("Content-Type", "application/x-ndjson; charset=utf-8");
   res.setHeader("Cache-Control", "no-cache");
@@ -110,7 +110,7 @@ app.post("/api/chat", async (req, res) => {
     emit({ type: "error", message: `Agent not available to ${HOSTS[host as HostKey].name}. Publish it in Aviator Studio Deployments or unblock it in Trading Grid Online Agent access.` });
     return res.end();
   }
-  try { await runTurn({ sessionId, host, agentId, message, baseUrl: baseUrl(req) }, emit); }
+  try { await runTurn({ sessionId, host, agentId, message, context: typeof context === "string" ? context : undefined, baseUrl: baseUrl(req) }, emit); }
   catch (e: any) { emit({ type: "error", message: String(e?.message ?? e) }); }
   res.end();
 });

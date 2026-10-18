@@ -220,7 +220,7 @@
     c.items.push(m);
     refreshConv(key);
     try {
-      const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: c.id, host: c.host, agentId: c.agentId, message: text }) });
+      const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: c.id, host: c.host, agentId: c.agentId, message: text, context: S.ctxFor[key]?.() }) });
       if (r.status === 401) { location.href = "/login"; return; }
       const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = "";
       for (;;) {
@@ -855,7 +855,7 @@
         ${K.tabs ? `<nav class="cl-tabs">${K.tabs.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}
         <div class="cl-sim">${esc(K.sim)}</div></div>`;
   }
-  S.scene = {};
+  S.scene = {}; S.ctxFor = {};
   const fdate = (iso) => new Date(iso).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
   const ago = (iso) => { const m = Math.round((Date.now() - Date.parse(iso)) / 60000); const h = Math.floor(m / 60); return m < 60 ? `${m} min ago` : `${h} hr ${m % 60} min ago`; };
   function wsSelected(K) {
@@ -901,6 +901,14 @@
               <div class="sn-f"><label>Description</label><div class="sn-in ta">${esc(`Inbound EDI from ${d.partner} is rejected at AS2 receipt. ${d.failed} documents failed so far (${fails}). Partner signing certificate expired.`)}</div></div></div>
               <div class="sn-act"><div class="sn-acth">Activity</div>${notes.map(([who, kind, at, txt]) => `<div class="sn-note ${kind === "Work notes" ? "wn" : ""}"><div class="sn-nh"><b>${esc(who)}</b><span>${esc(kind)} · ${ago(at)}</span></div><div>${esc(txt)}</div></div>`).join("")}</div></div></div></div></div></div>`;
   }
+  function wsContext(K) {
+    if (K.ws === "s4") {
+      const sel = wsSelected(K); if (!sel) return "";
+      return [`Application: SAP S/4HANA, Monitor Supplier Confirmations (plant ${S.scene.s4.plant}).`, `Selected purchase order: ${sel.po}. Supplier: ${sel.supplier} (Trading Grid company ${sel.supplierId}).`, `Order date: ${sel.orderedAt.slice(0, 10)}. Requested delivery date: ${sel.requestedDelivery}. Confirmation status in SAP: ${sel.status}.`, `Inbound route transit time (SAP TM route master): 2 days from shipment.`].join("\n");
+    }
+    const d = S.scene.servicenow; if (!d) return "";
+    return [`Application: ServiceNow Service Operations Workspace.`, `Open record: incident ${d.number}, "${d.shortDescription}". State ${d.state}, priority ${d.priority}, opened ${d.openedAt}.`, `Configuration item: ${d.ci} (Trading Grid company ${d.partnerCompanyId}, ${d.partner}). Service: ${d.service}.`, `Related Trading Grid change request in work notes: ${d.changeRequest}.`].join("\n");
+  }
   function pageClient(id) {
     const K = CLIENTS[id];
     if (!K) return shellCs(`<div class="content"><div class="empty">Client not found.</div></div>`);
@@ -912,6 +920,7 @@
     mounts[key] = (cc) => clChat(id, K, cc, agentId, avail, blocked);
     const others = avail.filter((x) => x.id !== "context-assistant");
     const list = [["context-assistant", K.auto], ...others.map((x) => [x.id, x.name])];
+    if (K.ws) S.ctxFor[key] = () => wsContext(K);
     if (K.ws) return `<div class="cl cl-${id} ws">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
     return `<div class="cl cl-${id} ${S.cps.side ? "side-open" : ""}">
       ${K.rail ? `<nav class="cl-rail">${K.rail.map(([i, l, on]) => `<button class="${on ? "on" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : ""}

@@ -41,6 +41,8 @@ function systemPrompt(agentId: string, host: HostKey) {
     "- Preserve source status and its interpretation. A missing acknowledgment is unknown, not a rejection. Configuration is not observed activity. Accepted is not completed.",
     "- When a result is PARTIAL or lists missingEvidence, say so in one line.",
     "- When a tool returns DENIED or UNSUPPORTED_OPERATION, state it plainly with the next action. Do not work around it.",
+    "- A <screen_context> block describes the record open in the user's application. Use it to identify the object; verify Trading Grid facts with tools.",
+    "- Answer from transaction metadata (status, timestamps, references) where it is sufficient. Request document content only when the question needs fields that metadata lacks.",
     "",
     "### Changes",
     "- Never claim a change was made unless a submit or apply tool returned status OK.",
@@ -124,10 +126,10 @@ function session(id: string, host: HostKey, agentId: string) {
   return s;
 }
 
-export async function runTurn(opts: { sessionId: string; host: HostKey; agentId: string; message: string; baseUrl: string }, emit: (e: any) => void) {
+export async function runTurn(opts: { sessionId: string; host: HostKey; agentId: string; message: string; baseUrl: string; context?: string }, emit: (e: any) => void) {
   if (!client) { emit({ type: "error", message: "Agent runtime unavailable. Model API key not configured. Tools remain available in the Tools catalog." }); return; }
   const s = session(opts.sessionId, opts.host, opts.agentId);
-  s.messages.push({ role: "user", content: opts.message });
+  s.messages.push({ role: "user", content: opts.context ? `<screen_context>\n${String(opts.context).slice(0, 2000)}\n</screen_context>\n\n${opts.message}` : opts.message });
   await runCore(s, { host: opts.host, sessionId: opts.sessionId, baseUrl: opts.baseUrl }, opts.agentId, "console", emit);
 }
 
