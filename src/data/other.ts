@@ -37,6 +37,10 @@ export const maps = [
   map("M-1010", "CRL_214_4010_IN", 3, "INBOUND", "X12 004010 214", "SAP IDoc TRXSTA", "ACTIVE", true, "ACCEPTED", "j.patel", 30, 29, ["C20013"], { lookups: ["CARRIER_STATUS_CODE"], characteristics: { targetFields: 41, unmappedTargetFields: 1, lookups: 1 } }),
   map("M-1011", "HRG_940_4010_OUT", 6, "OUTBOUND", "SAP IDoc SHPORD", "X12 004010 940", "ACTIVE", true, "ACCEPTED", "edi.team", 120, 119, ["C20013"]),
   map("M-1012", "HRG_812_4010_OUT", 2, "OUTBOUND", "SAP FI chargeback", "X12 004010 812", "ACTIVE", true, "ACCEPTED", "edi.team", 300, 299, PROFILES.filter((p) => p.flow === "X12_SUPPLIER").map((p) => p.id)),
+  map("M-1015", "HRG_855_4010_IN", 3, "INBOUND", "X12 004010 855", "SAP IDoc ORDRSP", "ACTIVE", true, "ACCEPTED", "edi.team", 90, 89, PROFILES.filter((p) => p.flow === "X12_SUPPLIER" && p.poAck > 0 && !p.map855).map((p) => p.id)),
+  map("M-1016", "HRG_810_4010_IN", 5, "INBOUND", "X12 004010 810", "SAP IDoc INVOIC", "ACTIVE", true, "ACCEPTED", "edi.team", 120, 119, PROFILES.filter((p) => p.flow === "X12_SUPPLIER" && !p.map810 && p.id !== "C20032").map((p) => p.id)),
+  map("M-1017", "HRG_856_4010_IN", 4, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "edi.team", 150, 149, PROFILES.filter((p) => p.flow === "X12_SUPPLIER" && !p.map856 && p.id !== "C20032").map((p) => p.id)),
+  map("M-1018", "HRG_860_4010_OUT", 2, "OUTBOUND", "SAP IDoc ORDCHG", "X12 004010 860", "ACTIVE", true, "ACCEPTED", "edi.team", 200, 199, PROFILES.filter((p) => p.flow === "X12_SUPPLIER").map((p) => p.id)),
   map("M-1014", "AAF_856_4010_IN", 1, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "IN_TEST", false, "PENDING", "j.patel", 4, null, ["C20032"]),
   map("M-1013", "HRG_856_4010_STORE_IN", 2, "INBOUND", "X12 004010 856", "SAP IDoc DESADV", "ACTIVE", true, "ACCEPTED", "s.okafor", 45, 44, ["C20017", "C20021"], { lookups: ["STORE_TO_GLN"], characteristics: { targetFields: 205, unmappedTargetFields: 7, lookups: 1 } }),
 ];
@@ -128,7 +132,7 @@ export const changeRequests: any[] = [
   { statusId: "ST-10388", requestId: "REQ-10388", title: "Brightwell 856 ship-to store resolution", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(14), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5488", type: "MAP_CHANGE", state: "COMPLETED", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "store_resolution_spec.xlsx" }] }] },
 ];
 // Certificate renewal for the Northfield Foods AS2 incident; times are relative to the current time.
-export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN connectivity", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }] }] };
+export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN connectivity", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }], latestNote: "Partner's new signing certificate received and validated. Installation and connection test scheduled; inbound files resume after the test passes." }] };
 changeRequests.push(JSON.parse(JSON.stringify(CERT_CR)));
 // Alder and Ash Furniture go-live (Oct 29): production move and connection in flight; no inbound 810 map requested yet.
 export const FIXTURE_CRS: any[] = [

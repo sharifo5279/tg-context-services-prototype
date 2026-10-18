@@ -173,7 +173,7 @@ export const bprs = [
   BPR(4112, "C20013", "ACTIVE", 410, "3PL warehouse: shipping orders, shipping advice and shipment status"),
   BPR(4113, "C20014", "ACTIVE", 150, "Small supplier on Harborview web EDI"),
 ];
-for (const [i, n] of NEW_PARTNERS.entries()) { const p = profileById(n.id)!; bprs.push(BPR(4200 + i, n.id, "ACTIVE", Math.max(3, -p.goLive + 10), `${n.industry} supplier, ${p.protocol === "WEB_EDI" ? "web EDI" : p.protocol === "VAN_INTERCONNECT" ? "via Keystone VAN" : p.protocol}`)); }
+for (const [i, n] of NEW_PARTNERS.entries()) { const p = profileById(n.id)!; bprs.push(BPR(4200 + i, n.id, "ACTIVE", Math.max(3, -p.goLive + 10), `${n.industry} supplier, ${p.protocol === "WEB_EDI" ? "web EDI" : p.protocol === "VAN_INTERCONNECT" ? "via Keystone VAN" : p.protocol}${n.id === "C20032" ? ". Sends 810 invoices with freight and handling charges (SAC segments), which the standard 810 map does not support; needs a partner-specific inbound 810 map. Specification on file: alder_ash_810_spec.pdf" : ""}`)); }
 
 export const partnerDirectory = bprs.map((b) => {
   const p = companyById(b.partnerCompanyId)!;
@@ -392,7 +392,7 @@ export const contacts = [
   poc("POC-ATL-01", "C20008", "Owen", "Pierce", "TECHNICAL_CONTACT", "b2b@atlastoyco.com", "+1 401 555 0133", ["850", "856"], "YES"),
   poc("POC-CST-01", "C20003", "Luis", "Moreno", "TECHNICAL_CONTACT", "edi@coastlineapparel.com", "+1 213 555 0177", ["856", "810"], "YES"),
 ];
-for (const n of NEW_PARTNERS) contacts.push(poc(`POC-${n.id.slice(1)}-01`, n.id, n.contact[0], n.contact[1], "TECHNICAL_CONTACT", n.contact[2], n.contact[3], ["850", "856", "810"], "YES"));
+for (const n of NEW_PARTNERS) contacts.push({ ...(poc(`POC-${n.id.slice(1)}-01`, n.id, n.contact[0], n.contact[1], "TECHNICAL_CONTACT", n.contact[2], n.contact[3], ["850", "855", "856", "810", "945"], "YES") as any), responsibilities: ["EDI documents and test files", "AS2 or SFTP connectivity and certificates"] });
 
 export const privateContactRules = {
   [HUB_ID]: { tupleContactRules: [

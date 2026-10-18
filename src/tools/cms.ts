@@ -363,7 +363,7 @@ export const cmsTools: ToolDef[] = [
     inputSchema: s.obj({ company: id("Company ID or name."), contact_type: s.str("BUSINESS_CONTACT, TECHNICAL_CONTACT, SERVICE_CONTACT or SUPPORT_CONTACT.") }, ["company"]),
     handler: (a, ctx) => {
       const r = co(ctx, "search_company_contacts", "contacts.read", a.company); if (r.early) return r.early;
-      const rows = D.contacts.filter((p) => p.companyId === r.c.companyId && (!a.contact_type || eq(p.contactType, a.contact_type))).map((p) => ({ pointOfContactId: p.pointOfContactId, pointOfContactName: p.pointOfContactName, contactType: p.contactType, isDefaultPOC: p.isDefaultPOC, email: p.contactInformation.email, documentTypes: p.associatedEntities.docType }));
+      const rows = D.contacts.filter((p) => p.companyId === r.c.companyId && (!a.contact_type || eq(p.contactType, a.contact_type))).map((p) => ({ pointOfContactId: p.pointOfContactId, pointOfContactName: p.pointOfContactName, contactType: p.contactType, isDefaultPOC: p.isDefaultPOC, email: p.contactInformation.email, documentTypes: p.associatedEntities.docType, telephone: p.contactInformation.telephone, ...((p as any).responsibilities ? { responsibilities: (p as any).responsibilities } : {}) }));
       return ok(ctx, "search_company_contacts", "contacts.read", { companyId: r.c.companyId, contacts: rows }, { sources: src(`/v3/companies/${r.c.companyId}/pointofcontacts`), completeness: rows.length ? "COMPLETE" : "UNKNOWN", missingEvidence: rows.length ? [] : ["No contacts of the requested type are recorded."] });
     },
   },
