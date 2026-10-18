@@ -23,7 +23,7 @@ export type AgentDef = {
   subtitle?: string;
 };
 
-const OUTPUT_RULES = "Present exceptions as a markdown table. Keep the narrative short. End with a 'Recommended action' line.";
+const OUTPUT_RULES = "Lead with the answer. Show exceptions in one compact table (at most 4 columns). End with one 'Next step' line.";
 
 export const AGENTS: AgentDef[] = [
   {
@@ -37,9 +37,9 @@ export const AGENTS: AgentDef[] = [
     inspiredBy: [{ name: "Trading Grid Aviator", where: "Trading Grid Online" }],
     scenario: "One agent for every Trading Grid question, with specialist sub-agents",
     instructions: [
-      { title: "Sub-agents", body: "You are the Trading Grid Agent. Before using data tools, call engage_subagent with the specialist sub-agent that fits the question. Engage another sub-agent when the question moves to its area. Follow the returned instructions and tool guidance. Use list_subagents when the user asks which agents or sub-agents are available." },
-      { title: "Explain the transaction", body: "For a failed transaction: state the likely cause, which side of the exchange owns it, the signals checked, and numbered next steps. Label the analysis as AI-generated." },
-      { title: "Mapping questions", body: "For map and cross-reference questions, engage map-inventory, map-level and mapping-rule-explorer as needed and present findings under those sub-agent names: Map Inventory Intelligence (dependent maps and partners), Map-level Intelligence (lookups per map) and Mapping Rule Explorer (the rule, its conditions and the not-found branch)." },
+      { title: "Sub-agents", body: "You are the Trading Grid Agent. Before using data tools, call engage_subagent with the specialist sub-agent that fits the question. Engage another sub-agent when the question moves to its area. Follow the returned instructions and tool guidance; the shared answer format still applies. Use list_subagents when the user asks which agents are available, and answer with the agent names grouped by status (one line per status) plus one sentence on the access they run under." },
+      { title: "Explain the transaction", body: "For a failed transaction: give the likely cause and which side owns the fix in one or two sentences, then at most 3 numbered next steps." },
+      { title: "Mapping questions", body: "For map and cross-reference questions, engage map-inventory, map-level and mapping-rule-explorer as needed. Name the maps and partners that use the lookup, then state what happens when a key is not found (error code and effect) in one or two bullets." },
     ],
     inputs: ["Transaction", "Question"],
     knowledge: ["Trading Grid documentation", "Harborview procedures"],
@@ -81,7 +81,7 @@ export const AGENTS: AgentDef[] = [
     ],
     inputs: ["Time window", "Trading partners"],
     knowledge: ["FA delinquency cycles"],
-    outputs: [{ name: "Exceptions", type: "Table" }, { name: "Key findings", type: "Text" }, { name: "Recommended action", type: "Text" }],
+    outputs: [{ name: "Exceptions", type: "Table" }, { name: "Next step", type: "Text" }],
     tools: ["get_access_context", "summarize_transaction_activity", "search_transactions", "get_transaction", "get_acknowledgment_evidence", "list_data_products", "query_data_product", "get_data_product_schema", "ccim_get_daily_digest", "ccim_list_anomalies", "ccim_list_watchlists", "tgi_get_facets"],
     starters: [40, 26, 29, 27],
   },
@@ -97,11 +97,11 @@ export const AGENTS: AgentDef[] = [
       { title: "Find rejected, failed and missing ASNs", body: "## Task goal\nFind the ASNs (856) the user asks about, or those from the last 24 hours that failed or were rejected. For each, retrieve the transaction, its acknowledgment and its status history.\n## Rules\nUse only data the requesting user is entitled to see. Do not resend, change or cancel anything without approval: prepare the change and wait." },
       { title: "Explain the cause", body: "Use transaction errors, the partner's configuration, map metadata and annotations, and cross-reference entries. Say which side owns the fix." },
       { title: "Prepare the fix", body: "When a configuration change resolves the cause, prepare it with the prepare tool and stop for approval. After approval, apply it and report the verified readback." },
-      { title: "Draft the supplier follow-up", body: "Address the supplier's technical contact. State the document, what failed and what to resend. " + OUTPUT_RULES },
+      { title: "Draft the supplier follow-up", body: "When asked, address the supplier's technical contact. State the document, what failed and what to resend. " + OUTPUT_RULES },
     ],
     inputs: ["Time window", "Trading partners"],
     knowledge: ["Supplier routing guide", "HRG 856 implementation guide"],
-    outputs: [{ name: "Exceptions", type: "Table" }, { name: "Supplier follow-up", type: "Text" }, { name: "Recommended action", type: "Text" }],
+    outputs: [{ name: "Exceptions", type: "Table" }, { name: "Supplier follow-up", type: "Text" }, { name: "Next step", type: "Text" }],
     tools: ["search_transactions", "get_transaction", "get_related_transactions", "get_acknowledgment_evidence", "get_transaction_payload", "get_partner_context", "get_map_metadata", "get_map_annotations", "list_maps", "get_cross_reference_entry", "get_cross_reference_entity", "prepare_cross_reference_change", "apply_cross_reference_change", "search_company_contacts", "list_autoforwards", "tgi_get_processing_flow", "tgi_reprocess_transaction"],
     starters: [6, 24, 32, 17],
   },
@@ -117,7 +117,7 @@ export const AGENTS: AgentDef[] = [
     instructions: [
       { title: "Read the error and the payload", body: "## Task goal\nFor the failed transaction or partner, get the error record and the original payload. Identify the segment and element at fault.\n## Rules\nPayload access is entitled separately. If it is denied, say so and continue from metadata." },
       { title: "Check the rules", body: "Compare against the implementation guide attached to the map and the error trend for the partner over 30 days." },
-      { title: "Write the supplier notice", body: "Pick recipients from the partner's technical contact. Write numbered steps. " + OUTPUT_RULES },
+      { title: "Write the supplier notice", body: "Draft the notice only when the user asks for it: recipient from the partner's technical contact, a subject and at most 3 numbered steps, under 90 words. " + OUTPUT_RULES },
     ],
     inputs: ["Transaction or partner", "Time window"],
     knowledge: ["HRG 810 and 856 implementation guides"],
@@ -153,7 +153,7 @@ export const AGENTS: AgentDef[] = [
     inspiredBy: [{ name: "Onboarding Guide Agent (roadmap)", where: "Trading Grid Aviator in Partner Hub" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
     scenario: "First days of a new trading partner",
     instructions: [
-      { title: "Report onboarding status", body: "## Task goal\nCombine invitation, registration, workflow process instances, trading relationships and maps to show the partner's stage.\n## Rules\nWorkflow status is not business readiness. Configured relationships are not proof of traffic: confirm with transaction evidence." },
+      { title: "Report onboarding status", body: "## Task goal\nCombine invitation, registration, workflow process instances, trading relationships, maps and open change requests to show the partner's stage. Say whether the partner is ready, then list each open item with its request (ST-) or 'no request yet'.\n## Rules\nWorkflow status is not business readiness. Configured relationships are not proof of traffic: confirm with transaction evidence." },
       { title: "Prepare requests", body: "For new connections or provisioning, prepare the request with all required fields and stop for approval. After approval, submit and return the tracking reference." },
       { title: "Track", body: "Report source status as recorded. Accepted is not completed. " + OUTPUT_RULES },
     ],
@@ -178,7 +178,7 @@ export const AGENTS: AgentDef[] = [
     ],
     inputs: ["Time window", "Trading partners"],
     knowledge: ["Data product catalog"],
-    outputs: [{ name: "Community findings", type: "Table" }, { name: "Recommended action", type: "Text" }],
+    outputs: [{ name: "Community findings", type: "Table" }, { name: "Next step", type: "Text" }],
     tools: ["list_partners", "search_companies", "search_trading_relationships", "search_messaging_tuples", "summarize_transaction_activity", "list_data_products", "get_data_product", "get_data_product_schema", "query_data_product", "get_data_product_query_results", "create_data_product_export", "get_data_product_export_status", "get_data_product_export_result", "get_interconnect_address", "get_trading_address", "list_autoforwards", "get_partner_primary_services", "get_partner_context", "ccim_list_trading_community", "ccim_get_partner_details", "ccim_get_partner_stats", "ccim_get_document_type_analysis", "ccim_get_partner_integration_analysis", "ccim_get_network_graph"],
     starters: [9, 29, 28, 20],
   },
@@ -192,7 +192,7 @@ export const AGENTS: AgentDef[] = [
     scenario: "Answers without a support ticket",
     instructions: [
       { title: "Answer from evidence", body: "## Task goal\nPick the fewest tools that answer the question. Resolve partners first when names are ambiguous.\n## Rules\nUse only data the requesting user is entitled to see. Prepare changes and wait for approval." },
-      { title: "Report gaps", body: "State completeness, missing evidence and denials with the next action." },
+      { title: "Report gaps", body: "State denials with who can grant access. Mention missing evidence only when it changes the answer, in one clause." },
     ],
     inputs: ["Question"],
     knowledge: ["Trading Grid Context Services tool catalog"],
@@ -208,7 +208,7 @@ export const AGENTS: AgentDef[] = [
     role: "Find transactions from a plain-language question and return the records with their status, keys and control numbers.",
     inspiredBy: [{ name: "Transaction Finder Agent", where: "TG Insights (Aviator portfolio: live today)" }],
     scenario: "Answers without a support ticket",
-    instructions: [{ title: "Find the transactions", body: "Turn the question into supported search filters: partner, document type, direction, status, collected keys, ship-to GLN and time window. Return a table with arrival time, partner, type, status, primary key and transaction ID. If a filter is not supported, say which collected keys can be used instead." }],
+    instructions: [{ title: "Find the transactions", body: "Turn the question into supported search filters: partner, document type, direction, status, collected keys, ship-to GLN and time window. Return a table of at most 4 columns: received, document (type and primary key), status, transaction ID. If a filter is not supported, say which collected keys can be used instead." }],
     inputs: ["Question", "Time window"], knowledge: ["Collected key map (Appendix G)"],
     outputs: [{ name: "Matching transactions", type: "Table" }],
     tools: ["search_transactions", "get_transaction", "get_related_transactions", "summarize_transaction_activity", "tgi_list_saved_filters", "tgi_get_facets"],
@@ -280,7 +280,7 @@ export const AGENTS: AgentDef[] = [
     role: "Explain how a map turns source data into target data, condition by condition, with an example.",
     inspiredBy: [{ name: "Mapping Rule Explorer Agent", where: "Trading Grid Cartographer (built for Contivo)" }],
     scenario: "Telling a supplier exactly what to fix",
-    instructions: [{ title: "Explain the rule", body: "Retrieve the rule for the target field. Explain what it does and why, trace source to target step by step, evaluate each condition, show the snippet and an example. Cite the rule ID and schema path. When a lookup is involved, check the lookup key." }],
+    instructions: [{ title: "Explain the rule", body: "Retrieve the rule for the target field. Give the rule ID and what it does in one sentence, then one bullet per condition (condition: outcome), including the not-found branch. Show the snippet or an example only when asked. When a lookup is involved, check the lookup key." }],
     inputs: ["Map", "Target field"], knowledge: ["Contivo rules"],
     outputs: [{ name: "Rule explanation", type: "Text" }],
     tools: ["get_map_rule", "get_map_metadata", "get_cross_reference_entry"],
