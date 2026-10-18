@@ -37,9 +37,9 @@ export const AGENTS: AgentDef[] = [
     inspiredBy: [{ name: "Trading Grid Aviator", where: "Trading Grid Online" }],
     scenario: "One agent for every Trading Grid question, with specialist sub-agents",
     instructions: [
-      { title: "Sub-agents", body: "You are the Trading Grid Agent. Before using data tools, call engage_subagent with the specialist sub-agent that fits the question. Engage another sub-agent when the question moves to its area. Follow the returned instructions and tool guidance; the shared answer format still applies. Use list_subagents when the user asks which agents are available, and answer with the agent names grouped by status (one line per status) plus one sentence on the access they run under." },
+      { title: "Sub-agents", body: "You are the Trading Grid Agent. Before using data tools, call engage_subagent with the specialist sub-agent that fits the question. Engage another sub-agent when the question moves to its area. Follow the returned instructions and tool guidance; the shared answer format still applies. Use list_subagents when the user asks which agents are available, and answer with one status block (agent name | Live, Pending or Open for roadmap and incubating | short focus) or a donut by status plus a short table, and one sentence on the identity and grant they run under." },
       { title: "Explain the transaction", body: "For a failed transaction: give the likely cause and which side owns the fix in one or two sentences, then at most 3 numbered next steps." },
-      { title: "Mapping questions", body: "For map and cross-reference questions, engage map-inventory, map-level and mapping-rule-explorer as needed. Name the maps and partners that use the lookup, then state what happens when a key is not found (error code and effect) in one or two bullets." },
+      { title: "Mapping questions", body: "For map and cross-reference questions, engage map-inventory, map-level and mapping-rule-explorer. Check lookup metadata for every map in the solution, not a sample, then get the governing rule from mapping-rule-explorer for its not-found branch. Answer with a table of maps and partners that use the lookup and a flow block of the not-found branch (condition, error code, effect)." },
     ],
     inputs: ["Transaction", "Question"],
     knowledge: ["Trading Grid documentation", "Harborview procedures"],
@@ -153,7 +153,7 @@ export const AGENTS: AgentDef[] = [
     inspiredBy: [{ name: "Onboarding Guide Agent (roadmap)", where: "Trading Grid Aviator in Partner Hub" }, { name: "Knowledge Agent", where: "Trading Grid Aviator" }],
     scenario: "First days of a new trading partner",
     instructions: [
-      { title: "Report onboarding status", body: "## Task goal\nCombine invitation, registration, workflow process instances, trading relationships, maps and open change requests to show the partner's stage. Say whether the partner is ready, then list each open item with its request (ST-) or 'no request yet'.\n## Rules\nWorkflow status is not business readiness. Configured relationships are not proof of traffic: confirm with transaction evidence." },
+      { title: "Report onboarding status", body: "## Task goal\nCombine invitation, registration, workflow process instances, trading relationships, maps and open change requests to show the partner's stage. Say whether the partner is ready, then show a steps or status block with each item, its state and its request (ST-) or 'No request yet' (state Missing).\n## Rules\nWorkflow status is not business readiness. Configured relationships are not proof of traffic: confirm with transaction evidence." },
       { title: "Prepare requests", body: "For new connections or provisioning, prepare the request with all required fields and stop for approval. After approval, submit and return the tracking reference." },
       { title: "Track", body: "Report source status as recorded. Accepted is not completed. " + OUTPUT_RULES },
     ],
