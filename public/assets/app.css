@@ -831,6 +831,7 @@ body:has(.cl) .bl-dot, body:has(.stage) .bl-dot { display: none; }
   .cl-starters { grid-template-columns: 1fr; }
   .cl-chatgpt .cl-starters { display: grid; }
   .cl-ub { max-width: 86%; }
+  .cl-md table { display: block; overflow-x: auto; white-space: nowrap; }
   .cl-foot { padding: 0 10px 4px; }
   .cl-tabs { display: flex; justify-content: space-around; padding: 6px 0 0; border-top: 1px solid var(--line); margin: 8px -10px 0; background: var(--bg); }
   .cl-tabs button { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); padding: 2px 8px; }
