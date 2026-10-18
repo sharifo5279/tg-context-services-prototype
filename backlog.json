@@ -180,6 +180,27 @@
           "desc": "list_change_requests tool with state, type, partner, submitter and date filters. 48 seeded requests over six months.",
           "accept": "Seven scenarios pass, including open, rejected, partner and pagination.",
           "reality": "Demo construct"
+        },
+        {
+          "key": "TGCS-1107",
+          "title": "Client scenarios for OTW stage",
+          "status": "Proposed",
+          "size": "M",
+          "source": "Omar Sharif",
+          "owner": "Omar Sharif",
+          "desc": "Scenarios for each of the seven stage clients: Copilot, Teams, Joule Work, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude. Onboarding focus; no customer-side fixes under managed services.",
+          "accept": "One scenario per client, runnable on iPhone and laptop.",
+          "reality": "Pending input"
+        },
+        {
+          "key": "TGCS-1108",
+          "title": "Stage view: iPhone and laptop in parallel",
+          "status": "Done",
+          "size": "M",
+          "source": "Demo request",
+          "desc": "/stage shows each client on an iPhone and a laptop silhouette; one conversation mirrors across both screens.",
+          "accept": "A prompt sent on either device appears on both.",
+          "reality": "Demo construct"
         }
       ]
     },

@@ -178,6 +178,7 @@
       const focused = document.activeElement === el.querySelector("textarea");
       const draft = el.querySelector("textarea")?.value ?? "";
       el.innerHTML = mounts[key](S.convs[key]);
+      if (fromRemote.has(key)) fromRemote.delete(key); else mirror({ conv: S.convs[key], plans: S.plans });
       const ta = el.querySelector("textarea"); if (ta) { ta.value = draft; if (focused) ta.focus(); }
       document.querySelectorAll(`[data-side="${key}"]`).forEach((s) => (s.innerHTML = sideMounts[key]?.(S.convs[key]) ?? ""));
       const cnt = String(S.convs[key]?.items.length ?? 0); const grew = el.dataset.n !== cnt; el.dataset.n = cnt;
@@ -186,6 +187,22 @@
     });
   }
   const sideMounts = {};
+
+  // ---------- Stage mirroring: phone and desktop frames show one conversation ----------
+  const STAGE = qs().get("stage");
+  const bc = STAGE && "BroadcastChannel" in window ? new BroadcastChannel("tg-stage") : null;
+  let remote = false;
+  const fromRemote = new Set();
+  const mirror = (msg) => { if (bc && !remote) bc.postMessage({ from: STAGE, ...msg }); };
+  if (bc) bc.onmessage = (ev) => {
+    const m = ev.data; if (m.from === STAGE) return;
+    remote = true;
+    try {
+      if (m.conv) { S.convs[m.conv.key] = m.conv; fromRemote.add(m.conv.key); if (m.plans) S.plans = m.plans; refreshConv(m.conv.key); }
+      if (m.reset) { delete S.convs[m.reset]; render(); }
+      if (m.nav && m.nav !== location.pathname + location.search) { history.replaceState({}, "", m.nav); render(); }
+    } finally { setTimeout(() => (remote = false), 0); }
+  };
 
   async function send(key, text) {
     const c = S.convs[key];
@@ -774,6 +791,31 @@
       <main class="cop-main" data-conv="${key}">${mounts[key](c)}</main></div>`;
   }
 
+  // ---------- Stage: each client on iPhone and laptop, one conversation ----------
+  const STAGE_CLIENTS = [{ id: "copilot", name: "Copilot", src: "/copilot", bg: "#f5f2ee" }];
+  const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1440, h: 900 };
+  function pageStage() {
+    const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client")) ?? STAGE_CLIENTS[0];
+    const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
+    return `<div class="stage">
+      <nav class="stage-tabs">${STAGE_CLIENTS.map((x) => `<button class="${x.id === cur.id ? "on" : ""}" data-href="/stage?client=${x.id}">${esc(x.name)}</button>`).join("")}</nav>
+      <div class="stage-row">
+        <div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg ?? "#fff"}"><div class="dev-status"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>
+        <div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div>
+      </div></div>`;
+  }
+  function stageFit() {
+    const st = document.querySelector(".stage"); if (!st) return;
+    const W = st.clientWidth - 64, H = st.clientHeight - 90;
+    // Laptop: screen plus 16px bezel and a 22px base; phone matches the laptop's visual height.
+    const lw = 1640, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
+    let sL = Math.min(H / lh, (W * 0.72) / lw);
+    let sP = (lh * sL) / ph;
+    const over = (pw * sP + lw * sL + 48) / W; if (over > 1) { sL /= over; sP /= over; }
+    st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
+  }
+  window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });
+
   // ---------- router ----------
   let poll = 0;
   async function render() {
@@ -804,8 +846,11 @@
     else if (p.startsWith("/approve/")) { S.plans = await api("/api/plans"); html = await pageApprove(p.split("/")[2]); }
     else if (p === "/copilot") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; html = pageCopilot(); }
     else if (p === "/ext") { S.deploy = await api("/api/deployments"); S.meta.clientStatus = (await api("/api/meta")).clientStatus; if ((qs().get("eco") ?? "copilot-studio") === "copilot-studio") { S.audit = await api("/api/audit"); html = pageCopilot(); } else html = pageExt(); }
+    else if (p === "/stage") html = pageStage();
     else html = shellCs(`<div class="content"><div class="empty">Page not found. Return to the demo journey.</div></div>`);
     app.innerHTML = html;
+    if (STAGE) mirror({ nav: location.pathname + location.search });
+    if (p === "/stage") stageFit();
     if (qs().get("open") === "1" && p === "/tgo/insights" && S.tgo?.rows?.length && !S.txOpen && S.lastOpen !== location.search) { S.lastOpen = location.search; S.txOpen = S.tgo.rows[0].transactionId; S.txTab = "details"; return render(); }
     if (p === "/cs" || p === "/cs/access") poll = setTimeout(() => { if (location.pathname === p && !document.querySelector(".drawer")) render(); }, 4000);
   }
@@ -843,7 +888,7 @@
     if (d.unf) { S.tgoFilters[d.unf] = ""; return render(); }
     if (d.clearf != null) { S.tgoFilters = { days: S.tgoFilters.days }; return render(); }
     if (d.suspend || d.restore) { await api(`/api/clients/${d.suspend || d.restore}/status`, { method: "POST", body: { active: !!d.restore } }); return render(); }
-    if (d.newconv) { delete S.convs[d.newconv]; return render(); }
+    if (d.newconv) { delete S.convs[d.newconv]; mirror({ reset: d.newconv }); return render(); }
     if (d.step) { const key = keyOf(t); const [mi, si] = d.step.split(":").map(Number); const s = S.convs[key].items[mi].steps[si]; s.open = !s.open; return refreshConv(key); }
     if (d.approve) { t.disabled = true; return decide(d.approve, true, keyOf(t)); }
     if (d.reject) return decide(d.reject, false, keyOf(t));
