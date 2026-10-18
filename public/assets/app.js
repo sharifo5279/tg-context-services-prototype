@@ -887,7 +887,7 @@
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
     return `<div class="stage"><div class="stage-row"></div>
-      <footer class="stage-foot"><img src="/assets/opentext-logo.svg" alt="OpenText" class="stage-logo"><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><div class="stage-name"></div></footer></div>`;
+      <footer class="stage-foot"><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><div class="stage-name"></div></footer></div>`;
   }
   function stageFrames(cur) {
     const row = document.querySelector(".stage-row");
