@@ -1200,6 +1200,7 @@ body:has(.cl) .bl-dot, body:has(.stage) .bl-dot { display: none; }
 .stage { position: fixed; inset: 0; background: #f6f7f7; font-family: Inter, sans-serif; color: #101c2f; overflow: hidden; }
 .stage-row { position: absolute; inset: 0 0 7vh; }
 .stage-pair { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; gap: 56px; }
+.stage-pair { align-items: flex-end; padding-bottom: var(--pb, 40px); box-sizing: border-box; }
 .stage-pair.on { display: flex; }
 .stage-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 7vh; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 0 32px; }
 .stage-logo { position: absolute; left: 32px; height: 20px; }

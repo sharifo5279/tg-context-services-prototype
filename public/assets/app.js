@@ -1226,9 +1226,12 @@
     const W = st.clientWidth - 72, H = st.clientHeight * 0.9;
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client"));
-    if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 125) / lh); st.style.setProperty("--sl", sl); return; }
-    let sP = H / ph;
-    let sL = Math.min((W - pw * sP - 56) / lw, (H - 125) / lh);
+    if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 125) / lh); st.style.setProperty("--sl", sl); st.style.setProperty("--pb", `${Math.max(8, ((st.querySelector(".stage-row")?.clientHeight ?? H) - lh * sl - 112) / 2)}px`); return; }
+    // Phone and laptop share one visual height; the scenario card sits above the laptop.
+    const Hc = Math.min(H - 125, (W - 56) / (pw / ph + lw / lh));
+    const sP = Hc / ph, sL = Hc / lh;
+    const rowH = st.querySelector(".stage-row")?.clientHeight ?? H;
+    st.style.setProperty("--pb", `${Math.max(8, (rowH - Hc - 112) / 2)}px`);
     st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
   }
   window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });
