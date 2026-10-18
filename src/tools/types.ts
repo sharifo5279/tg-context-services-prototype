@@ -18,7 +18,7 @@ export type ToolDef = {
 
 export const CMS_BASIS = "CMS Swagger v2-v5 (field names from CMS_context.md)";
 export const MODELED = "Modeled from incubation brief (field contract not supplied)";
-export const NEW_CONTRACT = "New Context Services contract (proposed)";
+export const NEW_CONTRACT = "New Context Connectors contract (proposed)";
 
 export const s = {
   str: (description: string, extra: any = {}) => ({ type: "string", description, ...extra }),

@@ -12,7 +12,7 @@ const BASE_OPS = [
   "ccim.read", "tgi.read", "tgi.configure", "tgi.redeliver", "ccpm.read", "ccpm.triage", "ccpm.write",
 ];
 
-const EXT = (eco: string) => [eco, "Aviator AKS gateway", "TG Context Services (MCP)", "Trading Grid services"];
+const EXT = (eco: string) => [eco, "Aviator AKS gateway", "Trading Grid Context Connectors (MCP)", "Trading Grid services"];
 
 export const HOSTS: Record<HostKey, any> = {
   "tg-aviator": {
@@ -25,7 +25,7 @@ export const HOSTS: Record<HostKey, any> = {
   },
   "aviator-studio": {
     key: "aviator-studio", name: "OpenText Aviator Studio", shortName: "Aviator Studio", exposure: "OpenText, outside Trading Grid Online",
-    route: ["Aviator Studio", "TG Context Services (MCP)", "Trading Grid services"],
+    route: ["Aviator Studio", "Trading Grid Context Connectors (MCP)", "Trading Grid services"],
     authPattern: "First-party OAuth, delegated user; Trading Grid Online grant",
     principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-aviator-studio-hrg",
     note: "Executes as the signed-in user.",

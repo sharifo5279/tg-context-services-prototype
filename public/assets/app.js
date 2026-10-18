@@ -874,19 +874,19 @@
     teams: { n: 1, title: "Colleagues onboarding a trading partner", setup: "Jordan Lee and Morgan Chen work the Alder and Ash Furniture go-live (Oct 29) in a group chat with the Trading Grid agent.", env: ["Microsoft Teams group chat", "Trading Grid agent via Copilot Studio", "Delegated users"],
       turns: [{ text: "What's left before Alder and Ash Furniture goes live?", as: "Jordan Lee" }, { text: "Request the missing item.", as: "Morgan Chen" }, { approve: true }] },
     servicenow: { n: 2, title: "AS2 certificate failure for one partner", setup: "Jordan has incident INC0041873 open in Service Operations Workspace with the Now Assist panel.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
-      turns: [{ text: "What's failing for Northfield Foods, and who is fixing it?" }, { text: "Add this as a work note." }] },
+      turns: [{ text: "What's failing for Northfield Foods, and who is fixing it?" }, { text: "Add this as a work note." }, { text: "When will the new certificate be live?" }] },
     copilot: { n: 3, title: "Building a monitoring agent in Copilot Studio", setup: "Jordan reviews Crestline Logistics shipment confirmations in Copilot, then builds a daily monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Show yesterday's Crestline shipment confirmations." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { text: "Run it for yesterday." }] },
     joule: { n: 4, title: "Supplier compliance: missing PO acknowledgments", setup: "Compliance opens a Pinegate Home PO marked Not confirmed. Pinegate went live 65 days ago and its 855 rate is inconsistent.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
-      turns: [{ text: "Is this a pattern for Pinegate?" }, { text: "Which unconfirmed Pinegate POs ship this week?", on: "phone" }] },
+      turns: [{ text: "Is this a pattern for Pinegate?" }, { text: "Which unconfirmed Pinegate POs ship this week?", on: "phone" }, { text: "Who is Pinegate's EDI contact?", on: "phone" }] },
     gemini: { n: 5, title: "Agents that work with Trading Grid agents", setup: "Harborview's AI transformation team builds a Supplier Operations agent that calls Trading Grid agents through TG Context Services.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
-      turns: [{ text: "Which Trading Grid agents can our agent call, and under what access?" }, { text: "Build an agent that sends failed inbound documents to TG Error Analysis." }, { text: "Test it on a failed Northfield 856." }, { text: "Can it check orders for Harborview Retail Canada?" }] },
+      turns: [{ text: "Which Trading Grid agents can our agent call, and under what access?" }, { text: "Build an agent that sends failed inbound documents to TG Error Analysis." }, { text: "Test it on a failed Northfield 856." }] },
     chatgpt: { n: 6, title: "Recurring follow-up task", setup: "B2B operations schedules a weekday task to chase change requests that are on hold.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
-      turns: [{ text: "Every weekday at 8 AM, list on-hold change requests and who owes the next action." }, { text: "Draft the email to Sunfield requesting the test file." }] },
+      turns: [{ text: "Every weekday at 8 AM, list on-hold change requests and who owes the next action." }, { text: "Draft the email to Sunfield requesting the test file." }, { text: "Who is the contact at Rocky Coast for the certificate?" }] },
     claude: { n: 7, title: "Rapid prototype: AP quantity dashboard", setup: "Accounts payable needs PO, ASN and invoice quantities side by side for the last 30 days.", env: ["Claude", "Trading Grid connector", "Jordan Lee, delegated"],
-      turns: [{ text: "Build an AP dashboard for the last 30 days comparing PO ordered quantity with ASN shipped quantity and invoiced quantity, by PO and supplier." }, { text: "Flag invoices received before the ASN." }] },
+      turns: [{ text: "Build an AP dashboard for the last 30 days comparing PO ordered quantity with ASN shipped quantity and invoiced quantity, by PO and supplier." }, { text: "Flag invoices received before the ASN." }, { text: "Show the documents for Meridian's latest flagged PO." }] },
     tgo: { n: 8, title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must cover it before the first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
-      turns: [{ text: "Which maps and partners use STORE_TO_GLN, and what happens to an ASN for a store that isn't in it?" }, { text: "Prepare the STORE_TO_GLN entry for store 0844." }] },
+      turns: [{ text: "Which maps and partners use STORE_TO_GLN, and what happens to an ASN for a store that isn't in it?" }, { text: "Prepare the STORE_TO_GLN entry for store 0844 Lynchburg, GLN 0614141084470." }, { approve: true }] },
   };
   const CLIENTS = {
     teams: { name: "Microsoft Teams", host: "copilot-studio", ph: "Type a message", auto: "Alder and Ash go-live", bot: "TG",
@@ -1127,7 +1127,7 @@
       ${prof(org)}</aside>`;
     if (id === "claude") return `<aside class="cl-side"><div class="cl-brand"><span class="cl-wm">Claude</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span><button class="cl-ib dt" title="Close sidebar">${ic("side")}</button>${close}</div>
       <button class="cl-new cl-newc" data-newconv="${key}"><span class="cl-plus">${ic("plus")}</span><span>New chat</span></button>${nav("chats", "Chats")}${nav("folder", "Projects")}${nav("code", "Artifacts")}
-      <div class="cl-sec">Projects</div><div class="cl-list">${list.map(([aid, n]) => link(aid, n)).join("")}</div>${hist}
+      ${hist}
       ${prof("Enterprise plan")}</aside>`;
     if (id === "gemini") return `<aside class="cl-side"><div class="cl-brand"><button class="cl-ib dt" title="Collapse menu">${ic("menu")}</button><span class="cl-wm">Gemini Enterprise</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span>${close}</div>
       ${nav("compose", "New chat", `data-newconv="${key}"`)}${nav("apps", "Agents")}${nav("inbox", "Inbox")}
@@ -1160,6 +1160,7 @@
 
   // ---------- Stage: each client on iPhone and laptop, one conversation per client ----------
   const STAGE_CLIENTS = [
+    { id: "intro", name: "Trading Grid Context Connectors", intro: true },
     { id: "copilot", name: "Microsoft Copilot", src: "/copilot", bg: "#ffffff" },
     { id: "teams", name: "Microsoft Teams", src: "/c/teams", bg: "#ffffff" },
     { id: "joule", name: "SAP S/4HANA with Joule", src: "/c/joule", bg: "#f5f6f7", foot: "#ffffff" },
@@ -1167,12 +1168,12 @@
     { id: "servicenow", name: "ServiceNow", src: "/c/servicenow", bg: "#032d42", foot: "#ffffff", dark: 1 },
     { id: "chatgpt", name: "ChatGPT Enterprise", src: "/c/chatgpt", bg: "#ffffff" },
     { id: "claude", name: "Claude", src: "/c/claude", bg: "#faf9f5" },
-    { id: "tgo", name: "TG Aviator", src: "/tgo/insights?aviator=1", bg: "#ffffff", laptopOnly: true },
+    { id: "tgo", name: "Trading Grid Aviator", src: "/tgo/insights?aviator=1", bg: "#ffffff", laptopOnly: true },
   ];
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
     return `<div class="stage"><div class="stage-row"></div>
-      <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><div class="stage-scn"></div><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name"></div></footer></div>`;
+      <footer class="stage-foot"><button class="stage-play" data-stageplay="1" aria-label="Continue"></button><button class="stage-fs" data-stagefs="1" aria-label="Full screen">${ic("expand")}</button><div class="stage-scn"></div><button class="stage-nav" data-stagemove="-1" title="Previous client" aria-label="Previous client">${ic("chev")}</button><div class="stage-dots">${STAGE_CLIENTS.map((x) => `<button data-stagego="${x.id}" title="${esc(x.name)}"></button>`).join("")}</div><button class="stage-nav nx" data-stagemove="1" title="Next client" aria-label="Next client">${ic("chev")}</button><div class="stage-name" data-stageplay="1"></div></footer></div>`;
   }
   function stageScenario(id) {
     const sc = SCN[id];
@@ -1196,9 +1197,20 @@
     if (t.src && w.location.pathname !== t.src) { lap.addEventListener("load", () => setTimeout(go, 1800), { once: true }); lap.src = `${t.src}?stage=desktop`; return; }
     go();
   }
+  function stageIntro() {
+    const live = S.meta.agents.filter((a) => a.id !== "tg-aviator" && a.id !== "context-assistant").length;
+    const fact = (k, v) => `<div class="si-f"><span>${esc(k)}</span><b>${esc(v)}</b></div>`;
+    return `<div class="stage-pair intro" data-sg="intro"><div class="si">
+      <div class="si-eye">Demo company</div>
+      <h1>Harborview Retail Group</h1>
+      <p class="si-lead">Mid-size US retailer headquartered in Charlotte, NC. Runs its supplier community on OpenText Trading Grid, with integration work delivered by OpenText Business Network managed services.</p>
+      <div class="si-facts">${fact("Trading partners", "31")}${fact("Stores and distribution", "40 stores, 1 DC, 3PL Crestline Logistics")}${fact("EDI volume", "About 1,500 documents a day")}${fact("On stage", "Jordan Lee, B2B operations analyst")}</div>
+      <section class="si-tgcc"><h2>Trading Grid Context Connectors</h2><p>Bring Trading Grid data, ${live} Trading Grid Aviator agents and approved actions into the AI assistants and business applications Harborview already uses: Microsoft Copilot and Teams, SAP S/4HANA with Joule, Gemini Enterprise, ServiceNow, ChatGPT Enterprise, Claude and Trading Grid Aviator. Access is granted in Trading Grid Online, changes require approval, and every answer cites its Trading Grid source.</p></section></div></div>`;
+  }
   function stageFrames(cur) {
     const row = document.querySelector(".stage-row");
     let g = row.querySelector(`[data-sg="${cur.id}"]`);
+    if (!g && cur.intro) { row.insertAdjacentHTML("beforeend", stageIntro()); g = row.lastElementChild; }
     if (!g) {
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
@@ -1225,6 +1237,7 @@
     const W = st.clientWidth - 72, H = st.clientHeight * 0.9;
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client"));
+    if (cur?.intro) return;
     if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 20) / lh); st.style.setProperty("--sl", sl); st.style.setProperty("--pb", `${Math.max(8, ((st.querySelector(".stage-row")?.clientHeight ?? H) - lh * sl) / 2)}px`); return; }
     // Phone and laptop share one visual height; the scenario card sits above the laptop.
     const Hc = Math.min(H - 20, (W - 56) / (pw / ph + lw / lh));
@@ -1234,6 +1247,10 @@
     st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
   }
   window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });
+  // Stage: hide the pointer after 0.5 seconds without movement.
+  let curT = 0;
+  const wake = () => { if (location.pathname !== "/stage" && !STAGE) return; document.documentElement.classList.remove("nocur"); clearTimeout(curT); curT = setTimeout(() => document.documentElement.classList.add("nocur"), 500); };
+  ["mousemove", "mousedown", "wheel"].forEach((e) => document.addEventListener(e, wake, { passive: true }));
   const arrowOk = (ev) => (ev.key === "ArrowLeft" || ev.key === "ArrowRight") && !ev.target.closest?.("textarea,input,select,[contenteditable]");
   document.addEventListener("keydown", (ev) => {
     if (!arrowOk(ev)) return;
@@ -1286,12 +1303,13 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
+    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.stagego) return stageShow(d.stagego);
     if (d.stagemove) return stageMove(Number(d.stagemove));
     if (d.stageplay) return stagePlay();
+    if (d.stagefs) { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.(); return; }
     if (d.artrow) { S.art.open[d.artrow] = !S.art.open[d.artrow]; return refreshConv(keyOf(t)); }
     if (d.artflag) { S.art.flagOnly = S.art.flagOnly === false; return refreshConv(keyOf(t)); }
     if (d.studiocreate) { const v = document.querySelector("[data-studiodesc]")?.value.trim(); if (!v) return; S.studio = { draft: studioDraft(v) }; return render(); }

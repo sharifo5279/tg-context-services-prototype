@@ -26,7 +26,7 @@ function agentToolDef(a: any) {
   return {
     name: toolNameFor(a.id),
     title: a.name,
-    description: `Trading Grid Aviator agent. ${a.role} Runs inside Trading Grid Context Services under your Trading Grid grant and returns the answer with its evidence trail. Pass conversation_id to continue a conversation, for example after approving a prepared change.`,
+    description: `Trading Grid Aviator agent. ${a.role} Runs on Trading Grid under your Trading Grid grant and returns the answer with its evidence trail. Pass conversation_id to continue a conversation, for example after approving a prepared change.`,
     inputSchema: { type: "object", properties: { request: { type: "string", description: "What you want the agent to do, in plain language." }, conversation_id: { type: "string", description: "Conversation ID returned by a previous call, to continue it." } }, required: ["request"], additionalProperties: false },
     annotations: { title: a.name, readOnlyHint: false, openWorldHint: false },
   };
@@ -53,7 +53,7 @@ export function hostForToken(token?: string | null): HostKey | null {
 }
 
 function buildServer(ctx: Ctx) {
-  const server = new Server({ name: "trading-grid-context-services", version: "0.2.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Services. Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
+  const server = new Server({ name: "trading-grid-context-connectors", version: "0.2.0" }, { capabilities: { tools: {}, prompts: {} }, instructions: "Trading Grid Context Connectors. Every response is an evidence envelope with source references, completeness and the access decision. Changes use prepare, approve, submit." });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [...(checkOperation(ctx, "agent.invoke") ? [] : agentsFor(ctx.host).map(agentToolDef)), ...TOOLS.filter((t) => !checkOperation(ctx, t.operation)).map((t) => ({
@@ -93,7 +93,7 @@ function buildServer(ctx: Ctx) {
     if (!a) throw new Error("Unknown prompt");
     const st0 = a.starters[0];
     const starter = typeof st0 === "string" ? st0 : USE_CASES.find((u) => u.n === st0)?.prompt ?? "";
-    const text = [`Act as the ${a.name}. ${a.role}`, ...a.instructions.map((i) => `${i.title}: ${i.body.replace(/## /g, "")}`), `Use only Trading Grid Context Services tools.`, `Request: ${req.params.arguments?.request || starter}`].join("\n\n");
+    const text = [`Act as the ${a.name}. ${a.role}`, ...a.instructions.map((i) => `${i.title}: ${i.body.replace(/## /g, "")}`), `Use only Trading Grid Context Connectors tools.`, `Request: ${req.params.arguments?.request || starter}`].join("\n\n");
     return { description: a.role, messages: [{ role: "user", content: { type: "text", text } }] };
   });
   return server;

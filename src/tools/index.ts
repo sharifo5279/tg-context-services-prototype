@@ -10,7 +10,7 @@ import { changeRequests, provisionings } from "../data/other.js";
 import { aviatorTools } from "./aviator.js";
 import { appTools } from "./apps.js";
 
-const A = "Trading Grid Context Services";
+const A = "Trading Grid Context Connectors";
 let ALL: ToolDef[] = [];
 
 function permitted(ctx: Ctx) {
@@ -30,7 +30,7 @@ const accessTools: ToolDef[] = [
   {
     name: "get_access_context", domain: "Access and operations", product: A, title: "Get access context",
     description: "Return the authenticated caller's permitted organization, BUID, solutions, data products and operation rights. No credentials are returned.",
-    operation: "access.read", kind: "read", binding: "New Context Services contract (authoritative access decisions + CMS access inputs)", basis: NEW_CONTRACT,
+    operation: "access.read", kind: "read", binding: "New Context Connectors contract (authoritative access decisions + CMS access inputs)", basis: NEW_CONTRACT,
     inputSchema: s.obj({}),
     handler: (_a, ctx) => {
       const h = hostOf(ctx);

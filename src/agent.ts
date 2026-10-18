@@ -2,6 +2,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { TOOLS, AGENT_ONLY, invoke, audit } from "./tools/index.js";
 import { agentById } from "./agents.js";
+import { publishable, toolNameFor, agentForTool, agentsFor } from "./deployments.js";
 import { HOSTS, PERSONA, HostKey, Ctx } from "./runtime.js";
 
 export const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-5-5";
@@ -28,7 +29,7 @@ function systemPrompt(agentId: string, host: HostKey) {
     `You are ${a.name}, running in ${h.name} for ${PERSONA.company}. The user is ${(h.persona ?? PERSONA).name}, ${(h.persona ?? PERSONA).title}.`,
     host === "tg-aviator"
       ? "You run inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
-      : `You reach OpenText Trading Grid only through Trading Grid Context Services MCP tools${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,
+      : `You reach OpenText Trading Grid only through Trading Grid Context Connectors (MCP tools)${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,
     `Current time: ${new Date().toISOString()}.`,
     "",
     a.role,
@@ -56,14 +57,16 @@ function systemPrompt(agentId: string, host: HostKey) {
   ].join("\n");
 }
 
-function toolsFor(agentId: string) {
+function toolsFor(agentId: string, host: HostKey, depth = 0) {
   const a = agentById(agentId);
   const list = a.tools === "ALL" ? TOOLS : [...TOOLS, ...AGENT_ONLY].filter((t) => (a.tools as string[]).includes(t.name));
-  return list.map((t, i) => ({
+  // Trading Grid agents are invocable as tools by other agents (one level deep).
+  const agentTools = depth > 0 ? [] : (host === "tg-aviator" ? publishable() : agentsFor(host)).filter((x) => x.id !== agentId && x.id !== "context-assistant").map((x) => ({ name: toolNameFor(x.id), description: `Trading Grid ${x.name}. ${x.role} Invoke with a plain-language request; returns the agent's answer and its evidence trail.`, inputSchema: { type: "object", properties: { request: { type: "string", description: "What the agent should do, in plain language." }, conversation_id: { type: "string", description: "Continue an earlier conversation with this agent." } }, required: ["request"] } }));
+  return [...list, ...agentTools].map((t: any, i, all) => ({
     name: t.name,
     description: t.description,
     input_schema: t.inputSchema,
-    ...(i === list.length - 1 ? { cache_control: { type: "ephemeral" } } : {}),
+    ...(i === all.length - 1 ? { cache_control: { type: "ephemeral" } } : {}),
   }));
 }
 
@@ -80,9 +83,9 @@ function summarize(out: any) {
   return bits.join(" · ");
 }
 
-async function runCore(s: Session, ctx: Ctx, agentId: string, channel: string, emit: (e: any) => void) {
+async function runCore(s: Session, ctx: Ctx, agentId: string, channel: string, emit: (e: any) => void, depth = 0) {
   const system = [{ type: "text", text: systemPrompt(agentId, ctx.host), cache_control: { type: "ephemeral" } }];
-  const tools = toolsFor(agentId);
+  const tools = toolsFor(agentId, ctx.host, depth);
   const model = modelFor(agentId);
   emit({ type: "start", model, toolCount: tools.length });
   for (let step = 0; step < 12; step++) {
@@ -104,7 +107,8 @@ async function runCore(s: Session, ctx: Ctx, agentId: string, channel: string, e
     for (const c of calls) {
       emit({ type: "tool_call", id: c.id, name: c.name, input: c.input });
       const allowed = new Set(tools.map((t: any) => t.name));
-      const { out, ms, tool } = allowed.has(c.name) ? invoke(c.name, c.input, ctx, channel as any) : { out: { status: "DENIED", error: { code: "TOOL_NOT_ASSIGNED", message: `${c.name} is not assigned to this agent.` }, access: { decision: "DENY" } }, ms: 0, tool: undefined as any };
+      const sub = allowed.has(c.name) ? agentForTool(c.name) : undefined;
+      const { out, ms, tool } = sub ? await invokeAgent(sub, c.input, ctx, depth) : allowed.has(c.name) ? invoke(c.name, c.input, ctx, channel as any) : { out: { status: "DENIED", error: { code: "TOOL_NOT_ASSIGNED", message: `${c.name} is not assigned to this agent.` }, access: { decision: "DENY" } }, ms: 0, tool: undefined as any };
       emit({
         type: "tool_result", id: c.id, name: c.name, ms, status: out.status,
         decision: out.access?.decision, product: tool?.product, binding: tool?.binding, basis: tool?.basis,
@@ -133,8 +137,18 @@ export async function runTurn(opts: { sessionId: string; host: HostKey; agentId:
   await runCore(s, { host: opts.host, sessionId: opts.sessionId, baseUrl: opts.baseUrl }, opts.agentId, "console", emit);
 }
 
+/** Invokes another Trading Grid agent as a tool and returns its answer as an evidence envelope. */
+async function invokeAgent(a: any, input: any, ctx: Ctx, depth: number) {
+  const t0 = Date.now();
+  const r = await runAgentForCaller({ host: ctx.host, agentId: a.id, request: String(input?.request ?? ""), conversationId: input?.conversation_id, baseUrl: ctx.baseUrl, depth: depth + 1 });
+  const out: any = { status: r.error ? "ERROR" : r.plans.length ? "APPROVAL_REQUIRED" : "OK", tool: toolNameFor(a.id),
+    result: r.plans.length ? r.plans[0] : { agent: a.name, agentStatus: a.status, conversationId: r.conversationId, answer: r.text, steps: r.steps },
+    evidence: { completeness: "COMPLETE", sourceRefs: [{ product: "Trading Grid Aviator agents", operation: `${a.name} (agent invocation)` }], agentAnswer: r.plans.length ? r.text : undefined },
+    access: { decision: "PERMIT", operation: "agent.invoke" } };
+  return { out, ms: Date.now() - t0, tool: { product: "Trading Grid Aviator agents", binding: `Agent invocation: ${a.name}`, basis: "Agent runs on Trading Grid Context Connectors tools under the caller's grant" } as any };
+}
 /** Run a published agent for an MCP caller. Returns the answer and the evidence trail. */
-export async function runAgentForCaller(opts: { host: HostKey; agentId: string; request: string; conversationId?: string; baseUrl: string }) {
+export async function runAgentForCaller(opts: { host: HostKey; agentId: string; request: string; conversationId?: string; baseUrl: string; depth?: number }) {
   const conversationId = opts.conversationId || `cv-${Math.random().toString(36).slice(2, 10)}`;
   const t0 = Date.now();
   if (!client) return { conversationId, text: "Agent runtime unavailable. Model API key not configured.", steps: [], plans: [], ms: 0, error: true };
@@ -148,6 +162,6 @@ export async function runAgentForCaller(opts: { host: HostKey; agentId: string; 
     if (e.type === "tool_result") steps.push({ tool: e.name, status: e.status, completeness: e.completeness, ms: e.ms, summary: e.summary });
     if (e.type === "approval") plans.push(e.plan);
     if (e.type === "error") error = e.message;
-  });
+  }, opts.depth ?? 0);
   return { conversationId, text: error ? `${text}\n\n${error}` : text, steps, plans, ms: Date.now() - t0, error: !!error };
 }

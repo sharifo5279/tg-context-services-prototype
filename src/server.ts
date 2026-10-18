@@ -52,7 +52,7 @@ app.use("/.well-known", (_req, res) => res.status(404).json({ error: "not_found"
 // ---- MCP endpoint (bearer token or token-in-path) ---------------------------------------------------
 async function mcpRoute(req: any, res: any, token: string | null) {
   const host = hostForToken(token);
-  if (!host) return res.status(401).json({ jsonrpc: "2.0", error: { code: -32001, message: "Unauthorized. Provide a valid Trading Grid Context Services token." }, id: null });
+  if (!host) return res.status(401).json({ jsonrpc: "2.0", error: { code: -32001, message: "Unauthorized. Provide a valid Trading Grid Context Connectors token." }, id: null });
   if (req.method !== "POST") return res.status(405).set("Allow", "POST").json({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed. Use POST." }, id: null });
   try { await handleMcp(req, res, host, baseUrl(req)); }
   catch (e: any) { if (!res.headersSent) res.status(500).json({ jsonrpc: "2.0", error: { code: -32603, message: String(e?.message ?? e) }, id: null }); }

@@ -8,7 +8,7 @@ import { eq } from "../util.js";
 import { resolveCompany } from "./common.js";
 import { connectionStatus } from "../data/monitor.js";
 
-const DEMO = "Demo construct: Aviator agent service (not a Context Services tool)";
+const DEMO = "Demo construct: Aviator agent service (not a Context Connectors tool)";
 const AV = "Trading Grid Aviator";
 
 const NOW = Date.now();
