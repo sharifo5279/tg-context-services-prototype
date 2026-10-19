@@ -307,6 +307,7 @@
 
   // ---------- Stage mirroring: phone and desktop frames show one conversation ----------
   const STAGE = qs().get("stage");
+  if (STAGE) document.documentElement.classList.add("stagefr");
   const bc = STAGE && "BroadcastChannel" in window ? new BroadcastChannel("tg-stage:" + location.pathname) : null;
   let remote = false;
   const fromRemote = new Set();
@@ -317,6 +318,8 @@
     window.__stageBusy = () => !!S.convs[curKey()]?.busy;
     /** Clicks Approve on the newest pending approval card. */
     window.__stageS4Open = () => { const u = new URLSearchParams(location.search); u.delete("po"); S.s4View = "po"; S.jouleOpen = true; history.replaceState(null, "", `${location.pathname}?${u}`); render(); return true; };
+    /** Scrolls the open conversation by most of a screen (up or down arrow on the stage). */
+    window.__stageScroll = (dir) => { const el = document.querySelector(`[data-conv="${curKey()}"]`); if (!el) return; const sc = el.querySelector(".cl-msgs, .cop-msgs, .chatscroll") ?? el.closest("[data-scroll]") ?? el; sc.scrollBy({ top: dir * sc.clientHeight * 0.8, behavior: "smooth" }); };
     window.__stageApprove = () => { const b = [...document.querySelectorAll("[data-approve]")].pop(); if (b) b.click(); return !!b; };
     /** Types text at reading pace into the composer (or another field), then sends it (or clicks a button). */
     window.__stageType = (text, o = {}) => {
@@ -324,11 +327,14 @@
       const ta = o.into ? document.querySelector(o.into) : el?.querySelector("[data-compose] textarea");
       if (!ta || (!o.into && S.convs[key]?.busy)) return false;
       // Touch screens: type without focusing, so the on-screen keyboard stays closed.
-      if (!matchMedia("(pointer: coarse)").matches) ta.focus(); else ta.blur();
+      ta.blur(); document.activeElement?.blur?.();
       ta.value = ""; let i = 0; window.__stageTyping = true;
+      if (o.file && !o.into) { S.pendingFile = { ...o.file, uploading: true }; refreshConv(key); setTimeout(() => { if (S.pendingFile) { S.pendingFile.uploading = false; refreshConv(key); } }, 1100); }
+      // The composer can re-render while typing (for example when a file is attached), so look it up on every keystroke.
+      const box = () => (o.into ? document.querySelector(o.into) : document.querySelector(`[data-conv="${key}"] [data-compose] textarea`)) ?? ta;
       const step = () => {
-        if (i < text.length) { ta.value += text[i++]; ta.dispatchEvent(new Event("input", { bubbles: true })); return setTimeout(step, 38 + Math.random() * 45 + (text[i - 1] === " " ? 30 : 0)); }
-        setTimeout(() => { window.__stageTyping = false; if (o.then) document.querySelector(o.then)?.click(); else { S.nextAs = o.as ?? null; ta.closest("form").requestSubmit(); } }, 450);
+        if (i < text.length) { const t = box(); t.value = text.slice(0, ++i); t.dispatchEvent(new Event("input", { bubbles: true })); return setTimeout(step, 23 + Math.random() * 27 + (text[i - 1] === " " ? 18 : 0)); }
+        setTimeout(() => { window.__stageTyping = false; if (o.then) document.querySelector(o.then)?.click(); else { S.nextAs = o.as ?? null; box().closest("form").requestSubmit(); } }, 450);
       };
       step();
       return true;
@@ -360,7 +366,7 @@
     c.items.push({ role: "user", text, t: Date.now() });
     c.items.push({ role: "agent", agentId: c.agentId, steps: [], text: `Added a work note to ${S.scene.servicenow?.number ?? "the incident"}.\n\n\`\`\`note\n${note}\n\`\`\``, plans: [], thinking: false, t0: Date.now() });
     mirror({ snNotes: S.snNotes });
-    render();
+    Promise.resolve(render()).then(() => refreshConv(key));
   }
   // Gemini Enterprise Agent Designer: draft and publish run in the client; the published agent's run goes to the Trading Grid Agent.
   const GEM_AGENT = { name: "Supplier failure analyst", schedule: "Every day at 8:00 AM ET", identity: "agent-hrg-supplier-ops (grant GRT-HRG-2026-014)", table: "harborview-ops.hrg_b2b.tg_error_analysis",
@@ -385,7 +391,7 @@
         <div class="gm-kv"><span>Available to</span><b>Supplier Operations, Harborview Retail Group</b><span>Schedule</span><b>${esc(GEM_AGENT.schedule)}, next run tomorrow</b><span>Connections</span><b>Trading Grid Agent Connectors · BigQuery · Google Chat</b><span>Version</span><b>1.0</b></div></div>`;
       c.items.push({ role: "agent", agentId: c.agentId, steps: [], text: "Published. The agent runs every morning at 8:00 AM and is available to the Supplier Operations team.", html, plans: [], thinking: false, t0: Date.now() });
     }
-    render();
+    Promise.resolve(render()).then(() => refreshConv(key));
   }
   async function send(key, text) {
     const c = S.convs[key];
@@ -395,12 +401,13 @@
     if (c.host === "gemini-enterprise" && /^build a gemini agent/i.test(text)) return gemLocal(key, text, "draft");
     if (c.host === "gemini-enterprise" && /^publish/i.test(text) && S.gem?.draft) return gemLocal(key, text, "publish");
     c.busy = true;
-    c.items.push({ role: "user", text, t: Date.now(), ...(as ? { as } : {}) });
+    const file = S.pendingFile ? { name: S.pendingFile.name, size: S.pendingFile.size } : null; S.pendingFile = null;
+    c.items.push({ role: "user", text, t: Date.now(), ...(as ? { as } : {}), ...(file ? { file } : {}) });
     const m = { role: "agent", agentId: c.agentId, steps: [], text: "", plans: [], thinking: true, t0: Date.now() };
     c.items.push(m);
     refreshConv(key);
     try {
-      const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: c.id, host: c.host, agentId: c.agentId, message: text, context: S.ctxFor[key]?.(), connector: S.conFor?.[key] }) });
+      const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: c.id, host: c.host, agentId: c.agentId, message: file ? `${text}\n\n[Attached file in this message: ${file.name} (${file.size})]` : text, context: S.ctxFor[key]?.(), connector: S.conFor?.[key] }) });
       if (r.status === 401) { location.href = "/login"; return; }
       const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = "";
       for (;;) {
@@ -991,7 +998,7 @@
   // Stage scenarios (OTW 2026). Clients without an entry show "Scenario pending" on the stage.
   const SCN = {
     teams: { n: 1, sugg: ["Which partners go live this month?", "Show open onboarding requests by owner", "Which suppliers have test traffic but no production traffic?"], connector: "agents", title: "Colleagues onboarding a trading partner", setup: "Jordan Lee and Morgan Chen track Cedar Valley Furniture's onboarding, due to go live Oct 29, with the Trading Grid Agent in Teams.", env: ["Microsoft Teams group chat", "Trading Grid Agent via Copilot Studio", "Delegated users"],
-      turns: [{ text: "How is onboarding progressing for Cedar Valley Furniture?", as: "Jordan Lee" }, { text: "Raise a change request for Cedar Valley's inbound 810 invoice map, using the spec on file.", as: "Morgan Chen" }, { approve: true }] },
+      turns: [{ text: "How is onboarding progressing for Cedar Valley Furniture?", as: "Jordan Lee" }, { text: "Raise a change request for Cedar Valley's inbound 810 invoice map. Attaching their invoice spec.", as: "Morgan Chen", file: { name: "cedar_valley_810_spec.pdf", size: "PDF · 412 KB" } }, { approve: true }] },
     servicenow: { n: 2, sugg: ["Summarize inbound failures in the last 24 hours", "Which partner certificates expire this quarter?", "Show other open incidents for Northfield Foods"], connector: "agents", title: "AS2 certificate failure for one partner", setup: "Northfield Foods' AS2 signing certificate expired and inbound 855, 856 and 810 files are being rejected. Jordan tracks the fix from incident INC0041873 in Service Operations Workspace, with Now Assist calling the Trading Grid Agent.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
       turns: [{ text: "What is the status of the AS2 certificate fix for Northfield Foods?" }, { text: "Add a work note to this incident summarizing the failure, the fix in progress under ST-10500 and WO-5600, and who owns it." }, { text: "Is there an estimate for when the new certificate will go live?" }] },
     copilot: { n: 5, sugg: ["Which 940s have no 945 yet?", "Show Crestline shipment volume by day", "Summarize Crestline 214 delays this week"], connector: "context", title: "From Copilot to a published Copilot Studio agent", setup: "Crestline Logistics, Harborview's 3PL, ships store orders from the distribution center. Distribution operations checks Crestline's shipment confirmations in Copilot, builds a daily short-shipment monitor in Copilot Studio, tests and publishes it, then uses it back in Copilot.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
@@ -1000,8 +1007,8 @@
       turns: [{ s4open: true }, { text: "Pinegate hasn't confirmed this purchase order. Is this a one-off, or has Pinegate been missing PO acknowledgments since it went live?" }, { text: "Which Pinegate POs already have an ASN in Trading Grid but never received the mandatory PO acknowledgment (855)? Show the evidence.", on: "phone" }, { text: "Our agreement requires an 855 within 24 hours of each PO. For the POs on this list, which breached it, what order value is affected, and what compliance fee applies?" }] },
     gemini: { n: 6, sugg: ["What can the Error Analysis agent return for a failed 810?", "Show the access grant for our agent identity", "Which agents help with mapping questions?"], connector: "agents", title: "Gemini agents that call Trading Grid agents", setup: "Priya Raman, Harborview's AI transformation lead, builds a Gemini Enterprise agent that calls Trading Grid agents every morning, analyzes failed transactions and stores the results in BigQuery for the supplier operations team.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
       turns: [{ text: "Which Trading Grid agents do we have access to, and what can each one do?" }, { text: "Build a Gemini agent that runs every morning at 8 AM, takes the failed transaction report from Trading Grid Insights, sends each failure to the Trading Grid Error Analysis agent, and stores the analysis in BigQuery for further analysis." }, { text: "Publish the agent to Gemini Enterprise for the supplier operations team." }, { text: "Run the agent now on the latest failed Northfield Foods 856." }] },
-    chatgpt: { n: 3, sugg: ["Which change requests were completed this week?", "List partners with missing 997s yesterday", "Summarize Trading Grid activity for the last 7 days"], connector: "context", title: "Recurring follow-up task", setup: "B2B operations runs a scheduled ChatGPT task each weekday morning to review work orders on hold, then follows up with the suppliers who owe a test file.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
-      turns: [{ text: "Every weekday at 8 AM, check Trading Grid for work orders on hold and tell me who owns the next action on each." }, { text: "Draft an email to Sunfield's EDI contact asking for the 945 test file our mapping team needs to finish the unit of measure change." }, { text: "Who is the contact at Rocky Coast for their test file?" }] },
+    chatgpt: { n: 3, sugg: ["Which change requests were completed this week?", "List partners with missing 997s yesterday", "Summarize Trading Grid activity for the last 7 days"], connector: "context", title: "Recurring follow-up task", setup: "B2B operations runs a scheduled ChatGPT task each weekday morning to review work orders on hold. It follows one of them through: Sunfield Produce owes an 856 test file for a catch-weight map change, so Jordan drafts the request and then checks the result.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
+      turns: [{ text: "Every weekday at 8 AM, check Trading Grid for work orders on hold and tell me who owns the next action on each." }, { text: "Draft an email to Sunfield's EDI contact asking for the 856 test file our mapping team needs to finish the catch-weight unit of measure change." }, { text: "Has Sunfield sent the test file yet? Check the work order and tell me whether it passed." }] },
     claude: { n: 7, sugg: ["Which Meridian invoices exceed the shipped quantity?", "Chart Meridian's fill rate by week", "Compare Meridian with our other personal care suppliers"], connector: "context", title: "Accounts payable reconciliation built in Claude", setup: "Harborview's accounts payable team reconciles Meridian Personal Care's EDI documents by hand and keeps finding quantity discrepancies. Priya Raman builds a live reconciliation dashboard in Claude on Trading Grid data, publishes it to the team, adds a daily invoice check and a weekly reconciliation agent.", env: ["Claude", "Trading Grid Context Connectors", "Priya Raman, delegated"],
       turns: [{ text: "Our accounts payable team reconciles Meridian Personal Care's EDI documents by hand and keeps finding quantity discrepancies. Build an accounts payable dashboard for Meridian covering the last 90 days: ordered (850), shipped (856) and invoiced (810) quantities by purchase order, with the exceptions highlighted." }, { click: "[data-artpub]" }, { click: "[data-artpubgo]" }, { text: "Every day at 7 AM, check Meridian's new invoices for any that have no shipment (ASN) matching their purchase order, and flag them in the dashboard for manual review." }, { text: "Create an agent that runs a weekly reconciliation roll-up for Meridian every Monday, monitors the health of their B2B transactions and sends the accounts payable team a summary." }] },
     tgo: { n: 8, sugg: ["Which maps changed in the last 30 days?", "Find failed invoices from yesterday", "Which cross-references do the most maps use?"], connector: "native", title: "From a failed transaction to a mapping fix", setup: "Kestrel Electronics launched a new product and its advance ship notices are failing. In Trading Grid Insights, Jordan asks Aviator to find the failures, trace them to the map in Cartographer, and fix the item cross-reference with an approval.", env: ["Trading Grid Online, TG Insights", "Trading Grid Aviator", "Jordan Lee, signed in"],
@@ -1067,8 +1074,8 @@
       <div class="cg-ma"><button class="cg-btn" data-cgtask="0">Pause</button><button class="cg-btn pri" data-cgtask="0">Done</button></div></div></div>`;
   }
   function clItem(id, K, c, m, mi) {
-    if (m.role === "user" && id === "teams" && m.as && m.as !== S.meta.persona.name) return `<div class="cl-b other"><div class="cl-av round o">${esc(initials(m.as))}</div><div class="cl-bb"><div class="cl-meta">${esc(m.as)} <span>${hhmm(m.t)}</span></div><div class="cl-md">${esc(m.text)}</div></div></div>`;
-    if (m.role === "user") return `<div class="cl-u">${id === "teams" ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}</div></div>`;
+    if (m.role === "user" && id === "teams" && m.as && m.as !== S.meta.persona.name) return `<div class="cl-b other"><div class="cl-av round o">${esc(initials(m.as))}</div><div class="cl-bb"><div class="cl-meta">${esc(m.as)} <span>${hhmm(m.t)}</span></div><div class="cl-md">${esc(m.text)}</div>${m.file ? fileCard(m.file) : ""}</div></div>`;
+    if (m.role === "user") return `<div class="cl-u">${id === "teams" ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}${m.file ? fileCard(m.file) : ""}</div></div>`;
     const done = !m.thinking && (m.text || m.error);
     const last = mi === c.items.length - 1;
     const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
@@ -1082,6 +1089,8 @@
     const disc = id === "claude" && last && done ? `<span class="cl-sp"></span><span class="cl-disc">Claude can make mistakes. Please double-check responses.</span>` : "";
     return `<div class="cl-b">${id === "servicenow" ? `<div class="cl-bh">${ic("sparkle")}<b>Now Assist</b></div>` : ""}<div class="cl-bb">${body}${done && acts ? `<div class="cl-acts">${acts}${disc}</div>` : ""}</div></div>`;
   }
+  // A file shared in the chat: shown on the message and named in the request so the agent can attach it.
+  const fileCard = (f) => `<div class="fl-card"><span class="fl-ic">PDF</span><div><b>${esc(f.name)}</b><span>${esc(f.size ?? "")}${f.uploading ? " · Uploading" : ""}</span></div>${f.uploading ? `<i class="fl-prog"></i>` : ""}</div>`;
   function clComposer(id, K, c) {
     const dis = c.busy ? "disabled" : "";
     const ph = !c.items.length && K.ph0 ? K.ph0 : K.ph;
@@ -1096,7 +1105,7 @@
       joule: `${b("plus", "Add attachment", "cl-lead")}${ta}${send("send")}`,
       servicenow: `${b("plus", "Attach", "cl-lead")}${ta}${send("send")}`,
     };
-    return `<form class="cl-comp" data-compose>${parts[id] ?? parts.servicenow}</form>`;
+    return `<form class="cl-comp${S.pendingFile ? " hasfile" : ""}" data-compose>${S.pendingFile ? `<div class="fl-pend">${fileCard(S.pendingFile)}</div>` : ""}${parts[id] ?? parts.servicenow}</form>`;
   }
   function clHeader(id, K, c, title, a) {
     const nc = `data-newconv="${c.key}" title="New chat"`;
@@ -1493,6 +1502,14 @@
     else if (STAGE && window.parent !== window) { ev.preventDefault(); window.parent.postMessage({ stagePlay: 1 }, location.origin); }
   });
   window.addEventListener("message", (ev) => { if (ev.origin === location.origin && ev.data?.stagePlay && location.pathname === "/stage") stagePlay(); });
+  // Up and down arrows page the chat in every device on the current stage slide.
+  document.addEventListener("keydown", (ev) => {
+    if ((ev.key !== "ArrowUp" && ev.key !== "ArrowDown") || ev.target.closest?.("textarea,input,select,[contenteditable]")) return;
+    const dir = ev.key === "ArrowDown" ? 1 : -1;
+    if (location.pathname === "/stage") { ev.preventDefault(); document.querySelectorAll(".stage-pair.on iframe").forEach((f) => f.contentWindow?.__stageScroll?.(dir)); }
+    else if (STAGE && window.parent !== window) { ev.preventDefault(); window.parent.postMessage({ stageScroll: dir }, location.origin); }
+  });
+  window.addEventListener("message", (ev) => { if (ev.origin === location.origin && ev.data?.stageScroll && location.pathname === "/stage") document.querySelectorAll(".stage-pair.on iframe").forEach((f) => f.contentWindow?.__stageScroll?.(ev.data.stageScroll)); });
   const arrowOk = (ev) => (ev.key === "ArrowLeft" || ev.key === "ArrowRight") && !ev.target.closest?.("textarea,input,select,[contenteditable]");
   document.addEventListener("keydown", (ev) => {
     if (!arrowOk(ev)) return;

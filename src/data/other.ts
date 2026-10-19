@@ -134,7 +134,13 @@ export const changeRequests: any[] = [
 // Certificate renewal for the Northfield Foods AS2 incident; times are relative to the current time.
 /** On-hold work orders the follow-up scenario depends on; reapplied after saved state is restored. */
 export let ON_HOLD_FIXES: [string, string, string, number][] = [];
-export function applyHoldFixes(list: any[]) { for (const [id, reason, owner] of ON_HOLD_FIXES) { const c = list.find((x) => x.statusId === id); const w = c?.workOrders?.[0]; if (w) { w.state = "ON_HOLD"; w.holdReason = reason; w.waitingOn = owner; } } }
+export function applyHoldFixes(list: any[]) {
+  for (const [id, reason, owner] of ON_HOLD_FIXES) { const c = list.find((x) => x.statusId === id); const w = c?.workOrders?.[0]; if (w) { w.state = "ON_HOLD"; w.holdReason = reason; w.waitingOn = owner; } }
+  // Sunfield thread for the ChatGPT scenario: an 856 catch-weight map change waiting on Sunfield's test file, which has just arrived and failed validation.
+  const sf = list.find((x) => x.statusId === "ST-10101"); const w = sf?.workOrders?.[0];
+  if (sf && w) { sf.title = "856 map change for Sunfield Produce Partners: catch-weight unit of measure"; sf.partnerCompanyId = "C20025"; w.type = "MAP_CHANGE"; w.assignedTeam = "BN mapping"; w.fields = { partnerCompanyId: "C20025", documentType: "856", mapName: "HRG_856_4010_IN", change: "Accept catch-weight items shipped in pounds (LB) with decimal quantities" }; w.attachments = [{ fileName: "sunfield_856_catchweight_spec.pdf" }];
+    w._testFile = { fileName: "SFP_856_TEST_catchweight.edi", minAgo: 12, from: "Sunfield Produce Partners (edi@sunfieldproduce.com)", validation: "FAILED: SN103 unit of measure 'LBR' is not a valid X12 code (expected 'LB'); 3 of 4 items affected", note: "Sunfield sent a test file 12 minutes ago. It failed validation: unit of measure 'LBR' instead of 'LB'. The work order stays on hold until a corrected file arrives." }; }
+}
 export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN Support Operations", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }], latestNote: "Partner's new signing certificate received and validated. Installation and connection test pending. Inbound files resume after the test passes.", estimatedCompletion: null, estimateNote: "BN Support Operations has not provided a completion estimate.", similarRequests: { count: 6, typicalResolution: "2 to 4 hours from certificate receipt", basis: "AS2 certificate renewals for Harborview partners in the last 12 months" } }] };
 changeRequests.push(JSON.parse(JSON.stringify(CERT_CR)));
 // Cedar Valley Furniture go-live (Oct 29): production move and connection in flight; no inbound 810 map requested yet.
@@ -190,10 +196,11 @@ changeRequests.push(...JSON.parse(JSON.stringify(FIXTURE_CRS)));
   const HOLDS: [string, string, string, number][] = [
     ["ST-10107", "Waiting for specification approval", "Harborview Retail Group", 8],
     ["ST-10101", "Waiting for partner test file", "Sunfield Produce Partners", 2],
-    ["ST-10104", "Waiting for partner test file", "Rocky Coast Beverages", 5],
+    ["ST-10104", "Waiting for partner certificate", "Rocky Coast Beverages", 5],
   ];
   ON_HOLD_FIXES = HOLDS;
   for (const [id, reason, owner, days] of HOLDS) { const c = changeRequests.find((x) => x.statusId === id); if (!c) continue; const w = c.workOrders[0]; w.state = "ON_HOLD"; w.holdReason = reason; w.waitingOn = owner; w.stateSince = dAgo(days); }
+  applyHoldFixes(changeRequests);
   gen.filter((c) => c.workOrders[0].state === "COMPLETED").slice(-2).forEach((c) => { c.workOrders[0].state = "CANCELLED"; });
   for (const c of changeRequests) if (!c.partnerCompanyId) c.partnerCompanyId = c.title.includes("Coastline") ? "C20003" : c.title.includes("Brightwell") ? "C20004" : c.title.includes("Crestline") ? "C20013" : null;
   changeRequests.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));

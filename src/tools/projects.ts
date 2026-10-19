@@ -13,7 +13,9 @@ const src = (product: string, op: string, ids?: string[]) => [{ product, operati
 let crSeq = 10500, woSeq = 5600, trkSeq = 120;
 
 /** Status advances with elapsed time so the demo shows asynchronous progress. */
-export function crView(cr: any) {
+export function crView(cr: any, detail = true) {
+  // A partner test file that arrived minutes ago (rolling), with its validation result.
+  if (cr.workOrders?.some((w: any) => w._testFile)) cr = !detail ? { ...cr, workOrders: cr.workOrders.map(({ _testFile, ...w }: any) => w) } : { ...cr, workOrders: cr.workOrders.map((w: any) => { if (!w._testFile) return w; const { _testFile, ...rest } = w; return { ...rest, attachments: [...(rest.attachments ?? []), { fileName: _testFile.fileName, attachedAt: new Date(Date.now() - _testFile.minAgo * 60_000).toISOString(), uploadedBy: _testFile.from, environment: "TEST", validation: _testFile.validation }], latestNote: _testFile.note }; }) };
   if (cr._rollingMin) { const { _rollingMin, ...rest } = cr; const t = Date.now() - _rollingMin * 60_000; return { ...rest, submittedAt: new Date(t).toISOString(), workOrders: cr.workOrders.map((w: any) => ({ ...w, stateSince: new Date(t + 15 * 60_000).toISOString(), ...(w.similarRequests ? { certificateReceivedAt: new Date(Date.now() - 10 * 60_000).toISOString() } : {}) })) }; }
   if (!cr._submittedMs) return cr;
   const age = (Date.now() - cr._submittedMs) / 1000;
@@ -45,7 +47,7 @@ export const projectsTools: ToolDef[] = [
     name: "prepare_change_request", domain: "Requests and provisioning", product: P, title: "Prepare change request",
     description: "Validate a draft change request (title, up to ten work orders, evidence) against required fields and the customer's default project. Returns a plan that requires approval. Submits nothing.",
     operation: "request.submit", kind: "prepare", binding: "New contract using Request/WorkOrder schemas", basis: NEW_CONTRACT,
-    inputSchema: s.obj({ title: s.str("Request title."), work_orders: s.arr(WO, "Work orders (1 to 10)."), evidence: s.str("Supporting evidence, e.g. transaction IDs.") }, ["title", "work_orders"]),
+    inputSchema: s.obj({ title: s.str("Request title."), work_orders: s.arr(WO, "Work orders (1 to 10)."), evidence: s.str("Supporting evidence, e.g. transaction IDs."), attachments: s.arr(s.str("File name"), "Files to attach to the work orders, e.g. a specification the user shared.") }, ["title", "work_orders"]),
     handler: (a, ctx) => {
       const wos: any[] = a.work_orders ?? [];
       const checks: any[] = [{ check: "Default project resolved", result: "PASS", detail: O.DEFAULT_PROJECT.projectId }, { check: "1 to 10 work orders", result: wos.length >= 1 && wos.length <= 10 ? "PASS" : "FAIL" }];
@@ -56,9 +58,11 @@ export const projectsTools: ToolDef[] = [
         checks.push({ check: `Work order ${i + 1} (${t.type}) required fields`, result: missing.length ? "FAIL" : "PASS", detail: missing.length ? `Missing: ${missing.join(", ")}` : undefined });
         if (w.fields?.partnerCompanyId) { const r = resolveCompany(w.fields.partnerCompanyId); checks.push({ check: `Work order ${i + 1} partner in scope`, result: r.kind === "ok" ? "PASS" : "FAIL" }); if (r.kind === "ok") w.fields.partnerCompanyId = r.company.companyId; }
       }
+      const files: string[] = (a.attachments ?? []).filter(Boolean);
+      for (const f of files) checks.push({ check: `Attachment ${f}`, result: "PASS", detail: "Attached to the work order" });
       const valid = !checks.some((c) => c.result === "FAIL");
       if (!valid) return fail(ctx, "prepare_change_request", "request.submit", "VALIDATION_FAILED", "Draft request did not pass validation. Provide the missing fields and prepare again.", { checks });
-      const p = createPlan(ctx, "submit_change_request", "request.submit", O.DEFAULT_PROJECT.projectId, `Submit request "${a.title}" with ${wos.length} work order(s)`, { title: a.title, projectId: O.DEFAULT_PROJECT.projectId, workOrders: wos, evidence: a.evidence ?? null }, { valid, checks });
+      const p = createPlan(ctx, "submit_change_request", "request.submit", O.DEFAULT_PROJECT.projectId, `Submit request "${a.title}" with ${wos.length} work order(s)`, { title: a.title, projectId: O.DEFAULT_PROJECT.projectId, workOrders: wos, evidence: a.evidence ?? null, attachments: files }, { valid, checks });
       return approvalRequired(ctx, "prepare_change_request", "request.submit", p, src(P, "Request/WorkOrder schema validation"));
     },
   },
@@ -72,7 +76,7 @@ export const projectsTools: ToolDef[] = [
       if (c.problem) return fail(ctx, "submit_change_request", "request.submit", c.plan?.status === "PENDING_APPROVAL" ? "APPROVAL_PENDING" : "PLAN_INVALID", c.problem);
       const p = c.plan!.parameters;
       const n = ++crSeq;
-      const cr = { statusId: `ST-${n}`, requestId: `REQ-${n}`, title: p.title, projectId: p.projectId, submittedAt: new Date().toISOString(), submittedBy: c.plan!.principal, approvedBy: c.plan!.approvedBy, planId: c.plan!.planId, workOrders: p.workOrders.map((w: any) => ({ workOrderId: `WO-${++woSeq}`, type: w.type, fields: w.fields, assignedTeam: w.type.includes("CONNECTION") ? "BN connectivity" : "BN mapping", attachments: [] })), _submittedMs: Date.now() };
+      const cr = { statusId: `ST-${n}`, requestId: `REQ-${n}`, title: p.title, projectId: p.projectId, submittedAt: new Date().toISOString(), submittedBy: c.plan!.principal, approvedBy: c.plan!.approvedBy, planId: c.plan!.planId, workOrders: p.workOrders.map((w: any) => ({ workOrderId: `WO-${++woSeq}`, type: w.type, fields: w.fields, assignedTeam: w.type.includes("CONNECTION") ? "BN connectivity" : "BN mapping", attachments: (p.attachments ?? []).map((f: string) => ({ fileName: f, attachedAt: new Date().toISOString() })) })), _submittedMs: Date.now() };
       O.changeRequests.push(cr);
       c.plan!.status = "EXECUTED";
       c.plan!.executionResult = { statusId: cr.statusId };
@@ -117,7 +121,7 @@ export const projectsTools: ToolDef[] = [
       const from = a.from ? parseTime(a.from) : null;
       const st = a.state ? String(a.state).toUpperCase() : null;
       const DONE = ["COMPLETED", "CANCELLED", "REJECTED"];
-      const rows = O.changeRequests.map(crView).filter((c: any) =>
+      const rows = O.changeRequests.map((c) => crView(c, false)).filter((c: any) =>
         (!pid || c.partnerCompanyId === pid) && (!a.submitted_by || eq(c.submittedBy, a.submitted_by)) && (!from || Date.parse(c.submittedAt) >= from)
         && (!a.type || c.workOrders.some((w: any) => eq(w.type, a.type)))
         && (!st || (st === "OPEN" ? c.submissionState !== "REJECTED" && c.workOrders.some((w: any) => !DONE.includes(w.state)) : eq(c.submissionState, st) || c.workOrders.some((w: any) => eq(w.state, st)))))

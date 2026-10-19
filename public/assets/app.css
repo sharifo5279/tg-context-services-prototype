@@ -1625,3 +1625,16 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .cl-artlink svg { width: 15px; height: 15px; }
 .stage-pair:not(.intro) { transform: translateX(var(--shift, 0px)); }
 .stage.mob .stage-pair { transform: none; }
+/* Files shared in chat */
+.fl-card { display: flex; align-items: center; gap: 10px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 8px 12px; background: #fff; margin-top: 8px; max-width: 320px; position: relative; overflow: hidden; }
+.fl-ic { width: 32px; height: 38px; border-radius: 4px; background: #d13438; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: end center; padding-bottom: 5px; box-sizing: border-box; flex: none; }
+.fl-card b { display: block; font-size: 13.5px; font-weight: 600; color: #242424; word-break: break-all; } .fl-card span { font-size: 12px; color: #616161; }
+.fl-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 40%; background: #5b5fc7; animation: flprog 1s ease-in-out infinite; } @keyframes flprog { from { left: -40%; } to { left: 100%; } }
+.fl-pend { padding: 6px 8px 0; } .fl-pend .fl-card { margin-top: 0; }
+.cl-comp.hasfile { flex-wrap: wrap; }
+.cl-comp.hasfile .fl-pend { flex-basis: 100%; }
+.cl-ub .fl-card { background: #fff; }
+/* Stage frames: no text caret or selection anywhere */
+html.stagefr, html.stagefr * { caret-color: transparent; }
+html.stagefr *:not(textarea):not(input) { -webkit-user-select: none; user-select: none; }
+html.stagefr *:focus { outline: none; }
