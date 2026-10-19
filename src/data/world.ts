@@ -107,7 +107,7 @@ export function incidentAt(pid: string, kind: Kind, t: number) {
 // Inbound production files from the partner fail AS2 signature verification at receipt.
 export const CERT_INCIDENT = { partnerCompanyId: "C20001", hours: 2 };
 /** Kestrel Electronics launched a new product; its UPC is missing from ITEM_UPC_TO_SKU, so inbound 856s fail in translation until the entry is added. */
-export const UPC_INCIDENT = { partnerCompanyId: "C20023", upc: "0845973051124", hours: 30, fixedAt: null as number | null, map: "HRG_856_4010_IN v4" };
+export const UPC_INCIDENT = { partnerCompanyId: "C20023", upc: "0845973051124", hours: 7, fixedAt: null as number | null, map: "HRG_856_4010_IN v4" };
 const upcErr = (): Err => ({ code: "XREF-404", category: "TRANSLATION", message: `Cross-reference lookup failed: entity ITEM_UPC_TO_SKU, key '${UPC_INCIDENT.upc}' not found (map ${UPC_INCIDENT.map}, LIN*UP item 1)`, service: "Translation", step: "Transform" });
 export const certIncidentStart = (now = Date.now()) => now - CERT_INCIDENT.hours * HOUR;
 const certErr = (): Err => ({ code: "AS2-SIG-401", category: "COMMUNICATION", message: `AS2 signature verification failed: partner signing certificate expired ${new Date(certIncidentStart()).toISOString().slice(0, 16).replace("T", " ")} UTC (CN=as2.northfieldfoods.example)`, service: "Communications gateway", step: "Receive" });

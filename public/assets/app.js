@@ -1127,7 +1127,7 @@
     const said = (re) => c.items.some((m) => m.role === "user" && re.test(m.text));
     const flagOn = said(/no (matching )?shipment|without .*(asn|shipment)|flag them/i), weeklyOn = said(/weekly/i);
     const su = d.suppliers[0] ?? { supplier: "Meridian Personal Care", purchaseOrders: 0, ordered: 0, shipped: 0, invoiced: 0, shortShipped: 0, overInvoiced: 0, invoiceBeforeAsn: 0, invoiceWithoutAsn: 0 };
-    const kpi = (l, v, n, cls = "") => `<div class="ak ${cls}"><span>${l}</span><b>${n0(v)}</b>${n ? `<em>${n}</em>` : ""}</div>`;
+    const kpi = (l, v, n, cls = "") => `<div class="ak ${cls}"><span>${l}</span><b>${typeof v === "string" ? esc(v) : n0(v)}</b>${n ? `<em>${n}</em>` : ""}</div>`;
     const wk = d.weekly ?? [];
     const mx = Math.max(1, ...wk.map((w) => w.ordered));
     const bars = wk.map((w) => `<div class="aw"><div class="awb"><i style="height:${(w.ordered / mx) * 100}%"></i><i class="s" style="height:${(w.shipped / mx) * 100}%"></i><i class="v" style="height:${(w.invoiced / mx) * 100}%"></i></div><span>${esc(w.weekOf.slice(5))}</span></div>`).join("");
