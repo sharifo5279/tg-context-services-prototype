@@ -319,6 +319,30 @@ export const ccimTools: ToolDef[] = [
 ];
 
 export const tgiAppTools: ToolDef[] = [
+  { name: "tgi_get_compliance_violations", domain: "Trading Grid Intelligence", product: "Trading Grid Intelligence: Deductions Management", title: "Get vendor compliance violations and chargebacks", description: "Trading Grid Intelligence Deductions Management: vendor compliance violations captured from EDI activity, the flat chargeback per violation from Harborview's deduction schedule, exemptions, and deduction status. Optionally limited to a list of PO numbers.", operation: "transaction.read", kind: "read", binding: "TGI Deductions Management violation capture", basis: BASIS_GA,
+    inputSchema: s.obj({ partner: s.str("Vendor name or ID."), days: s.int("Days back by PO date (default 14, max 90).", { minimum: 1, maximum: 90 }), po_numbers: s.arr(s.str("PO number"), "Limit to these purchase orders (for example the POs on the user's screen).") }, ["partner"]),
+    handler: (a, ctx) => {
+      const p = partnerArg(ctx, "tgi_get_compliance_violations", "transaction.read", a.partner); if (p.early) return p.early;
+      const days = Math.min(90, Math.max(1, Number(a.days) || 14));
+      const only = new Set<string>((a.po_numbers ?? []).map(String));
+      const SCHEDULE = [{ violation: "PO acknowledgment (855) late or missing", rule: "855 not received within 24 hours of the PO", chargebackPerPo: 50 }, { violation: "Advance ship notice (856) after invoice", rule: "810 received before the 856", chargebackPerPo: 75 }, { violation: "Advance ship notice (856) missing", rule: "No 856 within 48 hours of shipment", chargebackPerPo: 100 }];
+      const prof = companyById(p.id!) ; const goLive = transactions.filter((t) => t.partnerCompanyId === p.id && t.environment === "PRODUCTION").reduce((m, t) => Math.min(m, t._t), Date.now());
+      const exemptUntil = goLive + 30 * D;
+      const pos = within(days * D).filter((t) => t.partnerCompanyId === p.id && t.direction === "OUTBOUND" && t.documentType === "850" && (!only.size || only.has(t.refs.poNumber ?? "")));
+      const rows: any[] = [];
+      for (const po of pos) {
+        if (po._t < exemptUntil || Date.now() - po._t < 24 * H) continue;
+        const ack = docsByPo(po.refs.poNumber!).find((d) => d.partnerCompanyId === p.id && d.documentType === "855" && d.sourceStatus === "DLVD");
+        const lagH = ack ? (ack._t - po._t) / H : null;
+        if (lagH != null && lagH <= 24) continue;
+        const ageDays = (Date.now() - po._t) / D;
+        rows.push({ po: po.refs.poNumber, orderedAt: new Date(po._t).toISOString(), violation: SCHEDULE[0].violation, detail: ack ? `855 received after ${Math.round(lagH!)} hours` : "855 not received", chargeback: 50, status: ageDays > 5 ? "Approved, deducts on next 820 remittance" : "Pending supplier review", violationId: `VIO-${po.refs.poNumber!.slice(-6)}` });
+      }
+      rows.sort((x, y) => y.orderedAt.localeCompare(x.orderedAt));
+      const byStatus: Record<string, number> = {}; for (const r of rows) byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
+      return ok(ctx, "tgi_get_compliance_violations", "transaction.read", { vendor: prof?.companyName, deductionSchedule: SCHEDULE, chargebackBasis: "Flat amount per PO per violation, regardless of order value", newVendorExemption: { days: 30, ended: new Date(exemptUntil).toISOString().slice(0, 10) }, purchaseOrdersChecked: pos.length, violations: rows.length, chargebackTotal: rows.reduce((x, r) => x + r.chargeback, 0), currency: "USD", byStatus, rows: rows.slice(0, 60) },
+        { sources: [{ product: "Trading Grid Intelligence: Deductions Management", operation: "Violation capture and deduction schedule" }], interpretation: "Violations are captured automatically from EDI timing. Chargebacks are flat per PO; order value does not change the amount." });
+    } },
   { name: "tgi_get_shipment_reconciliation", domain: "TG Insights application", product: TGI, title: "Get 3PL shipment reconciliation", description: "For a 3PL (default Crestline Logistics): each 940 warehouse shipping order matched to its 945 warehouse shipping advice, with ordered and shipped quantities, short shipments by store, and orders still waiting for a 945. Window by 945 arrival day.", operation: "transaction.read", kind: "read", binding: "TG Insights document correlation by shipping order", basis: BASIS_GA,
     inputSchema: s.obj({ days: s.int("Days back, by 945 arrival. 1 = yesterday only (default 1, max 30).", { minimum: 1, maximum: 30 }), partner: s.str("3PL name or ID (default Crestline Logistics).") }),
     handler: (a, ctx) => {

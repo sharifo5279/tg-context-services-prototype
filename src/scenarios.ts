@@ -235,6 +235,7 @@ F("Add a missing store: prepare, approve, apply", "Approval flow", [
 
 // ---------------------------------------------------------------- Community Projects and Provisioning
 S("list_change_request_types", "Change request types", "Happy path", {}, "OK");
+S("tgi_get_compliance_violations", "Pinegate late acknowledgment chargebacks", "Happy path", { partner: "Pinegate Home LLC" }, "OK", { check: ["Flat chargebacks", (o) => R(o).violations > 0 && R(o).chargebackTotal === R(o).violations * 50] });
 S("tgi_get_shipment_reconciliation", "Crestline 940 to 945 for the last week", "Happy path", { days: 7 }, "OK", { check: ["Confirmations matched", (o) => R(o).confirmations945 > 50 && R(o).shortShipped >= 0] });
 S("tgi_get_quantity_reconciliation", "Ordered, shipped and invoiced by PO", "Happy path", {}, "OK", { check: ["Supplier totals", (o) => R(o).suppliers.length > 10 && R(o).rows.length > 0] });
 S("tgi_get_quantity_reconciliation", "Invoices before ASN for Meridian", "Filter", { partner: "Meridian Personal Care" }, "OK", { check: ["Invoice before ASN flagged", (o) => R(o).rows.some((x: any) => x.invoiceBeforeAsn)] });

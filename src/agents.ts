@@ -419,6 +419,18 @@ export const AGENTS: AgentDef[] = [
     starters: ["Which failed deliveries can be redelivered now?", "Reprocess ASNs that failed on a missing store cross-reference whose entry now exists."],
   },
   {
+    id: "tgi-deductions", status: "Live today", model: "fast", name: "Trading Grid Intelligence Agent", persona: "Supplier compliance manager",
+    subtitle: "Trading Grid Intelligence: Deductions Management",
+    role: "Find vendor compliance violations captured from EDI activity and the chargebacks they carry under Harborview's deduction schedule in Trading Grid Intelligence.",
+    inspiredBy: [{ name: "Deductions Management", where: "Trading Grid Intelligence" }],
+    scenario: "Chargebacks for late or missing acknowledgments",
+    instructions: [{ title: "Report violations and chargebacks", body: "Use tgi_get_compliance_violations, limited to the POs on the user's screen when given. Chargebacks are a flat amount per PO from the deduction schedule; never scale them by order value. Show violations, chargeback total and deduction status." }],
+    inputs: ["Vendor", "Purchase orders"], knowledge: ["Trading Grid Intelligence deduction schedule"],
+    outputs: [{ name: "Violations and chargebacks", type: "Table" }],
+    tools: ["tgi_get_compliance_violations", "get_acknowledgment_evidence", "search_transactions"],
+    starters: ["What chargebacks does Pinegate owe for late acknowledgments this month?"],
+  },
+  {
     id: "tgi-alerts", status: "Live today", model: "fast", name: "Alerts and Reports Agent", persona: "EDI operations analyst",
     subtitle: "Trading Grid Insights",
     role: "Show the dashboard, saved filters, alerts and scheduled reports, and turn a saved filter into an alert.",

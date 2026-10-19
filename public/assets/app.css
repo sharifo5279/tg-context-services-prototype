@@ -1638,3 +1638,14 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html.stagefr, html.stagefr * { caret-color: transparent; }
 html.stagefr *:not(textarea):not(input) { -webkit-user-select: none; user-select: none; }
 html.stagefr *:focus { outline: none; }
+
+.art-build{padding:28px 24px;display:flex;flex-direction:column;gap:12px}
+.art-bspin{width:22px;height:22px;border-radius:50%;border:2.5px solid #e8e2d6;border-top-color:#d97757;animation:spin .9s linear infinite;margin-bottom:6px}
+.art-bs{display:flex;align-items:center;gap:10px;font-size:13px;color:#a39e93;transition:color .2s}
+.art-bs i{width:14px;height:14px;border-radius:50%;border:1.5px solid #d6d0c4;display:inline-block}
+.art-bs.on{color:#3d3929;font-weight:500}.art-bs.on i{border-color:#d97757;border-top-color:transparent;animation:spin .8s linear infinite}
+.art-bs.ok{color:#6b665c}.art-bs.ok svg{width:14px;height:14px;color:#3f8f5a}
+.art-skel{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.art-skel b{height:62px;border-radius:10px;background:linear-gradient(90deg,#f1ede4 0,#f8f5ef 50%,#f1ede4 100%);background-size:200% 100%;animation:shim 1.4s ease infinite}
+.art-skel.tall{display:block;height:160px;border-radius:10px;margin-top:0;background:linear-gradient(90deg,#f1ede4 0,#f8f5ef 50%,#f1ede4 100%);background-size:200% 100%;animation:shim 1.4s ease infinite}
+@keyframes shim{0%{background-position:100% 0}100%{background-position:-100% 0}}

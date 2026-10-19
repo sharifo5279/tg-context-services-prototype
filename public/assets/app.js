@@ -218,7 +218,7 @@
     const kind = NATIVE[id];
     if (!kind) return activity(m, mi, m.route);
     const busy = m.thinking || m.steps.some((x) => !x.done);
-    if (busy) return kind === "dots" ? `<div class="na-dots"><i></i><i></i><i></i></div>` : `<div class="activity busy na"><span class="al">${esc(kind)}</span></div>`;
+    if (busy) return kind === "dots" ? `<div class="na-dots"><i></i><i></i><i></i></div>` : `<div class="activity busy na"><span class="al">${esc(m.phase ?? kind)}</span></div>`;
     if (!m.steps.length || (id !== "chatgpt" && id !== "gemini")) return "";
     const secs = m.elapsed ? Math.max(1, Math.round(m.elapsed / 1000)) : null;
     const label = id === "chatgpt" ? `Thought for ${secs ?? m.steps.length} ${secs ? "s" : "steps"}` : "Show thinking";
@@ -315,7 +315,7 @@
     const curKey = () => Object.keys(mounts).find((k) => document.querySelector(`[data-conv="${k}"]`));
     /** True while the open conversation is empty and idle. */
     window.__stageEmpty = () => { const c = S.convs[curKey()]; return !c || (!c.items.length && !c.busy); };
-    window.__stageBusy = () => !!S.convs[curKey()]?.busy;
+    window.__stageBusy = () => !!S.convs[curKey()]?.busy || (S.art?.readyAt ?? 0) > Date.now();
     /** Clicks Approve on the newest pending approval card. */
     window.__stageS4Open = () => { const u = new URLSearchParams(location.search); u.delete("po"); S.s4View = "po"; S.jouleOpen = true; history.replaceState(null, "", `${location.pathname}?${u}`); render(); return true; };
     /** Scrolls the open conversation by most of a screen (up or down arrow on the stage). */
@@ -372,9 +372,18 @@
   const GEM_AGENT = { name: "Supplier failure analyst", schedule: "Every day at 8:00 AM ET", identity: "agent-hrg-supplier-ops (grant GRT-HRG-2026-014)", table: "harborview-ops.hrg_b2b.tg_error_analysis",
     steps: ["Get yesterday's failed inbound transactions from the Trading Grid Insights failure report (Transaction Finder)", "Send each failure to the Trading Grid Error Analysis agent", "Write cause, owner and next action per transaction to BigQuery", "Post a summary to the Supplier Operations space"],
     tools: ["Trading Grid Agent Connectors: Trading Grid Agent (Transaction Finder, Error Analysis)", "BigQuery: insert rows", "Google Chat: post message"] };
-  function gemLocal(key, text, kind) {
+  const GEM_PHASES = { draft: ["Thinking", "Reading Trading Grid Agent capabilities", "Designing the agent in Agent Designer", "Configuring the BigQuery output table"], publish: ["Thinking", "Validating agent configuration", "Publishing to Gemini Enterprise"] };
+  async function gemLocal(key, text, kind) {
     const c = S.convs[key];
+    c.busy = true;
     c.items.push({ role: "user", text, t: Date.now() });
+    const ph = { role: "agent", agentId: c.agentId, steps: [], text: "", plans: [], thinking: true, phase: GEM_PHASES[kind][0], t0: Date.now() };
+    c.items.push(ph);
+    refreshConv(key);
+    const total = kind === "draft" ? 3800 : 3200, list = GEM_PHASES[kind];
+    for (let i = 1; i < list.length; i++) { await new Promise((r) => setTimeout(r, total / list.length)); ph.phase = list[i]; refreshConv(key); }
+    await new Promise((r) => setTimeout(r, total / list.length));
+    c.items.pop(); c.busy = false;
     let html;
     if (kind === "draft") {
       S.gem = { draft: GEM_AGENT };
@@ -561,10 +570,10 @@
 
   function tgoHeader(variant, appName) {
     if (variant === "portal") {
-      return `<header class="tgohead"><span class="tgomenu">${ic("list")}</span><img src="/assets/opentext-logo-white.svg" alt="OpenText" class="wm"><span class="bar">|</span><span class="ap">${esc(appName)}</span><span class="ver">26.4</span><div class="spacer"></div>
+      return `<header class="tgohead"><span class="tgomenu">${ic("list")}</span><img src="/assets/opentext-logo-white.svg" alt="OpenText" class="wm"><span class="bar">|</span><span class="ap">${esc(appName)}</span><span class="ver">27.1</span><div class="spacer"></div>
         <button class="tgoicon" data-avopen="tg-aviator" title="Aviator"><img src="/assets/aviator-logo.png" alt=""></button><button class="myav" data-avopen="tg-aviator">${ic("agent")}MyAviator</button>${journeyBtn}</header>`;
     }
-    return `<header class="topbar tgi"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">${esc(appName)}</span><span class="ver">26.4</span></div><div class="spacer"></div>
+    return `<header class="topbar tgi"><div class="brand"><img src="/assets/opentext-logo.svg" alt="OpenText"><span class="divider"></span><span class="name">${esc(appName)}</span><span class="ver">27.1</span></div><div class="spacer"></div>
       <button class="iconbtn av" data-avopen="tg-aviator" title="Ask Aviator"><img src="/assets/aviator-logo.png" alt=""></button>${journeyBtn}${avatar()}</header>`;
   }
   const TGO_RAIL = [["home", "/tgo", "Trading Grid Online"], ["swap", "/tgo/insights", "Transactions"], ["key", "/tgo/access", "Agent access"]];
@@ -1004,7 +1013,7 @@
     copilot: { n: 5, sugg: ["Which 940s have no 945 yet?", "Show Crestline shipment volume by day", "Summarize Crestline 214 delays this week"], connector: "context", title: "From Copilot to a published Copilot Studio agent", setup: "Crestline Logistics, Harborview's 3PL, ships store orders from the distribution center. Distribution operations checks Crestline's shipment confirmations in Copilot, builds a daily short-shipment monitor in Copilot Studio, tests and publishes it, then uses it back in Copilot.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Crestline Logistics ships our store orders from the distribution center. Show yesterday's shipment confirmations (945s) against the warehouse shipping orders (940s) we sent them." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { click: "[data-studiotest]" }, { text: "Run the monitor for yesterday: match each Crestline 945 to its 940 and list the orders that shipped short, with ordered and shipped quantities by store." }, { click: "[data-studiopublish]" }, { src: "/copilot?agent=cps-custom", text: "Which orders shipped short from Crestline this week, and which stores did they affect?" }] },
     joule: { n: 4, sugg: ["Which Pinegate POs ship this week?", "Compare Pinegate's 855 rate with similar suppliers", "Show Pinegate's 997 acknowledgment history"], connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Pinegate Home went live on Trading Grid 65 days ago. Compliance reviews Pinegate's purchase orders in S/4HANA, opens an unconfirmed PO and asks Joule, which calls the Trading Grid Agent and combines its evidence with SAP order values and the supplier agreement.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
-      turns: [{ s4open: true }, { text: "Pinegate hasn't confirmed this purchase order. Is this a one-off, or has Pinegate been missing PO acknowledgments since it went live?" }, { text: "Which Pinegate POs already have an ASN in Trading Grid but never received the mandatory PO acknowledgment (855)? Show the evidence.", on: "phone" }, { text: "Our agreement requires an 855 within 24 hours of each PO. For the POs on this list, which breached it, what order value is affected, and what compliance fee applies?" }] },
+      turns: [{ s4open: true }, { text: "Pinegate hasn't confirmed this purchase order. Is this a one-off, or has Pinegate been missing PO acknowledgments since it went live?" }, { text: "Which Pinegate POs already have an ASN in Trading Grid but never received the mandatory PO acknowledgment (855)? Show the evidence.", on: "phone" }, { text: "Our agreement requires an 855 within 24 hours of each PO. Check our chargeback program in Trading Grid Intelligence: which POs on this list incur a chargeback, and what is the total?" }] },
     gemini: { n: 6, sugg: ["What can the Error Analysis agent return for a failed 810?", "Show the access grant for our agent identity", "Which agents help with mapping questions?"], connector: "agents", title: "Gemini agents that call Trading Grid agents", setup: "Priya Raman, Harborview's AI transformation lead, builds a Gemini Enterprise agent that calls Trading Grid agents every morning, analyzes failed transactions and stores the results in BigQuery for the supplier operations team.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
       turns: [{ text: "Which Trading Grid agents do we have access to, and what can each one do?" }, { text: "Build a Gemini agent that runs every morning at 8 AM, takes the failed transaction report from Trading Grid Insights, sends each failure to the Trading Grid Error Analysis agent, and stores the analysis in BigQuery for further analysis." }, { text: "Publish the agent to Gemini Enterprise for the supplier operations team." }, { text: "Run the agent now on the latest failed Northfield Foods 856." }] },
     chatgpt: { n: 3, sugg: ["Which change requests were completed this week?", "List partners with missing 997s yesterday", "Summarize Trading Grid activity for the last 7 days"], connector: "context", title: "Recurring follow-up task", setup: "B2B operations runs a scheduled ChatGPT task each weekday morning to review work orders on hold. It follows one of them through: Sunfield Produce owes an 856 test file for a catch-weight map change, so Jordan drafts the request and then checks the result.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
@@ -1173,8 +1182,19 @@
     const hello = !c.items.length ? `<div class="cl-hello">${id === "teams" ? `<div class="cl-av sq lg">${esc(initials(title))}</div><h2>${esc(title)}</h2>` : ""}<h1>${esc(K.hello(first))}</h1>${K.sub ? `<div class="cl-sub">${esc(K.sub)}</div>` : ""}</div>` : "";
     const disc = { chatgpt: "ChatGPT can make mistakes. Check important info.", gemini: "Gemini can make mistakes, so double-check it" }[id];
     const art = id === "claude" ? artData(c) : null;
-    if (art && !S.art.hidden) return `<div class="art-split"><div class="art-chat">${clChatBody(id, K, c, title, a, hello, starters, disc)}</div><aside class="art">${artView(art, c)}</aside></div>`;
+    if (id === "claude" && !art) S.art.readyAt = 0;
+    if (art && !S.art.hidden) {
+      if (!S.art.readyAt) { S.art.readyAt = Date.now() + 4600; for (let i = 1; i <= 5; i++) setTimeout(() => refreshConv(curKey()), i * 950); }
+      const building = Date.now() < S.art.readyAt;
+      return `<div class="art-split"><div class="art-chat">${clChatBody(id, K, c, title, a, hello, starters, disc)}</div><aside class="art">${building ? artBuilding() : artView(art, c)}</aside></div>`;
+    }
     return clChatBody(id, K, c, title, a, hello, starters, disc);
+  }
+  function artBuilding() {
+    const left = S.art.readyAt - Date.now(), steps = ["Reading reconciliation data", "Laying out summary tiles", "Building weekly quantity chart", "Writing exception table", "Rendering preview"];
+    const done = Math.min(steps.length - 1, Math.floor((4600 - left) / 920));
+    return `<div class="art-h"><span class="art-t">Meridian accounts payable reconciliation</span><span class="art-v">Creating artifact</span></div>
+      <div class="art-build"><div class="art-bspin"></div>${steps.map((x, i) => `<div class="art-bs${i < done ? " ok" : i === done ? " on" : ""}">${i < done ? ic("check") : "<i></i>"}<span>${esc(x)}</span></div>`).join("")}<div class="art-skel"><b></b><b></b><b></b><b></b></div><div class="art-skel tall"></div></div>`;
   }
   function clChatBody(id, K, c, title, a, hello, starters, disc) {
     const blocked = (S.meta.clientStatus[K.host] ?? "ACTIVE") !== "ACTIVE";

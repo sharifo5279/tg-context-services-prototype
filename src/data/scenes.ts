@@ -13,7 +13,7 @@ const transitDays = (id: string) => 1 + ([...id].reduce((a, c) => a * 31 + c.cha
 const ITEMS: [string, string, number][] = [["HG-40112", "Ceramic table lamp, 24 in", 38.5], ["HG-40218", "Linen throw pillow, 18 in", 12.75], ["HG-40305", "Walnut picture frame, 8x10", 9.4], ["HG-40411", "Woven storage basket, large", 21.9], ["HG-40527", "Stoneware vase, 12 in", 16.25], ["HG-40633", "Cotton throw blanket", 27.0]];
 const hnum = (s: string) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
 /** SAP supplier agreement for Pinegate Home, held in the S/4HANA vendor master and purchasing info records. */
-export const PINEGATE_AGREEMENT = { vendor: "1000452", name: "Pinegate Home LLC", confirmationControl: "Z855: order acknowledgment (EDI 855) required within 24 hours of the PO", complianceTarget: "95% of POs acknowledged within 24 hours", fee: 50, feeText: "$50 per PO not acknowledged within 24 hours", escalation: "Below 90% for two consecutive months triggers a supplier performance review" };
+export const PINEGATE_AGREEMENT = { vendor: "1000452", name: "Pinegate Home LLC", confirmationControl: "Z855: order acknowledgment (EDI 855) required within 24 hours of the PO", complianceTarget: "95% of POs acknowledged within 24 hours", feeText: "Vendor compliance program: chargebacks per Harborview's deduction schedule in Trading Grid Intelligence", escalation: "Below 90% for two consecutive months triggers a supplier performance review" };
 
 /** Monitor Supplier Confirmations filtered to Pinegate Home, last 14 days, newest first. Values come from SAP; document timing from Trading Grid. */
 export function sceneS4() {
