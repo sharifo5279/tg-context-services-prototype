@@ -1649,3 +1649,13 @@ html.stagefr *:focus { outline: none; }
 .art-skel b{height:62px;border-radius:10px;background:linear-gradient(90deg,#f1ede4 0,#f8f5ef 50%,#f1ede4 100%);background-size:200% 100%;animation:shim 1.4s ease infinite}
 .art-skel.tall{display:block;height:160px;border-radius:10px;margin-top:0;background:linear-gradient(90deg,#f1ede4 0,#f8f5ef 50%,#f1ede4 100%);background-size:200% 100%;animation:shim 1.4s ease infinite}
 @keyframes shim{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+.so { width: min(1180px, 86vw); font-family: Inter, sans-serif; color: #101c2f; text-align: center; }
+.so h1 { margin: 0; font-size: clamp(72px, 11vw, 168px); font-weight: 700; letter-spacing: -.035em; line-height: 1; color: #101c2f; }
+.so-lead { margin: 28px auto 48px; max-width: 900px; font-size: 22px; line-height: 1.5; color: #3f4d62; }
+.so-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; text-align: left; }
+.so-pt { background: #fff; border: 1px solid #e3e6eb; border-radius: 16px; padding: 22px 24px; }
+.so-pt h3 { margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #0066ff; }
+.so-pt p { margin: 0; font-size: 16px; line-height: 1.55; color: #3f4d62; }
+.stage.mob .so h1 { font-size: 64px; } .stage.mob .so-lead { font-size: 16px; margin: 18px 0 24px; } .stage.mob .so-grid { grid-template-columns: 1fr; gap: 10px; } .stage.mob .so { width: 100%; }
+.stage-pair.outro { align-items: center; }

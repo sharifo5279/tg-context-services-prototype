@@ -1380,6 +1380,7 @@
     { id: "gemini", name: "Gemini Enterprise", src: "/c/gemini", bg: "#ffffff" },
     { id: "claude", name: "Claude", src: "/c/claude", bg: "#faf9f5" },
     { id: "tgo", name: "Trading Grid Aviator", src: "/tgo/insights?aviator=1", bg: "#ffffff", laptopOnly: true, zoom: 0.72 },
+    { id: "outro", name: "", intro: true, outro: true },
   ];
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
@@ -1467,10 +1468,18 @@
         </section>
       </div></div></div>`;
   }
+  function stageOutro() {
+    const pt = (h, p) => `<div class="so-pt"><h3>${esc(h)}</h3><p>${esc(p)}</p></div>`;
+    return `<div class="stage-pair intro outro" data-sg="outro"><div class="so">
+      <h1>Thank you</h1>
+      <p class="so-lead">Trading Grid Context Services brings Trading Grid data and intelligence into the AI ecosystems where our clients already work, so they can connect, understand and act across their business ecosystems.</p>
+      <div class="so-grid">${pt("Built with clients", "Product Management, Engineering and Product Marketing are working with clients to validate use cases and shape delivery.")}${pt("Engage us", "Client conversations are welcome. Include Product Management and Product Marketing.")}${pt("Incubation phase", "Not a roadmap commitment. Availability, pricing, packaging and timelines are not yet defined.")}</div>
+    </div></div>`;
+  }
   function stageFrames(cur) {
     const row = document.querySelector(".stage-row");
     let g = row.querySelector(`[data-sg="${cur.id}"]`);
-    if (!g && cur.intro) { row.insertAdjacentHTML("beforeend", stageIntro()); g = row.lastElementChild; }
+    if (!g && cur.intro) { row.insertAdjacentHTML("beforeend", cur.outro ? stageOutro() : stageIntro()); g = row.lastElementChild; }
     if (!g) {
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
