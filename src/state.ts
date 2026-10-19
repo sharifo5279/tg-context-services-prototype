@@ -26,7 +26,9 @@ export type State = ReturnType<typeof getState>;
 
 /** Replaces the mutable state with a serialized copy. */
 export function setState(raw: any) {
-  const v = typeof raw === "string" ? JSON.parse(raw) : JSON.parse(JSON.stringify(raw));
+  // Saved state from before the partner rename carries the old name; map it to Cedar Valley Furniture.
+  const txt = (typeof raw === "string" ? raw : JSON.stringify(raw)).replace(/Alder and Ash Furniture/g, "Cedar Valley Furniture").replace(/Alder and Ash/g, "Cedar Valley").replace(/alder_ash/g, "cedar_valley").replace(/alderandash\.com/g, "cedarvalleyfurniture.com").replace(/ALDERASHFURN/g, "CEDARVALLEYF").replace(/AAF_856/g, "CVF_856").replace(/TRK-AAF/g, "TRK-CVF").replace(/MB-AAF/g, "MB-CVF");
+  const v = JSON.parse(txt);
   setArr(changeRequests, v.changeRequests); if (!changeRequests.some((c) => c.statusId === CERT_CR.statusId)) changeRequests.unshift(JSON.parse(JSON.stringify(CERT_CR))); for (const f of FIXTURE_CRS) if (!changeRequests.some((c) => c.statusId === f.statusId)) changeRequests.push(JSON.parse(JSON.stringify(f))); for (const k of ["ST-10466"]) { const i = changeRequests.findIndex((c) => c.statusId === k); if (i >= 0) changeRequests.splice(i, 1); } setArr(provisionings, v.provisionings); for (const p of SEED_PROVISIONINGS) if (!provisionings.some((x) => x.trackingId === p.trackingId)) provisionings.push({ ...p }); setArr(deliverySchedules, v.deliverySchedules);
   setObj(xrefEntities, v.xrefEntities); setArr(tickets, v.tickets); setArr(alertRules, v.alertRules); setArr(ccpmRules, v.ccpmRules);
   setObj(findingState, v.findingState); setObj(clientStatus, v.clientStatus);

@@ -54,7 +54,7 @@ export const NEW_PARTNERS: NewPartner[] = [
   { id: "C20029", name: "Northstar Apparel Group", city: "New York", state: "NY", industry: "Apparel", qualifier: "ZZ", address: "NORTHSTARAPRL", contact: ["Dev", "Shah", "edi@northstarapparel.com", "+1 212 555 0193"] },
   { id: "C20030", name: "Tidewater Seafood Co", city: "Norfolk", state: "VA", industry: "Seafood", qualifier: "ZZ", address: "TIDEWATERSEA", contact: ["Bill", "Grady", "orders@tidewaterseafood.com", "+1 757 555 0129"] },
   { id: "C20031", name: "Prairie Grain Foods", city: "Wichita", state: "KS", industry: "Consumer packaged goods", qualifier: "ZZ", address: "PRAIRIEGRAIN", contact: ["Lena", "Fischer", "edi@prairiegrainfoods.com", "+1 316 555 0114"] },
-  { id: "C20032", name: "Alder and Ash Furniture", city: "High Point", state: "NC", industry: "Furniture", qualifier: "ZZ", address: "ALDERASHFURN", contact: ["Grant", "Ellis", "it@alderandash.com", "+1 336 555 0182"] },
+  { id: "C20032", name: "Cedar Valley Furniture", city: "High Point", state: "NC", industry: "Furniture", qualifier: "ZZ", address: "CEDARVALLEYF", contact: ["Grant", "Ellis", "it@cedarvalleyfurniture.com", "+1 336 555 0182"] },
   { id: "C20033", name: "Vantage Health Supply", city: "Nashville", state: "TN", industry: "Health and beauty", qualifier: "ZZ", address: "VANTAGEHLTH", contact: ["Ana", "Costa", "edi@vantagehealthsupply.com", "+1 615 555 0157"] },
   { id: "C20034", name: "Rocky Coast Beverages", city: "Portland", state: "ME", industry: "Beverages", qualifier: "12", address: "2075550146", contact: ["Sam", "Fortin", "edi@rockycoastbev.com", "+1 207 555 0146"] },
 ];
@@ -89,7 +89,7 @@ export const PROFILES: Profile[] = [
   { id: "C20029", prefix: "NSA", flow: "X12_SUPPLIER", protocol: "AS2", orders: 11, poAck: 0.92, goLive: -1350 },
   { id: "C20030", prefix: "TWS", flow: "X12_SUPPLIER", protocol: "SFTP", orders: 4, poAck: 0, goLive: -900, quietFrom: -40 },
   { id: "C20031", prefix: "PGF", flow: "X12_SUPPLIER", protocol: "AS2", orders: 9, poAck: 0.88, goLive: -1150 },
-  { id: "C20032", prefix: "AAF", flow: "X12_SUPPLIER", protocol: "AS2", orders: 3, poAck: 0.9, goLive: 12 },
+  { id: "C20032", prefix: "CVF", flow: "X12_SUPPLIER", protocol: "AS2", orders: 3, poAck: 0.9, goLive: 12 },
   { id: "C20033", prefix: "VHS", flow: "X12_SUPPLIER", protocol: "AS2", orders: 6, poAck: 0.85, goLive: -90 },
   { id: "C20034", prefix: "RCB", flow: "X12_SUPPLIER", protocol: "SFTP", orders: 5, poAck: 0.8, goLive: 24 },
 ];
