@@ -1184,7 +1184,7 @@
     const art = id === "claude" ? artData(c) : null;
     if (id === "claude" && !art) S.art.readyAt = 0;
     if (art && !S.art.hidden) {
-      if (!S.art.readyAt) { S.art.readyAt = Date.now() + 4600; for (let i = 1; i <= 5; i++) setTimeout(() => refreshConv(curKey()), i * 950); }
+      if (!S.art.readyAt) { S.art.readyAt = Date.now() + 4600; for (let i = 1; i <= 5; i++) setTimeout(() => refreshConv(Object.keys(S.convs).find((k) => S.convs[k] === c)), i * 950); }
       const building = Date.now() < S.art.readyAt;
       return `<div class="art-split"><div class="art-chat">${clChatBody(id, K, c, title, a, hello, starters, disc)}</div><aside class="art">${building ? artBuilding() : artView(art, c)}</aside></div>`;
     }
