@@ -1553,3 +1553,19 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .cg-f { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid #efefef; } .cg-f span { color: #6b6b6b; } .cg-f b { font-weight: 500; line-height: 1.45; }
 .cg-ma { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .cg-btn { border: 1px solid #d9d9d9; background: #fff; border-radius: 99px; padding: 8px 16px; font: inherit; font-weight: 500; cursor: pointer; } .cg-btn.pri { background: #0d0d0d; color: #fff; border-color: #0d0d0d; }
+/* S/4HANA: Joule closed by default on the stage laptop; purchase order object page */
+@media (min-width: 821px) { .cl-joule.ws.jclosed .ws-panel { display: none; } }
+.s4-joule { border: 0; cursor: pointer; }
+.s4-back { border: 0; background: none; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; color: #0a6ed1; margin-right: 2px; } .s4-back:hover { background: #eef4fb; } .s4-back svg { width: 18px; height: 18px; }
+.s4-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.s4-table tbody tr { cursor: pointer; } .s4-table tbody tr:hover { background: #f5faff; }
+.s4-obj { overflow-y: auto; }
+.s4-oh { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0 10px; } .s4-ot { font-size: 20px; color: #1d2d3e; } .s4-ot b { font-weight: 700; } .s4-os { color: #556b82; font-size: 14px; margin-top: 2px; }
+.s4-btn { border: 1px solid #bcc3ca; background: #fff; color: #0a6ed1; border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; font-weight: 600; }
+.s4-hf { display: grid; grid-template-columns: repeat(6, auto); justify-content: start; gap: 6px 32px; padding: 6px 0 14px; } .s4-hf div { display: flex; flex-direction: column; gap: 4px; } .s4-hf span { font-size: 12.5px; color: #556b82; } .s4-hf b { font-size: 14px; color: #1d2d3e; font-weight: 600; }
+.s4-otabs { display: flex; gap: 22px; border-bottom: 1px solid #d9dfe5; margin-bottom: 12px; } .s4-otabs span { padding: 8px 0; font-size: 14px; color: #556b82; } .s4-otabs .on { color: #0a6ed1; border-bottom: 3px solid #0a6ed1; font-weight: 600; }
+.s4-sec { background: #fff; border-radius: 12px; box-shadow: 0 0 2px rgba(34,53,72,.16), 0 2px 4px rgba(34,53,72,.08); padding: 12px 16px; margin-bottom: 12px; } .s4-sec > b { display: block; font-size: 15px; margin-bottom: 8px; color: #1d2d3e; }
+.s4-sec table { width: 100%; border-collapse: collapse; font-size: 13.5px; } .s4-sec th { text-align: left; font-weight: 600; color: #556b82; padding: 8px 6px; border-bottom: 1px solid #e5e9ed; } .s4-sec td { padding: 9px 6px; border-bottom: 1px solid #eef1f4; } .s4-sec .lnk { color: #0a6ed1; }
+.s4-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .s4-kv { display: grid; grid-template-columns: 170px 1fr; gap: 8px 12px; font-size: 13.5px; } .s4-kv span:nth-child(odd) { color: #556b82; }
+.s4-page.s4-obj { padding: 14px 24px 20px; }
+.s4-oh .s4-btn { border: 1px solid #bcc3ca !important; background: #fff !important; color: #0a6ed1 !important; border-radius: 8px !important; padding: 6px 12px !important; font-size: 13px !important; font-weight: 600 !important; }

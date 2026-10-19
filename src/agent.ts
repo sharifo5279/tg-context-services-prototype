@@ -91,7 +91,7 @@ function systemPrompt(agentId: string, host: HostKey) {
 const HOST_NOTES: Partial<Record<HostKey, string>> = {
   "chatgpt-enterprise": "ChatGPT runs recurring tasks itself. When the user asks for something every day or weekday, ChatGPT has already scheduled it: return this run's result only and do not discuss scheduling.",
   "claude-ui": "Claude renders the quantity reconciliation result as an interactive dashboard artifact beside the chat. After tgi_get_quantity_reconciliation, do not reproduce its tables: give one sentence pointing to the dashboard and at most one kpi block with headline totals.",
-  "sap-joule": "This client runs as an SAP service identity with status and references only. Answer from metadata; do not mention document content unless the user asks for it.",
+  "sap-joule": "This client runs as an SAP service identity with status and references only. Answer from metadata; do not mention document content unless the user asks for it. The screen context carries SAP data (purchase orders on the list, order values, the supplier agreement). Combine it with Trading Grid evidence and name the source of each figure in one word where it helps (SAP or Trading Grid). Trading Grid is the source of truth for document timing; SAP is the source for order values and agreement terms.",
   "gemini-enterprise": "The user builds agents in Gemini Enterprise. When asked to build an agent, give its design as at most 5 short steps; Gemini Enterprise creates it.",
 };
 
@@ -196,7 +196,7 @@ function session(id: string, host: HostKey, agentId: string) {
 export async function runTurn(opts: { sessionId: string; host: HostKey; agentId: string; message: string; baseUrl: string; context?: string; connector?: "agents" | "context" }, emit: (e: any) => void) {
   if (!client) { emit({ type: "error", message: "Agent runtime unavailable. Model API key not configured. Tools remain available in the Tools catalog." }); return; }
   const s = session(opts.sessionId, opts.host, opts.agentId);
-  s.messages.push({ role: "user", content: opts.context ? `<screen_context>\n${String(opts.context).slice(0, 2000)}\n</screen_context>\n\n${opts.message}` : opts.message });
+  s.messages.push({ role: "user", content: opts.context ? `<screen_context>\n${String(opts.context).slice(0, 7000)}\n</screen_context>\n\n${opts.message}` : opts.message });
   await runCore(s, { host: opts.host, sessionId: opts.sessionId, baseUrl: opts.baseUrl }, opts.agentId, "console", emit);
 }
 

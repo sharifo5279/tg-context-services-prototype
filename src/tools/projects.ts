@@ -14,7 +14,7 @@ let crSeq = 10500, woSeq = 5600, trkSeq = 120;
 
 /** Status advances with elapsed time so the demo shows asynchronous progress. */
 export function crView(cr: any) {
-  if (cr._rollingMin) { const { _rollingMin, ...rest } = cr; const t = Date.now() - _rollingMin * 60_000; return { ...rest, submittedAt: new Date(t).toISOString(), workOrders: cr.workOrders.map((w: any) => ({ ...w, stateSince: new Date(t + 15 * 60_000).toISOString() })) }; }
+  if (cr._rollingMin) { const { _rollingMin, ...rest } = cr; const t = Date.now() - _rollingMin * 60_000; return { ...rest, submittedAt: new Date(t).toISOString(), workOrders: cr.workOrders.map((w: any) => ({ ...w, stateSince: new Date(t + 15 * 60_000).toISOString(), ...(w.similarRequests ? { certificateReceivedAt: new Date(Date.now() - 10 * 60_000).toISOString() } : {}) })) }; }
   if (!cr._submittedMs) return cr;
   const age = (Date.now() - cr._submittedMs) / 1000;
   const state = age < 20 ? "SUBMITTED" : "ACCEPTED";

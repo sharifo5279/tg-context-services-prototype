@@ -315,6 +315,7 @@
     window.__stageEmpty = () => { const c = S.convs[curKey()]; return !c || (!c.items.length && !c.busy); };
     window.__stageBusy = () => !!S.convs[curKey()]?.busy;
     /** Clicks Approve on the newest pending approval card. */
+    window.__stageS4Open = () => { const u = new URLSearchParams(location.search); u.delete("po"); S.s4View = "po"; S.jouleOpen = true; history.replaceState(null, "", `${location.pathname}?${u}`); render(); return true; };
     window.__stageApprove = () => { const b = [...document.querySelectorAll("[data-approve]")].pop(); if (b) b.click(); return !!b; };
     /** Types text at reading pace into the composer (or another field), then sends it (or clicks a button). */
     window.__stageType = (text, o = {}) => {
@@ -963,8 +964,8 @@
       turns: [{ text: "What is the status of the AS2 certificate fix for Northfield Foods?" }, { text: "Add a work note to this incident summarizing the failure, the fix in progress under ST-10500 and WO-5600, and who owns it." }, { text: "Is there an estimate for when the new certificate will go live?" }] },
     copilot: { n: 5, sugg: ["Which 940s have no 945 yet?", "Show Crestline shipment volume by day", "Summarize Crestline 214 delays this week"], connector: "context", title: "Building a monitoring agent in Copilot Studio", setup: "Distribution operations checks Crestline 945s in Copilot, then builds a daily short-shipment monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Show yesterday's Crestline shipment confirmations." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { text: "Run it for yesterday." }] },
-    joule: { n: 4, sugg: ["Which suppliers confirm POs the slowest?", "Show POs with no ASN past the ship date", "Compare 855 rates for my top 5 suppliers"], connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Pinegate Home went live 65 days ago. Compliance reviews an unconfirmed purchase order in S/4HANA.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
-      turns: [{ text: "Is this a pattern for Pinegate?" }, { text: "Which unconfirmed Pinegate POs ship this week?", on: "phone" }, { text: "Who is Pinegate's EDI contact?", on: "phone" }] },
+    joule: { n: 4, sugg: ["Which Pinegate POs ship this week?", "Compare Pinegate's 855 rate with similar suppliers", "Show Pinegate's 997 acknowledgment history"], connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Pinegate Home went live on Trading Grid 65 days ago. Compliance reviews Pinegate's purchase orders in S/4HANA, opens an unconfirmed PO and asks Joule, which calls the Trading Grid Agent and combines its evidence with SAP order values and the supplier agreement.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
+      turns: [{ s4open: true }, { text: "Pinegate hasn't confirmed this purchase order. Is this a one-off, or has Pinegate been missing PO acknowledgments since it went live?" }, { text: "Which Pinegate POs already have an ASN in Trading Grid but never received the mandatory PO acknowledgment (855)? Show the evidence.", on: "phone" }, { text: "Our agreement requires an 855 within 24 hours of each PO. For the POs on this list, which breached it, what order value is affected, and what compliance fee applies?" }] },
     gemini: { n: 6, sugg: ["Show the access grant for our agent", "Which sub-agents are incubating?", "What does Error Analysis return for a failed 810?"], connector: "agents", title: "Agents that work with the Trading Grid Agent", setup: "Harborview's AI team builds a Supplier Operations agent that calls the Trading Grid Agent and its sub-agents.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
       turns: [{ text: "Which Trading Grid agents can our agent call, and under what access?" }, { text: "Build an agent that sends failed inbound documents to Trading Grid for error analysis." }, { text: "Test it on a failed Northfield 856." }] },
     chatgpt: { n: 3, sugg: ["Which change requests were completed this week?", "List partners with missing 997s yesterday", "Summarize Trading Grid activity for the last 7 days"], connector: "context", title: "Recurring follow-up task", setup: "B2B operations runs a scheduled ChatGPT task each weekday morning to review work orders on hold, then follows up with the suppliers who owe a test file.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
@@ -1161,17 +1162,31 @@
     if (K.ws === "s4") {
       const d = S.scene.s4, sel = wsSelected(K);
       if (!d) return `<div class="ws-area"></div>`;
+      const usd = (v) => "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const f = (l, v, i = "vh") => `<label class="s4-f"><span>${esc(l)}:</span><div><span>${esc(v)}</span>${i === "dd" ? ic("chev") : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>`}</div></label>`;
-      return `<div class="ws-area s4">
-        <header class="s4-shell"><span class="s4-logo">SAP</span><span class="s4-app">Monitor Supplier Confirmations ${ic("chev")}</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span><span class="s4-search">${ic("search")}<span>Search in: Apps</span></span><span class="s4-joule on" title="Joule">${ic("sparkle")}</span><span class="s4-ib">${ic("bell")}</span><span class="cl-av round sm">JL</span></header>
+      const shell = (title) => `<header class="s4-shell">${S.s4View === "po" ? `<button class="s4-back" data-s4back="1" title="Back">${ic("left")}</button>` : ""}<span class="s4-logo">SAP</span><span class="s4-app">${esc(title)} ${ic("chev")}</span><span class="cl-sp"></span><span class="s4-search">${ic("search")}<span>Search in: Apps</span></span><button class="s4-joule ${S.jouleOpen ? "on" : ""}" data-s4joule="1" title="Joule">${ic("sparkle")}</button><span class="s4-ib">${ic("bell")}</span><span class="cl-av round sm">JL</span></header>`;
+      const mcard = sel ? `<div class="s4-mcard"><div class="k">Purchase order</div><div class="t">${sel.po}</div><div class="s">${esc(sel.supplier)} · ordered ${fdate(sel.orderedAt)}</div>${s4St(sel.status)}</div>` : "";
+      if (S.s4View === "po" && sel) {
+        const ag = d.agreement;
+        return `<div class="ws-area s4">${shell("Purchase Order")}
+          <div class="s4-page s4-obj">
+            <div class="s4-oh"><div><div class="s4-ot">Standard PO <b>${sel.po}</b></div><div class="s4-os">${esc(sel.supplier)} (${esc(ag.vendor)})</div></div><span class="cl-sp"></span><button class="s4-btn">Edit</button><button class="s4-btn">Send Reminder</button></div>
+            <div class="s4-hf"><div><span>Confirmation Status</span>${s4St(sel.status)}</div><div><span>Net Value</span><b>${usd(sel.netValue)}</b></div><div><span>Order Date</span><b>${fdate(sel.orderedAt)}</b></div><div><span>Requested Delivery</span><b>${fdate(sel.requestedDelivery + "T12:00:00Z")}</b></div><div><span>Plant</span><b>${esc(d.plant)}</b></div><div><span>Purchasing Group</span><b>${esc(d.purchasingGroup)}</b></div></div>
+            <nav class="s4-otabs"><span class="on">Items</span><span>Confirmations</span><span>Inbound Deliveries</span><span>Supplier Agreement</span></nav>
+            <div class="s4-sec"><b>Items (${sel.items.length})</b><table><thead><tr><th>Item</th><th>Material</th><th>Description</th><th>Quantity</th><th>Net Price</th><th>Delivery Date</th></tr></thead><tbody>${sel.items.map((i) => `<tr><td>${i.item}</td><td class="lnk">${esc(i.material)}</td><td>${esc(i.description)}</td><td>${i.quantity} ${esc(i.unit)}</td><td>${usd(i.netPrice)}</td><td>${fdate(sel.requestedDelivery + "T12:00:00Z")}</td></tr>`).join("")}</tbody></table></div>
+            <div class="s4-cols"><div class="s4-sec"><b>Confirmations</b><div class="s4-kv"><span>Confirmation control</span><span>${esc(ag.confirmationControl)}</span><span>Order acknowledgment</span><span>${sel.confirmedAt ? `Received ${fdate(sel.confirmedAt)}` : "Not received"}</span></div></div>
+            <div class="s4-sec"><b>Inbound Deliveries</b><div class="s4-kv"><span>Inbound shipment</span><span>${esc(sel.shipmentId ?? "None")}</span><span>Planned ship date</span><span>${fdate(sel.plannedShipDate + "T12:00:00Z")}</span></div></div></div>
+          </div>${mcard}</div>`;
+      }
+      return `<div class="ws-area s4">${shell("Monitor Supplier Confirmations")}
         <div class="s4-page">
           <div class="s4-head"><h1>Standard ${ic("chev")}</h1>
-            <div class="s4-filters">${f("Purchasing Group", d.purchasingGroup)}${f("Plant", d.plant)}${f("Order Date", "Last 7 days", "dd")}${f("Confirmation Status", "All", "dd")}<span class="cl-sp"></span><button class="s4-go">Go</button><button class="s4-lnk">Adapt Filters (4)</button></div></div>
+            <div class="s4-filters">${f("Supplier", d.supplierFilter ?? "All")}${f("Plant", d.plant)}${f("Order Date", "Last 14 days", "dd")}${f("Confirmation Status", "All", "dd")}<span class="cl-sp"></span><button class="s4-go">Go</button><button class="s4-lnk">Adapt Filters (4)</button></div></div>
           <div class="s4-table"><div class="s4-tbar"><b>Purchase Orders (${d.rows.length})</b><span class="cl-sp"></span><button>Send Reminder</button><button>Export ${ic("chev")}</button><span class="s4-ib">${ic("gear")}</span></div>
-            <table><thead><tr><th class="cb"><i></i></th><th>Purchase Order</th><th>Supplier</th><th>Order Date</th><th>Req. Delivery</th><th>Confirmation Status</th><th>Inbound Shipment</th></tr></thead><tbody>
-            ${d.rows.map((r) => `<tr class="${sel && r.po === sel.po ? "sel" : ""}" data-s4po="${r.po}"><td class="cb"><i></i></td><td class="lnk">${r.po}</td><td>${esc(r.supplier)}</td><td>${fdate(r.orderedAt)}</td><td>${fdate(r.requestedDelivery + "T12:00:00Z")}</td><td>${s4St(r.status)}</td><td>${esc(r.shipmentId ?? "")}</td></tr>`).join("")}
+            <table><thead><tr><th class="cb"><i></i></th><th>Purchase Order</th><th>Supplier</th><th>Order Date</th><th>Req. Delivery</th><th>Net Value</th><th>Confirmation Status</th><th>Inbound Shipment</th></tr></thead><tbody>
+            ${d.rows.map((r) => `<tr class="${sel && r.po === sel.po ? "sel" : ""}" data-s4po="${r.po}"><td class="cb"><i></i></td><td class="lnk">${r.po}</td><td>${esc(r.supplier)}</td><td>${fdate(r.orderedAt)}</td><td>${fdate(r.requestedDelivery + "T12:00:00Z")}</td><td class="num">${usd(r.netValue)}</td><td>${s4St(r.status)}</td><td>${esc(r.shipmentId ?? "")}</td></tr>`).join("")}
             </tbody></table></div></div>
-        ${sel ? `<div class="s4-mcard"><div class="k">Purchase order</div><div class="t">${sel.po}</div><div class="s">${esc(sel.supplier)} · ordered ${fdate(sel.orderedAt)}</div>${s4St(sel.status)}</div>` : ""}</div>`;
+        ${mcard}</div>`;
     }
     const d = S.scene.servicenow;
     if (!d) return `<div class="ws-area"></div>`;
@@ -1198,8 +1213,13 @@
   function wsContext(K) {
     if (K.ws === "studio") { const d = S.studio?.draft; return d ? [`Application: Microsoft Copilot Studio, test pane for the draft agent "${d.name}".`, `Agent instructions: ${d.instructions.join(" ")}`, `Trigger: ${d.trigger}. Channel: ${d.channel}. In the test pane, return the message that would be posted instead of posting it.`, `Today: ${new Date().toISOString().slice(0, 10)}.`].join("\n") : ""; }
     if (K.ws === "s4") {
-      const sel = wsSelected(K); if (!sel) return "";
-      return [`Application: SAP S/4HANA, Monitor Supplier Confirmations (plant ${S.scene.s4.plant}).`, `Selected purchase order: ${sel.po}. Supplier: ${sel.supplier} (Trading Grid company ${sel.supplierId}).`, `Order date: ${sel.orderedAt.slice(0, 10)}. Requested delivery date: ${sel.requestedDelivery}. Planned ship date: ${sel.plannedShipDate}. Confirmation status in SAP: ${sel.status}.`, `Other ${sel.supplier} purchase orders on screen: ${S.scene.s4.rows.filter((r) => r.supplierId === sel.supplierId && r.po !== sel.po).map((r) => `${r.po} (${r.status}, planned ship ${r.plannedShipDate})`).join("; ") || "none"}.`, `Today: ${new Date().toISOString().slice(0, 10)}.`, `Inbound route transit time for this supplier (SAP TM route master): ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"} from receipt of the advance ship notice. Expected arrival = ASN receipt time plus ${sel.transitDays} day${sel.transitDays === 1 ? "" : "s"}.`].join("\n");
+      const sel = wsSelected(K); const d = S.scene.s4; if (!sel || !d) return "";
+      const ag = d.agreement;
+      return [`Application: SAP S/4HANA, ${S.s4View === "po" ? `purchase order ${sel.po} open` : "Monitor Supplier Confirmations"}. Plant ${d.plant}. List filter: supplier ${d.supplierFilter}, order date last 14 days.`,
+        `Selected purchase order: ${sel.po}, ${sel.supplier} (Trading Grid company ${sel.supplierId}). Ordered ${sel.orderedAt.slice(0, 10)}, requested delivery ${sel.requestedDelivery}, net value ${sel.netValue} USD, SAP confirmation status ${sel.status}.`,
+        `SAP supplier agreement (vendor ${ag.vendor}): ${ag.confirmationControl}. Target: ${ag.complianceTarget}. Compliance fee: ${ag.feeText}. ${ag.escalation}.`,
+        `SAP route transit time for this supplier: ${sel.transitDays} days.`,
+        `Purchase orders on the list (PO, order date, net value USD, SAP confirmation status): ${d.rows.map((r) => `${r.po} ${r.orderedAt.slice(0, 10)} ${r.netValue} ${r.status === "Confirmed" ? "C" : "N"}`).join("; ")}. C = confirmed, N = not confirmed.`].join("\n");
     }
     const d = S.scene.servicenow; if (!d) return "";
     return [`Application: ServiceNow Service Operations Workspace.`, `Open record: incident ${d.number}, "${d.shortDescription}". State ${d.state}, priority ${d.priority}, opened ${d.openedAt}.`, `Configuration item: ${d.ci} (Trading Grid company ${d.partnerCompanyId}, ${d.partner}). Service: ${d.service}.`, `Related Trading Grid change request in work notes: ${d.changeRequest}.`].join("\n");
@@ -1247,7 +1267,7 @@
     (S.conFor ??= {})[key] = K.connector;
     if (K.ws) S.ctxFor[key] = () => wsContext(K);
     if (id === "teams") S.ctxFor[key] = () => `Application: Microsoft Teams group chat "Supplier Onboarding". Members: Jordan Lee (jordan.lee), Morgan Chen (m.chen) and the Trading Grid Agent. Latest message from: ${S.lastAs ?? "Jordan Lee"}.`;
-    if (K.ws) return `<div class="cl cl-${id} ws">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
+    if (K.ws) return `<div class="cl cl-${id} ws${K.ws === "s4" && !S.jouleOpen ? " jclosed" : ""}">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
     const chats = Object.values(S.convs).filter((x) => x.key.startsWith(`cl:${id}:`) && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
     const rail = id === "teams" ? `<header class="tm-bar"><span class="tm-l"><span class="cl-brandtx">Microsoft Teams</span><span class="tm-nav">${ic("left")}${ic("right")}</span></span><span class="tm-search">${ic("search")}<span>Search</span></span><span class="tm-r"><button class="cl-ib" title="Settings and more">${ic("more")}</button><span class="cl-av round sm pres">JL</span></span></header>
       <nav class="cl-rail">${[["bell", "Activity"], ["chats", "Chat", 1], ["teams", "Teams"], ["calendar", "Calendar"], ["phone", "Calls"], ["sparkle", "Copilot"], ["apps", "Apps", 0, 1]].map(([i, l, on, end]) => `<button class="${on ? "on" : ""}${end ? " end" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : "";
@@ -1293,9 +1313,10 @@
     const w = lap?.contentWindow; if (!w) return;
     if (w.__stageBusy?.()) return;
     let step = S.stageStep[id] ?? 0;
-    if (step > 0 && w.__stageEmpty?.() && (mob || w.location.pathname === cur.src.split("?")[0])) step = 0;
+    if (step > 0 && sc.turns.slice(0, step).some((x) => x.text) && w.__stageEmpty?.() && (mob || w.location.pathname === cur.src.split("?")[0])) step = 0;
     const t = sc.turns[step]; if (!t) return;
     S.stageStep[id] = step + 1;
+    if (t.s4open) { if (mob) return stagePlay(); w.__stageS4Open?.(); return; }
     if (t.approve) { w.__stageApprove?.(); return; }
     const go = () => (mob || t.on === "phone" ? stageFrame(id, "phone") : stageFrame(id, "desktop"))?.contentWindow?.__stageType?.(t.text, mob ? { ...t, into: undefined, then: undefined } : t);
     if (mob) return go();
@@ -1305,6 +1326,7 @@
   // The play dot shows only when a scenario turn is ready to play: hidden on the intro, while an answer runs,
   // while an approval card waits for the presenter, and after the last turn. A manual approval advances the script.
   S.stageApproveSeen = {};
+  S.jouleOpen = STAGE !== "desktop";
   function stageDot() {
     const btns = document.querySelectorAll("[data-stageplay]"); if (!btns.length) return;
     const id = qs().get("client") ?? STAGE_CLIENTS[0].id; const sc = SCN[id];
@@ -1448,7 +1470,7 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-stop],[data-cgtask],[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
+    const t = ev.target.closest("[data-s4back],[data-s4joule],[data-stop],[data-cgtask],[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.stagego) return stageShow(d.stagego);
@@ -1458,7 +1480,9 @@
     if (d.artrow) { S.art.open[d.artrow] = !S.art.open[d.artrow]; return refreshConv(keyOf(t)); }
     if (d.artflag) { S.art.flagOnly = S.art.flagOnly === false; return refreshConv(keyOf(t)); }
     if (d.studiocreate) { const v = document.querySelector("[data-studiodesc]")?.value.trim(); if (!v) return; S.studio = { draft: studioDraft(v) }; return render(); }
-    if (d.s4po) { const u = new URLSearchParams(location.search); u.set("po", d.s4po); return go(`${location.pathname}?${u}`); }
+    if (d.s4po) { const u = new URLSearchParams(location.search); u.set("po", d.s4po); S.s4View = "po"; return go(`${location.pathname}?${u}`); }
+    if (d.s4back) { S.s4View = null; return render(); }
+    if (d.s4joule) { S.jouleOpen = !S.jouleOpen; return render(); }
     if (d.copside) { S.cps.side = d.copside === "1"; return render(); }
     if (d.cpsuse) { S.cps.side = false; const u = new URLSearchParams(location.search); u.set("agent", d.cpsuse); return go(`${location.pathname}?${u}`); }
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }

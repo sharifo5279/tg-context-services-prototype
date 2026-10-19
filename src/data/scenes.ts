@@ -9,33 +9,36 @@ const name = (id: string) => companyById(id)?.companyName ?? id;
 /** Route transit days per supplier, 1 to 4, as held in the SAP TM route master. */
 const transitDays = (id: string) => 1 + ([...id].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) % 4);
 
-/** Purchase orders for Monitor Supplier Confirmations: last 7 days, newest first, one or two per supplier. */
+/** SAP item catalog for Pinegate Home purchase orders (material, description, unit price in USD). */
+const ITEMS: [string, string, number][] = [["HG-40112", "Ceramic table lamp, 24 in", 38.5], ["HG-40218", "Linen throw pillow, 18 in", 12.75], ["HG-40305", "Walnut picture frame, 8x10", 9.4], ["HG-40411", "Woven storage basket, large", 21.9], ["HG-40527", "Stoneware vase, 12 in", 16.25], ["HG-40633", "Cotton throw blanket", 27.0]];
+const hnum = (s: string) => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+/** SAP supplier agreement for Pinegate Home, held in the S/4HANA vendor master and purchasing info records. */
+export const PINEGATE_AGREEMENT = { vendor: "1000452", name: "Pinegate Home LLC", confirmationControl: "Z855: order acknowledgment (EDI 855) required within 24 hours of the PO", complianceTarget: "95% of POs acknowledged within 24 hours", fee: 50, feeText: "$50 per PO not acknowledged within 24 hours", escalation: "Below 90% for two consecutive months triggers a supplier performance review" };
+
+/** Monitor Supplier Confirmations filtered to Pinegate Home, last 14 days, newest first. Values come from SAP; document timing from Trading Grid. */
 export function sceneS4() {
   const now = Date.now();
-  const seen = new Set<string>();
-  const cand: any[] = [];
-  for (const t of transactions) {
-    if (t._t < now - 7 * DAY) break;
-    if (t.documentType !== "850" || t.direction !== "OUTBOUND" || t.environment !== "PRODUCTION" || !/^45\d{8}$/.test(t.refs.poNumber ?? "")) continue;
-    const dayKey = `${t.partnerCompanyId}|${Math.floor(t._t / DAY)}`;
-    if (seen.has(dayKey) && t.partnerCompanyId !== "C20005") continue;
-    seen.add(dayKey);
-    const docs = docsByPo(t.refs.poNumber!).filter((x) => x.partnerCompanyId === t.partnerCompanyId);
-    const has = (d: string) => docs.some((x) => x.documentType === d && x.sourceStatus === "DLVD");
-    const asn = docs.find((x) => x.documentType === "856" && x.sourceStatus === "DLVD");
-    const status = has("810") ? "Invoiced" : asn ? "Shipped" : has("855") ? "Confirmed" : "Not confirmed";
-    cand.push({ po: t.refs.poNumber, supplier: name(t.partnerCompanyId), supplierId: t.partnerCompanyId, orderedAt: new Date(t._t).toISOString(), requestedDelivery: new Date(t._t + 6 * DAY).toISOString().slice(0, 10), status, transitDays: transitDays(t.partnerCompanyId), asnAt: asn ? new Date(asn._t).toISOString() : null, shipmentId: asn?.refs.shipmentId ?? null });
-  }
-  // Scenario: compliance review of Pinegate Home, a supplier new to EDI with an inconsistent 855 rate.
   const FOCUS = "C20005";
-  const fAll = cand.filter((c) => c.supplierId === FOCUS);
-  const focus = [...fAll.filter((c) => c.status === "Not confirmed").slice(0, 4), ...fAll.filter((c) => c.status !== "Not confirmed").slice(0, 3)];
-  const quota: Record<string, number> = { "Not confirmed": 1, Confirmed: 2, Shipped: 2, Invoiced: 2 };
-  const used = new Set<string>([FOCUS]);
-  const rows = [...focus, ...cand.filter((c) => { if (!quota[c.status] || used.has(c.supplierId)) return false; quota[c.status]--; used.add(c.supplierId); return true; })].sort((a, b) => b.orderedAt.localeCompare(a.orderedAt));
+  const rows: any[] = [];
+  for (const t of transactions) {
+    if (t._t < now - 14 * DAY) break;
+    if (t.partnerCompanyId !== FOCUS || t.documentType !== "850" || t.direction !== "OUTBOUND" || t.environment !== "PRODUCTION" || !/^45\d{8}$/.test(t.refs.poNumber ?? "")) continue;
+    const docs = docsByPo(t.refs.poNumber!).filter((x) => x.partnerCompanyId === FOCUS);
+    const ack = docs.find((x) => x.documentType === "855" && x.sourceStatus === "DLVD");
+    const asn = docs.find((x) => x.documentType === "856" && x.sourceStatus === "DLVD");
+    const inv = docs.find((x) => x.documentType === "810" && x.sourceStatus === "DLVD");
+    const h = hnum(t.refs.poNumber!);
+    const qty = t.refs.quantityOrdered ?? 24;
+    const a = ITEMS[h % ITEMS.length], b2 = ITEMS[(h >>> 3) % ITEMS.length === h % ITEMS.length ? (h + 1) % ITEMS.length : (h >>> 3) % ITEMS.length];
+    const q1 = Math.max(6, Math.round(qty * 0.6)), q2 = Math.max(6, qty - q1);
+    const items = [{ item: 10, material: a[0], description: a[1], quantity: q1, unit: "EA", netPrice: a[2] }, { item: 20, material: b2[0], description: b2[1], quantity: q2, unit: "EA", netPrice: b2[2] }];
+    const netValue = Math.round(items.reduce((s2, i) => s2 + i.quantity * i.netPrice, 0) * 100) / 100;
+    rows.push({ po: t.refs.poNumber, supplier: name(FOCUS), supplierId: FOCUS, orderedAt: new Date(t._t).toISOString(), requestedDelivery: new Date(t._t + 6 * DAY).toISOString().slice(0, 10), status: ack ? "Confirmed" : "Not confirmed", delivery: inv ? "Invoiced" : asn ? "Shipped" : "Open", netValue, currency: "USD", items, transitDays: transitDays(FOCUS), asnAt: asn ? new Date(asn._t).toISOString() : null, shipmentId: asn?.refs.shipmentId ?? null, confirmedAt: ack ? new Date(ack._t).toISOString() : null });
+  }
   for (const r of rows) r.plannedShipDate = new Date(Date.parse(r.requestedDelivery + "T12:00:00Z") - r.transitDays * DAY).toISOString().slice(0, 10);
-  const pick = rows.filter((r) => r.supplierId === FOCUS && r.status === "Not confirmed").sort((a, b) => a.orderedAt.localeCompare(b.orderedAt))[0] ?? rows.find((r) => r.status === "Shipped" && r.supplierId !== CERT_INCIDENT.partnerCompanyId) ?? rows[0];
-  return { plant: "1710", purchasingGroup: "Home and Seasonal (H02)", rows, selected: pick?.po ?? null };
+  // Default selection: the oldest unconfirmed PO with no ASN yet, so the question is open on screen.
+  const pick = [...rows].reverse().find((r) => r.status === "Not confirmed" && !r.asnAt) ?? rows.find((r) => r.status === "Not confirmed") ?? rows[0];
+  return { plant: "1710", purchasingGroup: "Home and Seasonal (H02)", supplierFilter: "Pinegate Home LLC (1000452)", agreement: PINEGATE_AGREEMENT, rows, selected: pick?.po ?? null };
 }
 
 /** Incident record for the Northfield Foods AS2 certificate expiry. */
