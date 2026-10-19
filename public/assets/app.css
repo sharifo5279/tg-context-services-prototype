@@ -1540,3 +1540,16 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .stage.mob .si-grid { grid-template-columns: 1fr; gap: 12px; } .stage.mob .si-co { padding: 16px; } .stage.mob .si-co h2 { font-size: 22px; } .stage.mob .si-co .si-lead { font-size: 14.5px; }
 .stage.mob .si-kvs { grid-template-columns: 1fr 1fr; } .stage.mob .si-kv b { font-size: 16px; } .stage.mob .si-mix { grid-template-columns: 1fr; } .stage.mob .si-mx { grid-template-columns: 130px 1fr 22px; font-size: 13px; }
 .stage.mob .si-docs div { grid-template-columns: 1fr; gap: 0; } .stage.mob .si-con { padding: 16px; } .stage.mob .si-con h3 { font-size: 18px; } .stage.mob .si-con p { font-size: 14.5px; }
+.sn-note > div:not(.sn-nh) { white-space: pre-line; }
+.cl-brandtx { font-size: 12px; font-weight: 600; color: #5d5d5d; white-space: nowrap; }
+.tm-bar .cl-brandtx { color: #424242; font-weight: 600; }
+.cl-task { align-items: center; } .cl-task > div { flex: 1; }
+.cl-taskbtn { border: 1px solid #d9d9d9; background: #fff; border-radius: 99px; padding: 6px 14px; font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; color: #0d0d0d; white-space: nowrap; }
+.cl-taskbtn:hover { background: #f4f4f4; }
+.cg-ov { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.cg-modal { background: #fff; border-radius: 16px; width: min(460px, 100%); padding: 18px 20px; box-shadow: 0 10px 40px rgba(0,0,0,.2); font-size: 14px; }
+.cg-mh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; } .cg-mh b { font-size: 17px; }
+.cg-x { border: 0; background: none; cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; } .cg-x:hover { background: #f4f4f4; } .cg-x svg { width: 18px; height: 18px; }
+.cg-f { display: grid; grid-template-columns: 100px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid #efefef; } .cg-f span { color: #6b6b6b; } .cg-f b { font-weight: 500; line-height: 1.45; }
+.cg-ma { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.cg-btn { border: 1px solid #d9d9d9; background: #fff; border-radius: 99px; padding: 8px 16px; font: inherit; font-weight: 500; cursor: pointer; } .cg-btn.pri { background: #0d0d0d; color: #fff; border-color: #0d0d0d; }

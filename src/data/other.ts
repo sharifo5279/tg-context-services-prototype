@@ -132,7 +132,10 @@ export const changeRequests: any[] = [
   { statusId: "ST-10388", requestId: "REQ-10388", title: "Brightwell 856 ship-to store resolution", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(14), submittedBy: "jordan.lee", submissionState: "ACCEPTED", workOrders: [{ workOrderId: "WO-5488", type: "MAP_CHANGE", state: "COMPLETED", stateSince: dAgo(4), assignedTeam: "BN mapping", attachments: [{ fileName: "store_resolution_spec.xlsx" }] }] },
 ];
 // Certificate renewal for the Northfield Foods AS2 incident; times are relative to the current time.
-export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN connectivity", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }], latestNote: "Partner's new signing certificate received and validated. Installation and connection test scheduled; inbound files resume after the test passes." }] };
+/** On-hold work orders the follow-up scenario depends on; reapplied after saved state is restored. */
+export let ON_HOLD_FIXES: [string, string, string, number][] = [];
+export function applyHoldFixes(list: any[]) { for (const [id, reason, owner] of ON_HOLD_FIXES) { const c = list.find((x) => x.statusId === id); const w = c?.workOrders?.[0]; if (w) { w.state = "ON_HOLD"; w.holdReason = reason; w.waitingOn = owner; } } }
+export const CERT_CR = { statusId: "ST-10500", requestId: "REQ-10500", title: "AS2 certificate renewal for Northfield Foods", projectId: DEFAULT_PROJECT.projectId, submittedAt: dAgo(0), submittedBy: "jordan.lee", submissionState: "ACCEPTED", partnerCompanyId: "C20001", _rollingMin: 95, workOrders: [{ workOrderId: "WO-5600", type: "AS2_CONNECTION", state: "IN_PROGRESS", stateSince: dAgo(0), assignedTeam: "BN Support Operations", attachments: [{ fileName: "northfield_as2_signing_2026.cer" }], latestNote: "Partner's new signing certificate received and validated. Installation and connection test pending. Inbound files resume after the test passes.", estimatedCompletion: null, estimateNote: "BN Support Operations has not provided a completion estimate.", similarRequests: { count: 6, typicalResolution: "2 to 4 hours from certificate receipt", basis: "AS2 certificate renewals for Harborview partners in the last 12 months" } }] };
 changeRequests.push(JSON.parse(JSON.stringify(CERT_CR)));
 // Cedar Valley Furniture go-live (Oct 29): production move and connection in flight; no inbound 810 map requested yet.
 export const FIXTURE_CRS: any[] = [
@@ -187,8 +190,9 @@ changeRequests.push(...JSON.parse(JSON.stringify(FIXTURE_CRS)));
   const HOLDS: [string, string, string, number][] = [
     ["ST-10107", "Waiting for specification approval", "Harborview Retail Group", 8],
     ["ST-10101", "Waiting for partner test file", "Sunfield Produce Partners", 2],
-    ["ST-10104", "Waiting for partner certificate", "Rocky Coast Beverages", 5],
+    ["ST-10104", "Waiting for partner test file", "Rocky Coast Beverages", 5],
   ];
+  ON_HOLD_FIXES = HOLDS;
   for (const [id, reason, owner, days] of HOLDS) { const c = changeRequests.find((x) => x.statusId === id); if (!c) continue; const w = c.workOrders[0]; w.state = "ON_HOLD"; w.holdReason = reason; w.waitingOn = owner; w.stateSince = dAgo(days); }
   gen.filter((c) => c.workOrders[0].state === "COMPLETED").slice(-2).forEach((c) => { c.workOrders[0].state = "CANCELLED"; });
   for (const c of changeRequests) if (!c.partnerCompanyId) c.partnerCompanyId = c.title.includes("Coastline") ? "C20003" : c.title.includes("Brightwell") ? "C20004" : c.title.includes("Crestline") ? "C20013" : null;

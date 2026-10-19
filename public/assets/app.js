@@ -224,10 +224,9 @@
     const list = m.showSteps ? `<div class="na-list">${m.steps.map((x) => `<div>${esc(x.name === "engage_subagent" ? `Engaged ${x.summary ?? "sub-agent"}` : `Trading Grid: ${toolTitle(x.name)}`)}${x.by ? `<span> · ${esc(x.by)}</span>` : ""}</div>`).join("")}</div>` : "";
     return `<div class="na na-${id}"><button class="na-t" data-togglesteps="${mi}">${esc(label)}<span class="chev">${id === "gemini" ? (m.showSteps ? "⌃" : "⌄") : "›"}</span></button>${list}</div>`;
   }
-  // Stage: the suggestion card is the scenario's opening prompt.
+  // Stage: suggestion cards offer related questions, not the scripted turns.
   function stagePrompts(sid) {
-    const t = STAGE && SCN[sid]?.turns.find((x) => x.text);
-    return t ? [t.text] : null;
+    return STAGE && SCN[sid]?.sugg ? SCN[sid].sugg : null;
   }
   function activity(m, mi, route) {
     if (!m.steps.length && !m.thinking) return "";
@@ -324,10 +323,10 @@
       if (!ta || (!o.into && S.convs[key]?.busy)) return false;
       // Touch screens: type without focusing, so the on-screen keyboard stays closed.
       if (!matchMedia("(pointer: coarse)").matches) ta.focus(); else ta.blur();
-      ta.value = ""; let i = 0;
+      ta.value = ""; let i = 0; window.__stageTyping = true;
       const step = () => {
         if (i < text.length) { ta.value += text[i++]; ta.dispatchEvent(new Event("input", { bubbles: true })); return setTimeout(step, 38 + Math.random() * 45 + (text[i - 1] === " " ? 30 : 0)); }
-        setTimeout(() => { if (o.then) document.querySelector(o.then)?.click(); else { S.nextAs = o.as ?? null; ta.closest("form").requestSubmit(); } }, 450);
+        setTimeout(() => { window.__stageTyping = false; if (o.then) document.querySelector(o.then)?.click(); else { S.nextAs = o.as ?? null; ta.closest("form").requestSubmit(); } }, 450);
       };
       step();
       return true;
@@ -349,11 +348,15 @@
   function addWorkNote(key, text) {
     const c = S.convs[key];
     const last = [...c.items].reverse().find((m) => m.role === "agent" && m.text);
-    const plain = (last?.text ?? "").replace(/\|.*\|/g, " ").replace(/[*#`>]/g, "").replace(/\n{2,}/g, "\n").split("\n").map((l) => l.trim()).filter((l) => l && !/^sources?:/i.test(l)).slice(0, 6).join(" ");
-    const note = plain.length > 520 ? plain.slice(0, 520).replace(/\s\S*$/, "") + "..." : plain;
+    // Lead sentence plus the facts from the answer's blocks, as a 2 to 3 line note.
+    const lines = (last?.text ?? "").split("\n").map((l) => l.trim());
+    const lead = lines.find((l) => l && !/^(```|\||title:|status:|sources?:|next step)/i.test(l) && !l.includes(" | ")) ?? "";
+    const facts = lines.filter((l) => l.includes(" | ") && !/^\|/.test(l)).map((l) => l.split("|").map((x) => x.trim()).filter(Boolean)).filter((c) => c.length >= 2).slice(0, 4).map((c) => `${c[0]}: ${c.slice(1).join(", ")}`);
+    const next = lines.find((l) => /^next step/i.test(l)) ?? "";
+    const note = [lead.replace(/[*`]/g, ""), facts.join("; "), next.replace(/[*`]/g, "")].filter(Boolean).join("\n");
     (S.snNotes ??= []).unshift({ who: "Jordan Lee", kind: "Work notes", at: new Date().toISOString(), text: `Now Assist summary: ${note}` });
     c.items.push({ role: "user", text, t: Date.now() });
-    c.items.push({ role: "agent", agentId: c.agentId, steps: [], text: `Added a work note to ${S.scene.servicenow?.number ?? "the incident"}.`, plans: [], thinking: false, t0: Date.now() });
+    c.items.push({ role: "agent", agentId: c.agentId, steps: [], text: `Added a work note to ${S.scene.servicenow?.number ?? "the incident"}.\n\n\`\`\`note\n${note}\n\`\`\``, plans: [], thinking: false, t0: Date.now() });
     mirror({ snNotes: S.snNotes });
     render();
   }
@@ -954,21 +957,21 @@
   // ---------- Ecosystem clients (simulated), one renderer with a skin per ecosystem ----------
   // Stage scenarios (OTW 2026). Clients without an entry show "Scenario pending" on the stage.
   const SCN = {
-    teams: { n: 1, connector: "agents", title: "Colleagues onboarding a trading partner", setup: "Jordan Lee and Morgan Chen track Cedar Valley Furniture's onboarding, due to go live Oct 29, with the Trading Grid Agent in Teams.", env: ["Microsoft Teams group chat", "Trading Grid Agent via Copilot Studio", "Delegated users"],
+    teams: { n: 1, sugg: ["Which partners go live this month?", "Show open onboarding requests by owner", "Which suppliers have test traffic but no production traffic?"], connector: "agents", title: "Colleagues onboarding a trading partner", setup: "Jordan Lee and Morgan Chen track Cedar Valley Furniture's onboarding, due to go live Oct 29, with the Trading Grid Agent in Teams.", env: ["Microsoft Teams group chat", "Trading Grid Agent via Copilot Studio", "Delegated users"],
       turns: [{ text: "How is onboarding progressing for Cedar Valley Furniture?", as: "Jordan Lee" }, { text: "Raise a change request for Cedar Valley's inbound 810 invoice map, using the spec on file.", as: "Morgan Chen" }, { approve: true }] },
-    servicenow: { n: 2, connector: "agents", title: "AS2 certificate failure for one partner", setup: "Northfield Foods' AS2 certificate expired and inbound files are failing. Jordan works the incident in Service Operations Workspace.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
-      turns: [{ text: "What's failing for Northfield Foods, and who is fixing it?" }, { text: "Add this as a work note." }, { text: "When will the new certificate be live?" }] },
-    copilot: { n: 5, connector: "context", title: "Building a monitoring agent in Copilot Studio", setup: "Distribution operations checks Crestline 945s in Copilot, then builds a daily short-shipment monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
+    servicenow: { n: 2, sugg: ["Summarize inbound failures in the last 24 hours", "Which partner certificates expire this quarter?", "Show other open incidents for Northfield Foods"], connector: "agents", title: "AS2 certificate failure for one partner", setup: "Northfield Foods' AS2 signing certificate expired and inbound 855, 856 and 810 files are being rejected. Jordan tracks the fix from incident INC0041873 in Service Operations Workspace, with Now Assist calling the Trading Grid Agent.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
+      turns: [{ text: "What is the status of the AS2 certificate fix for Northfield Foods?" }, { text: "Add a work note to this incident summarizing the failure, the fix in progress under ST-10500 and WO-5600, and who owns it." }, { text: "Is there an estimate for when the new certificate will go live?" }] },
+    copilot: { n: 5, sugg: ["Which 940s have no 945 yet?", "Show Crestline shipment volume by day", "Summarize Crestline 214 delays this week"], connector: "context", title: "Building a monitoring agent in Copilot Studio", setup: "Distribution operations checks Crestline 945s in Copilot, then builds a daily short-shipment monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Show yesterday's Crestline shipment confirmations." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { text: "Run it for yesterday." }] },
-    joule: { n: 4, connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Pinegate Home went live 65 days ago. Compliance reviews an unconfirmed purchase order in S/4HANA.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
+    joule: { n: 4, sugg: ["Which suppliers confirm POs the slowest?", "Show POs with no ASN past the ship date", "Compare 855 rates for my top 5 suppliers"], connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Pinegate Home went live 65 days ago. Compliance reviews an unconfirmed purchase order in S/4HANA.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
       turns: [{ text: "Is this a pattern for Pinegate?" }, { text: "Which unconfirmed Pinegate POs ship this week?", on: "phone" }, { text: "Who is Pinegate's EDI contact?", on: "phone" }] },
-    gemini: { n: 6, connector: "agents", title: "Agents that work with the Trading Grid Agent", setup: "Harborview's AI team builds a Supplier Operations agent that calls the Trading Grid Agent and its sub-agents.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
+    gemini: { n: 6, sugg: ["Show the access grant for our agent", "Which sub-agents are incubating?", "What does Error Analysis return for a failed 810?"], connector: "agents", title: "Agents that work with the Trading Grid Agent", setup: "Harborview's AI team builds a Supplier Operations agent that calls the Trading Grid Agent and its sub-agents.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
       turns: [{ text: "Which Trading Grid agents can our agent call, and under what access?" }, { text: "Build an agent that sends failed inbound documents to Trading Grid for error analysis." }, { text: "Test it on a failed Northfield 856." }] },
-    chatgpt: { n: 3, connector: "context", title: "Recurring follow-up task", setup: "B2B operations schedules a weekday task to chase on-hold change requests and draft partner follow-ups.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
-      turns: [{ text: "Every weekday at 8 AM, list on-hold change requests and who owes the next action." }, { text: "Draft the email to Sunfield requesting the test file." }, { text: "Who is the contact at Rocky Coast for the certificate?" }] },
-    claude: { n: 7, connector: "context", title: "Rapid prototype: AP quantity dashboard", setup: "Accounts payable prototypes a 30-day PO, ASN and invoice quantity dashboard from live Trading Grid data.", env: ["Claude", "Trading Grid connector", "Jordan Lee, delegated"],
+    chatgpt: { n: 3, sugg: ["Which change requests were completed this week?", "List partners with missing 997s yesterday", "Summarize Trading Grid activity for the last 7 days"], connector: "context", title: "Recurring follow-up task", setup: "B2B operations runs a scheduled ChatGPT task each weekday morning to review work orders on hold, then follows up with the suppliers who owe a test file.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
+      turns: [{ text: "Every weekday at 8 AM, check Trading Grid for work orders on hold and tell me who owns the next action on each." }, { text: "Draft an email to Sunfield's EDI contact asking for the 945 test file our mapping team needs to finish the unit of measure change." }, { text: "Who is the contact at Rocky Coast for their test file?" }] },
+    claude: { n: 7, sugg: ["Chart weekly 810 volume by supplier", "Table of short shipments over 10%", "Which suppliers invoice above shipped quantity?"], connector: "context", title: "Rapid prototype: AP quantity dashboard", setup: "Accounts payable prototypes a 30-day PO, ASN and invoice quantity dashboard from live Trading Grid data.", env: ["Claude", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Build an AP dashboard for the last 30 days comparing PO ordered quantity with ASN shipped quantity and invoiced quantity, by PO and supplier." }, { text: "Flag invoices received before the ASN." }, { text: "Show the documents for Meridian's latest flagged PO." }] },
-    tgo: { n: 8, connector: "native", title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must include it before the store's first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
+    tgo: { n: 8, sugg: ["Which maps changed in the last 30 days?", "Find failed ASNs from yesterday", "Which cross-references do the most maps use?"], connector: "native", title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must include it before the store's first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
       turns: [{ text: "Which maps and partners use STORE_TO_GLN, and what happens to an ASN for a store that isn't in it?" }, { text: "Prepare the STORE_TO_GLN entry for store 0844 Lynchburg, GLN 0614141084470." }, { approve: true }] },
   };
   const CLIENTS = {
@@ -1007,6 +1010,18 @@
     joule: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]],
     servicenow: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]] };
   const nextWeekday8 = () => { const d = new Date(); d.setHours(8, 0, 0, 0); do d.setDate(d.getDate() + 1); while (d.getDay() === 0 || d.getDay() === 6); return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + ", 8:00 AM"; };
+  // ChatGPT scheduled task details, opened from the task card.
+  function cgTaskModal(prompt) {
+    const runs = [0, 1, 2].map((k) => { const d = new Date(); d.setHours(8, 0, 0, 0); let n = 0; while (n <= k) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) n++; } return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + ", 8:00 AM"; });
+    return `<div class="cg-ov" data-cgtask="0"><div class="cg-modal" data-stop="1"><div class="cg-mh"><b>Scheduled task</b><button class="cg-x" data-cgtask="0" title="Close">${ic("x")}</button></div>
+      <div class="cg-f"><span>Name</span><b>Work orders on hold</b></div>
+      <div class="cg-f"><span>Schedule</span><b>Weekdays at 8:00 AM (ET)</b></div>
+      <div class="cg-f"><span>Instructions</span><b>${esc(prompt)}</b></div>
+      <div class="cg-f"><span>Apps</span><b>Trading Grid</b></div>
+      <div class="cg-f"><span>Notify</span><b>Push and email</b></div>
+      <div class="cg-f"><span>Next runs</span><b>${runs.map(esc).join("<br>")}</b></div>
+      <div class="cg-ma"><button class="cg-btn" data-cgtask="0">Pause</button><button class="cg-btn pri" data-cgtask="0">Done</button></div></div></div>`;
+  }
   function clItem(id, K, c, m, mi) {
     if (m.role === "user" && id === "teams" && m.as && m.as !== S.meta.persona.name) return `<div class="cl-b other"><div class="cl-av round o">${esc(initials(m.as))}</div><div class="cl-bb"><div class="cl-meta">${esc(m.as)} <span>${hhmm(m.t)}</span></div><div class="cl-md">${esc(m.text)}</div></div></div>`;
     if (m.role === "user") return `<div class="cl-u">${id === "teams" ? `<div class="cl-meta r">${hhmm(m.t)}</div>` : ""}<div class="cl-ub">${esc(m.text)}</div></div>`;
@@ -1014,7 +1029,7 @@
     const last = mi === c.items.length - 1;
     const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
     const acts = (CL_ACTS[id] ?? []).map(([i, t]) => `<button title="${t}" ${i === "copy" ? `data-copy="${esc(m.text)}"` : i === "refresh" ? `data-prompt="${esc(prevUser)}"` : ""}>${ic(i)}</button>`).join("");
-    const task = id === "chatgpt" && /^every (weekday|day|week)/i.test(prevUser) ? `<div class="cl-task">${ic("calendar")}<div><b>Task scheduled</b><span>Weekdays at 8:00 AM · next run ${nextWeekday8()}</span></div></div>` : "";
+    const task = id === "chatgpt" && /^every (weekday|day|week)/i.test(prevUser) ? `<div class="cl-task">${ic("calendar")}<div><b>Task scheduled</b><span>Weekdays at 8:00 AM · next run ${nextWeekday8()}</span></div><button class="cl-taskbtn" data-cgtask="1">View task</button></div>${S.cgTask ? cgTaskModal(prevUser) : ""}` : "";
     const artCard = id === "claude" && m.steps?.some((x) => x.name === "tgi_get_quantity_reconciliation" && x.done) ? `<div class="cl-artcard">${ic("chart")}<div><b>AP quantity variance</b><span>Interactive artifact</span></div></div>` : "";
     const body = `${task}${subLine(m, id === "teams")}${nativeActivity(id, m, mi)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}${artCard}`;
     if (id === "teams") return `<div class="cl-b"><div class="cl-av sq">${esc(initials(c.botName))}</div><div class="cl-bb"><div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>${body}${done ? `<div class="cl-aig">AI generated</div>` : ""}</div></div>`;
@@ -1164,7 +1179,7 @@
     const fails = Object.entries(d.byDoc).map(([k, v]) => `${k} × ${v}`).join(", ");
     const notes = [
       ...(S.snNotes ?? []).map((n) => [n.who, n.kind, n.at, n.text]),
-      ["Jordan Lee", "Work notes", new Date(Date.parse(d.openedAt) + 35 * 60000).toISOString(), `Raised certificate renewal ${d.changeRequest} in Trading Grid Community Projects. BN connectivity assigned; partner's new signing certificate attached.`],
+      ["Jordan Lee", "Work notes", new Date(Date.parse(d.openedAt) + 35 * 60000).toISOString(), `Raised certificate renewal ${d.changeRequest} in Trading Grid Community Projects. BN Support Operations assigned; partner's new signing certificate attached.`],
       ["Jordan Lee", "Work notes", new Date(Date.parse(d.openedAt) + 6 * 60000).toISOString(), `Trading Grid shows inbound files from ${d.partner} failing AS2 signature verification since ${new Date(d.certificateExpired).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Outbound POs are unaffected.`],
       ["System", "Field changes", d.openedAt, `Incident created from Trading Grid alert. Priority 2 - High. Assignment group ${d.assignmentGroup}.`],
     ];
@@ -1204,7 +1219,7 @@
         <div class="cl-sec">${ic("chev")}Chats</div>
         <div class="cl-list">${list.map(([aid, n]) => `<button class="cl-link ${aid === agentId ? "on" : ""}" data-cpsuse="${aid}"><span class="cl-av sq sm">${esc(initials(n))}</span><span class="tm-li"><span class="tm-n"><b>${esc(n)}</b><i>${when(aid)}</i></span><span class="tm-p">${esc(prev(aid))}</span></span></button>`).join("")}</div></aside>`;
     }
-    if (id === "chatgpt") return `<aside class="cl-side"><div class="cl-brand"><span class="cl-tiny">ChatGPT Enterprise, simulated</span><span class="cl-sp"></span><button class="cl-ib dt" title="Close sidebar">${ic("side")}</button>${close}</div>
+    if (id === "chatgpt") return `<aside class="cl-side"><div class="cl-brand"><span class="cl-brandtx">ChatGPT Enterprise</span><span class="cl-sp"></span><button class="cl-ib dt" title="Close sidebar">${ic("side")}</button>${close}</div>
       ${nav("compose", "New chat", `data-newconv="${key}"`)}${nav("search", "Search chats")}${nav("image", "Library")}
       <div class="cl-sec">GPTs</div><div class="cl-list">${list.map(([aid, n]) => link(aid, n, `<span class="cl-gi">${esc(initials(n).slice(0, 1))}</span>`)).join("")}</div>${hist}
       ${prof(org)}</aside>`;
@@ -1234,7 +1249,7 @@
     if (id === "teams") S.ctxFor[key] = () => `Application: Microsoft Teams group chat "Supplier Onboarding". Members: Jordan Lee (jordan.lee), Morgan Chen (m.chen) and the Trading Grid Agent. Latest message from: ${S.lastAs ?? "Jordan Lee"}.`;
     if (K.ws) return `<div class="cl cl-${id} ws">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
     const chats = Object.values(S.convs).filter((x) => x.key.startsWith(`cl:${id}:`) && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
-    const rail = id === "teams" ? `<header class="tm-bar"><span class="tm-l"><span class="cl-tiny">Microsoft Teams, simulated</span><span class="tm-nav">${ic("left")}${ic("right")}</span></span><span class="tm-search">${ic("search")}<span>Search</span></span><span class="tm-r"><button class="cl-ib" title="Settings and more">${ic("more")}</button><span class="cl-av round sm pres">JL</span></span></header>
+    const rail = id === "teams" ? `<header class="tm-bar"><span class="tm-l"><span class="cl-brandtx">Microsoft Teams</span><span class="tm-nav">${ic("left")}${ic("right")}</span></span><span class="tm-search">${ic("search")}<span>Search</span></span><span class="tm-r"><button class="cl-ib" title="Settings and more">${ic("more")}</button><span class="cl-av round sm pres">JL</span></span></header>
       <nav class="cl-rail">${[["bell", "Activity"], ["chats", "Chat", 1], ["teams", "Teams"], ["calendar", "Calendar"], ["phone", "Calls"], ["sparkle", "Copilot"], ["apps", "Apps", 0, 1]].map(([i, l, on, end]) => `<button class="${on ? "on" : ""}${end ? " end" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : "";
     return `<div class="cl cl-${id} ${S.cps.side ? "side-open" : ""}">${rail}
       ${clSide(id, K, key, agentId, list, chats)}
@@ -1296,10 +1311,8 @@
     const frames = [stageFrame(id, "desktop"), stageFrame(id, "phone")].filter(Boolean).map((f) => f.contentWindow).filter(Boolean);
     let ready = false;
     try {
-      const busy = frames.some((w) => w.__stageBusy?.());
-      const main = frames[0];
-      let step = S.stageStep[id] ?? 0;
-      if (step > 0 && main?.__stageEmpty?.() && !busy) { step = 0; S.stageStep[id] = 0; }
+      const busy = frames.some((w) => w.__stageBusy?.() || w.document.querySelector("[data-compose] textarea")?.value || w.__stageTyping);
+      const step = S.stageStep[id] ?? 0;
       const t = sc?.turns[step];
       if (t?.approve && !busy) {
         const pending = frames.some((w) => w.document.querySelector("[data-approve]"));
@@ -1435,7 +1448,7 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
+    const t = ev.target.closest("[data-stop],[data-cgtask],[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.stagego) return stageShow(d.stagego);
@@ -1451,6 +1464,8 @@
     if (d.scrun) { ev.stopPropagation(); t.disabled = true; t.textContent = "Running"; const r = await api("/api/scenarios/run", { method: "POST", body: { ids: [d.scrun] } }); for (const x of r.results ?? []) S.sc.results[x.id] = x; S.sc.open[d.scrun] = true; S.plans = await api("/api/plans"); return render(); }
     if (d.scall != null) { if (!confirm(`Run all ${S.sc.catalog.length} scenarios? Demo data is reset before each scenario and restored afterwards.`)) return; S.sc.running = true; render(); const r = await api("/api/scenarios/run", { method: "POST", body: { all: true } }); S.sc.running = false; for (const x of r.results ?? []) S.sc.results[x.id] = x; S.plans = await api("/api/plans"); return render(); }
     if (d.scrow) { S.sc.open[d.scrow] = !S.sc.open[d.scrow]; return render(); }
+    if (d.cgtask != null) { S.cgTask = d.cgtask === "1"; return render(); }
+    if (d.stop) return;
     if (d.copy) {
       const done = () => { const lab = t.querySelector(".cp-l"); const el = lab ?? t; const o = el.textContent; el.textContent = "Copied"; t.classList.add("ok"); setTimeout(() => { el.textContent = o; t.classList.remove("ok"); }, 1400); };
       const fallback = () => { const ta = document.createElement("textarea"); ta.value = d.copy; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;opacity:0;top:0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch {} ta.remove(); };
