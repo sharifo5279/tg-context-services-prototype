@@ -37,7 +37,7 @@ export const AGENTS: AgentDef[] = [
     inspiredBy: [{ name: "Trading Grid Aviator", where: "Trading Grid Online" }],
     scenario: "One agent for every Trading Grid question, with specialist sub-agents",
     instructions: [
-      { title: "Sub-agents", body: "You are the Trading Grid Agent. Before using data tools, call engage_subagent with the specialist sub-agent that fits the question. Engage another sub-agent when the question moves to its area. Follow the returned instructions and tool guidance; the shared answer format still applies. Use list_subagents when the user asks which agents are available, and answer with one status block (agent name | Live, Pending or Open for roadmap and incubating | short focus) or a donut by status plus a short table, and one sentence on the identity and grant they run under." },
+      { title: "Sub-agents", body: "You are the Trading Grid Agent. Before using data tools, call engage_subagent with the specialist sub-agent that fits the question. Engage another sub-agent when the question moves to its area. Follow the returned instructions and tool guidance; the shared answer format still applies. Use list_subagents when the user asks which agents are available, and answer with one sentence on the identity and access they run under, then one cards block listing every sub-agent (name | what it does in under 12 words | area). Do not label agents with maturity or status." },
       { title: "Explain the transaction", body: "For a failed transaction: give the likely cause and which side owns the fix in one or two sentences, then at most 3 numbered next steps." },
       { title: "Mapping questions", body: "For map and cross-reference questions, engage map-inventory, map-level and mapping-rule-explorer. Check lookup metadata for every map in the solution, not a sample, then get the governing rule from mapping-rule-explorer for its not-found branch. Answer with a table of maps and partners that use the lookup and a flow block of the not-found branch (condition, error code, effect)." },
     ],
@@ -87,7 +87,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "asn-exception",
-    status: "Custom",
+    status: "Live today",
     name: "ASN Exception Agent",
     persona: "EDI support analyst",
     role: "Identify rejected, failed or missing advance ship notices, explain the cause, and prepare the fix and supplier follow-up.",
@@ -127,7 +127,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "fa-reconciliation",
-    status: "Incubating",
+    status: "Live today",
     name: "FA Reconciliation Agent",
     persona: "EDI manager",
     role: "Identify purchase orders not acknowledged on time, separate missing from rejected acknowledgments, and list suppliers for follow-up.",
@@ -146,7 +146,7 @@ export const AGENTS: AgentDef[] = [
   },
   {
     id: "partner-onboarding",
-    status: "On the roadmap",
+    status: "Live today",
     name: "Onboarding Guide Agent",
     persona: "Onboarding manager",
     role: "Report onboarding status per new partner, confirm first live transactions, and prepare provisioning and connection requests.",
@@ -288,7 +288,7 @@ export const AGENTS: AgentDef[] = [
   },
   // ---- On the roadmap ----
   {
-    id: "configuration-resolution", status: "On the roadmap", name: "Configuration Resolution Agent", persona: "EDI support analyst",
+    id: "configuration-resolution", status: "Live today", name: "Configuration Resolution Agent", persona: "EDI support analyst",
     role: "Resolve configuration questions behind a delivery or routing problem: addresses, qualifiers, relationships, delivery method and map assignment.",
     inspiredBy: [{ name: "Configuration Resolution Agent", where: "Trading Grid Aviator portfolio (on the roadmap)" }],
     scenario: "Any EDI error, read and routed to its fix",
@@ -299,7 +299,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Confirm how Coastline Apparel's 810s reach us: route, addresses, relationship and map assignment."],
   },
   {
-    id: "edi-document-analyzer", status: "On the roadmap", name: "EDI Document Analyzer Agent", persona: "EDI support analyst",
+    id: "edi-document-analyzer", status: "Live today", name: "EDI Document Analyzer Agent", persona: "EDI support analyst",
     role: "Check a document element by element against the implementation guide and list every element that breaks it.",
     inspiredBy: [{ name: "EDI Document Analyzer Agent", where: "Trading Grid Aviator portfolio (on the roadmap)" }],
     scenario: "Payload problem without reading raw EDI",
@@ -311,7 +311,7 @@ export const AGENTS: AgentDef[] = [
   },
   // ---- Incubating ----
   {
-    id: "xref-checker", status: "Incubating", name: "Xref Checker Agent", persona: "EDI support analyst",
+    id: "xref-checker", status: "Live today", name: "Xref Checker Agent", persona: "EDI support analyst",
     role: "Check the cross-reference tables behind failing maps and prepare the missing or incorrect entries for approval.",
     inspiredBy: [{ name: "Xref Checker Agent", where: "Trading Grid Aviator portfolio (incubating)" }],
     scenario: "Any EDI error, read and routed to its fix",
@@ -322,7 +322,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Check the cross-reference tables behind failed 856s in the last 7 days."],
   },
   {
-    id: "error-triage", status: "Incubating", model: "fast", name: "Error Triage Agent", persona: "Integration operations lead",
+    id: "error-triage", status: "Live today", model: "fast", name: "Error Triage Agent", persona: "Integration operations lead",
     role: "Triage every failure in a window by error family, owning side and urgency.",
     inspiredBy: [{ name: "Error Triage Agent", where: "Trading Grid Aviator portfolio (incubating)" }],
     scenario: "One root cause behind many failures",
@@ -333,7 +333,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Triage every failure from the last 24 hours by error family."],
   },
   {
-    id: "connection-health", status: "Incubating", model: "fast", name: "Connection Health Agent", persona: "B2B support analyst",
+    id: "connection-health", status: "Live today", model: "fast", name: "Connection Health Agent", persona: "B2B support analyst",
     role: "Explain delivery failures and timeouts against connection status, retry history and partner pickup.",
     inspiredBy: [{ name: "Connection Health Agent", where: "Trading Grid Aviator portfolio (incubating)" }],
     scenario: "Partner endpoint outage and recovery",
@@ -344,7 +344,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Which partner endpoints are down or degraded right now, and since when?", "Which partners stopped returning 997s, and are their connections healthy?"],
   },
   {
-    id: "remediation-advisor", status: "Incubating", name: "Remediation Advisor Agent", persona: "EDI manager",
+    id: "remediation-advisor", status: "Live today", name: "Remediation Advisor Agent", persona: "EDI manager",
     role: "Recommend the corrective action, owner and next step for each failure family.",
     inspiredBy: [{ name: "Remediation Advisor Agent", where: "Trading Grid Aviator portfolio (incubating)" }],
     scenario: "One root cause behind many failures",
@@ -357,7 +357,7 @@ export const AGENTS: AgentDef[] = [
 
   // ---- Command Center Performance Monitor (incubation): monitor agents ----
   {
-    id: "ccpm-nora", status: "Incubating", name: "Nora, Conformance Agent", persona: "Supplier compliance manager",
+    id: "ccpm-nora", status: "Live today", name: "Nora, Conformance Agent", persona: "Supplier compliance manager",
     subtitle: "Command Center Performance Monitor",
     role: "Validate individual transactions against conformance rules and explain each finding with its chain of reasoning.",
     inspiredBy: [{ name: "Nora (conformance)", where: "Command Center Performance Monitor (incubation)" }],
@@ -369,7 +369,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Which shipments failed conformance this week, and why?", "Explain the chain of reasoning for the newest conformance finding."],
   },
   {
-    id: "ccpm-lex", status: "Incubating", name: "Lex, Timing and SLA Agent", persona: "Buying desk lead",
+    id: "ccpm-lex", status: "Live today", name: "Lex, Timing and SLA Agent", persona: "Buying desk lead",
     subtitle: "Command Center Performance Monitor",
     role: "Check SLA policies across transaction types, such as PO acknowledgment and PO response times, with partner grace periods.",
     inspiredBy: [{ name: "Lex (timing and SLA)", where: "Command Center Performance Monitor (incubation)" }],
@@ -381,7 +381,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Which suppliers missed the 24-hour PO acknowledgment SLA this week?", "Create a Lex rule: 856 within 24 hours of the 855 for Summit Beverage. Test it first."],
   },
   {
-    id: "ccpm-liz", status: "Incubating", name: "Liz, Process Agent", persona: "Supply chain analyst",
+    id: "ccpm-liz", status: "Live today", name: "Liz, Process Agent", persona: "Supply chain analyst",
     subtitle: "Command Center Performance Monitor",
     role: "Check that business documents follow the expected sequence, such as ship notice before invoice.",
     inspiredBy: [{ name: "Liz (process)", where: "Command Center Performance Monitor (incubation)" }],
@@ -393,7 +393,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Which invoices arrived before their ship notice?"],
   },
   {
-    id: "ccpm-reese", status: "Incubating", name: "Reese, Reconciliation Agent", persona: "Accounts payable lead",
+    id: "ccpm-reese", status: "Live today", name: "Reese, Reconciliation Agent", persona: "Accounts payable lead",
     subtitle: "Command Center Performance Monitor",
     role: "Validate across documents: invoices against sent purchase orders, and score suppliers on the results.",
     inspiredBy: [{ name: "Reese (reconciliation)", where: "Command Center Performance Monitor (incubation)" }],
@@ -407,7 +407,7 @@ export const AGENTS: AgentDef[] = [
 
   // ---- TG Insights: Aviator-powered application features ----
   {
-    id: "tgi-redelivery", status: "Custom", model: "fast", name: "Redelivery Agent", persona: "B2B support analyst",
+    id: "tgi-redelivery", status: "Live today", model: "fast", name: "Redelivery Agent", persona: "B2B support analyst",
     subtitle: "Trading Grid Insights",
     role: "Find failed deliveries, check whether the partner endpoint has recovered, and prepare redelivery or reprocess for approval.",
     inspiredBy: [{ name: "Automated redelivery (powered by Aviator)", where: "TG Insights" }],
@@ -419,7 +419,7 @@ export const AGENTS: AgentDef[] = [
     starters: ["Which failed deliveries can be redelivered now?", "Reprocess ASNs that failed on a missing store cross-reference whose entry now exists."],
   },
   {
-    id: "tgi-alerts", status: "Custom", model: "fast", name: "Alerts and Reports Agent", persona: "EDI operations analyst",
+    id: "tgi-alerts", status: "Live today", model: "fast", name: "Alerts and Reports Agent", persona: "EDI operations analyst",
     subtitle: "Trading Grid Insights",
     role: "Show the dashboard, saved filters, alerts and scheduled reports, and turn a saved filter into an alert.",
     inspiredBy: [{ name: "Self-service alerts and reports", where: "TG Insights" }],

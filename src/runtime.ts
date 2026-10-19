@@ -77,7 +77,7 @@ export const HOSTS: Record<HostKey, any> = {
   "claude-ui": {
     key: "claude-ui", connectors: ["context"], exposure: "External", route: EXT("Claude"), name: "Claude chatbot (Claude UI)", shortName: "Claude UI",
     authPattern: "Custom connector in Claude settings; token in connector URL",
-    principalType: "DELEGATED_USER", principal: "jordan.lee@harborviewretail.com", clientApplication: "app-claude-ui-hrg",
+    principalType: "DELEGATED_USER", principal: "priya.raman@harborviewretail.com", clientApplication: "app-claude-ui-hrg", persona: { name: "Priya Raman", title: "AI transformation lead" },
     note: "Executes as the connecting user.",
     operations: BASE_OPS,
   },

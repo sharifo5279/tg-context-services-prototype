@@ -25,6 +25,7 @@ export type Profile = {
   storeNumbers?: boolean;
   /** Share of invoices sent before the ASN. */
   invoiceFirst?: number;
+  asnMissing?: number;
   /** Inbound map used for 856 and 810. */
   map856?: string;
   map810?: string;
@@ -69,7 +70,7 @@ export const PROFILES: Profile[] = [
   { id: "C20006", prefix: "HOL", flow: "EDIFACT_SUPPLIER", protocol: "AS2", orders: 4, poAck: 0, goLive: -1090 },
   { id: "C20007", prefix: "SMB", flow: "X12_SUPPLIER", protocol: "SFTP", orders: 11, poAck: 0.85, map855: "M-1008", goLive: -1240 },
   { id: "C20008", prefix: "ATL", flow: "X12_SUPPLIER", protocol: "AS2", orders: 9, poAck: 0.9, goLive: -1440 },
-  { id: "C20009", prefix: "MPC", flow: "X12_SUPPLIER", protocol: "AS2", orders: 10, poAck: 0.88, invoiceFirst: 0.06, goLive: -970 },
+  { id: "C20009", prefix: "MPC", flow: "X12_SUPPLIER", protocol: "AS2", orders: 10, poAck: 0.88, invoiceFirst: 0.06, asnMissing: 0.03, goLive: -970 },
   { id: "C20013", prefix: "CRL", flow: "3PL", protocol: "AS2", orders: 30, poAck: 0, goLive: -410 },
   { id: "C20014", prefix: "MRC", flow: "WEB_EDI", protocol: "WEB_EDI", orders: 1.5, poAck: 0, storeNumbers: true, invoiceFirst: 0.2, goLive: -150 },
   { id: "C20015", prefix: "BYS", flow: "X12_SUPPLIER", protocol: "AS2", orders: 12, poAck: 0.9, goLive: -1100 },

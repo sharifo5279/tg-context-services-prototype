@@ -141,6 +141,7 @@
     if (kind === "steps" || kind === "progress") return `<div class="rv">${head}<div class="rv-steps">${data.map(([l, st, d]) => `<div class="rv-sp ${tone(st)}"><i></i><b>${inline(l)}</b>${st ? `<em>${inline(st)}</em>` : ""}${d ? `<span>${inline(d)}</span>` : ""}</div>`).join("")}</div></div>`;
     if (kind === "flow") return `<div class="rv">${head}<div class="rv-flow">${data.map(([l, st, d], k) => `${k ? `<div class="rv-arrow">›</div>` : ""}<div class="rv-node ${tone(st)}"><b>${inline(l)}</b>${st ? `<em>${inline(st)}</em>` : ""}${d ? `<span>${inline(d)}</span>` : ""}</div>`).join("")}</div></div>`;
     if (kind === "record" || kind === "card") { const st = meta("status")?.join(", "); return `<div class="rv"><div class="rv-record"><div class="rv-rh">${title ? `<b>${inline(title)}</b>` : ""}${st ? `<em class="${tone(st)}">${inline(st)}</em>` : ""}</div><div class="rv-kv">${rowsOf.map(([k, v]) => `<span>${inline(k)}</span><b>${inline(v ?? "")}</b>`).join("")}</div></div></div>`; }
+    if (kind === "cards") return `<div class="rv">${head}<div class="rv-cards">${data.map(([n, d, t]) => `<div class="rv-card"><div class="rv-ci">${esc(initials(n.replace(/&[a-z]+;/g, "")) || "TG")}</div><div><b>${inline(n)}</b>${d ? `<span>${inline(d)}</span>` : ""}${t ? `<em>${inline(t)}</em>` : ""}</div></div>`).join("")}</div></div>`;
     if (kind === "contact") return `<div class="rv">${head}<div class="rv-contacts">${data.map(([n, r, e, ph]) => `<div class="rv-contact"><i>${esc(initials(n.replace(/&[a-z]+;/g, "")))}</i><div><b>${inline(n)}</b>${r ? `<span>${inline(r)}</span>` : ""}${e ? `<a>${inline(e)}</a>` : ""}${ph ? `<span>${inline(ph)}</span>` : ""}</div></div>`).join("")}</div></div>`;
     if (kind === "alert" || kind === "callout") return data.map(([sev, t, d]) => `<div class="rv-alert ${tone(sev)}"><b>${inline(t ?? sev)}</b>${d ? `<span>${inline(d)}</span>` : ""}</div>`).join("");
     if (kind === "actions") return `<div class="rv-actions">${data.map(([l, pr]) => `<button class="rv-act" data-prompt="${pr || l}">${inline(l)}</button>`).join("")}</div>`;
@@ -361,11 +362,38 @@
     mirror({ snNotes: S.snNotes });
     render();
   }
+  // Gemini Enterprise Agent Designer: draft and publish run in the client; the published agent's run goes to the Trading Grid Agent.
+  const GEM_AGENT = { name: "Supplier failure analyst", schedule: "Every day at 8:00 AM ET", identity: "agent-hrg-supplier-ops (grant GRT-HRG-2026-014)", table: "harborview-ops.hrg_b2b.tg_error_analysis",
+    steps: ["Get yesterday's failed inbound transactions from the Trading Grid Insights failure report (Transaction Finder)", "Send each failure to the Trading Grid Error Analysis agent", "Write cause, owner and next action per transaction to BigQuery", "Post a summary to the Supplier Operations space"],
+    tools: ["Trading Grid Agent Connectors: Trading Grid Agent (Transaction Finder, Error Analysis)", "BigQuery: insert rows", "Google Chat: post message"] };
+  function gemLocal(key, text, kind) {
+    const c = S.convs[key];
+    c.items.push({ role: "user", text, t: Date.now() });
+    let html;
+    if (kind === "draft") {
+      S.gem = { draft: GEM_AGENT };
+      const g = GEM_AGENT;
+      html = `<div class="gm-card"><div class="gm-h"><span class="gm-ic">${ic("sparkle")}</span><div><b>${esc(g.name)}</b><span>Agent draft · Agent Designer</span></div></div>
+        <div class="gm-kv"><span>Trigger</span><b>${esc(g.schedule)}</b><span>Runs as</span><b>${esc(g.identity)}</b><span>Output</span><b class="mono">${esc(g.table)}</b></div>
+        <div class="gm-sec">Steps</div><ol class="gm-steps">${g.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+        <div class="gm-sec">Tools</div><div class="gm-tools">${g.tools.map((x) => `<span>${esc(x)}</span>`).join("")}</div>
+        <div class="gm-sec">BigQuery table schema</div><div class="gm-schema">${["run_date DATE", "transaction_id STRING", "partner STRING", "document STRING", "error_code STRING", "cause STRING", "owner STRING", "next_action STRING"].map((x) => `<code>${esc(x)}</code>`).join("")}</div></div>`;
+      c.items.push({ role: "agent", agentId: c.agentId, steps: [], text: "I drafted the agent in Agent Designer. Review the trigger, steps and output table, then publish it.", html, plans: [], thinking: false, t0: Date.now() });
+    } else {
+      S.gem.published = true;
+      html = `<div class="gm-card pub"><div class="gm-h"><span class="gm-ic ok">${ic("check")}</span><div><b>${esc(GEM_AGENT.name)} is live</b><span>Published to Gemini Enterprise</span></div></div>
+        <div class="gm-kv"><span>Available to</span><b>Supplier Operations, Harborview Retail Group</b><span>Schedule</span><b>${esc(GEM_AGENT.schedule)}, next run tomorrow</b><span>Connections</span><b>Trading Grid Agent Connectors · BigQuery · Google Chat</b><span>Version</span><b>1.0</b></div></div>`;
+      c.items.push({ role: "agent", agentId: c.agentId, steps: [], text: "Published. The agent runs every morning at 8:00 AM and is available to the Supplier Operations team.", html, plans: [], thinking: false, t0: Date.now() });
+    }
+    render();
+  }
   async function send(key, text) {
     const c = S.convs[key];
     if (!c || c.busy || !text.trim()) return;
     const as = S.nextAs; S.nextAs = null; S.lastAs = as ?? S.meta.persona.name;
     if (c.host === "servicenow" && /\bwork note\b/i.test(text)) return addWorkNote(key, text);
+    if (c.host === "gemini-enterprise" && /^build a gemini agent/i.test(text)) return gemLocal(key, text, "draft");
+    if (c.host === "gemini-enterprise" && /^publish/i.test(text) && S.gem?.draft) return gemLocal(key, text, "publish");
     c.busy = true;
     c.items.push({ role: "user", text, t: Date.now(), ...(as ? { as } : {}) });
     const m = { role: "agent", agentId: c.agentId, steps: [], text: "", plans: [], thinking: true, t0: Date.now() };
@@ -920,9 +948,9 @@
   function cpsChat(c, agentId, avail, blocked) {
     const a = agent(agentId);
     const first = (S.meta.persona.name || "").split(" ")[0];
-    const label = agentId === "context-assistant" ? "Copilot" : a?.name ?? "Copilot";
-    const empty = !c.items.length ? `<div class="cop-hello"><h1>Hi ${esc(first)}, how can I help?</h1></div>` : "";
-    const starters = !c.items.length ? `<div class="cop-starters">${(stagePrompts("copilot") ?? (a?.starters ?? []).slice(0, 4).map(promptOf)).map((p) => `<button class="cop-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : "";
+    const label = c.label ?? (agentId === "context-assistant" ? "Copilot" : a?.name ?? "Copilot");
+    const empty = !c.items.length ? (c.label ? `<div class="cop-hello"><div class="cop-agav">${esc(initials(c.label))}</div><h1>${esc(c.label)}</h1><p class="cop-agd">Built in Copilot Studio · Trading Grid Context Connectors</p></div>` : `<div class="cop-hello"><h1>Hi ${esc(first)}, how can I help?</h1></div>`) : "";
+    const starters = !c.items.length ? `<div class="cop-starters">${(c.label ? ["Which stores were affected by short shipments this week?", "Show Crestline orders still waiting for a 945"] : stagePrompts("copilot") ?? (a?.starters ?? []).slice(0, 4).map(promptOf)).map((p) => `<button class="cop-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : "";
     const dis = c.busy ? "disabled" : "";
     return `<header class="cop-top"><button class="cop-round cop-menu" data-copside="1" title="Menu">${ic("menu")}</button>
         <label class="cop-pick"><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "Copilot" : x.name)}</option>`).join("")}</select><span>${esc(label)}</span>${ic("chev")}</label>
@@ -938,8 +966,11 @@
     const eco = "copilot-studio";
     const avail = studioAgents().filter((a) => S.deploy?.agents.find((x) => x.agentId === a.id)?.clients[eco]?.published && !S.deploy.agents.find((x) => x.agentId === a.id).clients[eco].blocked);
     const agentId = "context-assistant";
-    const key = `ext:${eco}:${agentId}`;
+    let pub = null; try { pub = JSON.parse(sessionStorage.getItem("tg-cps-agent") || "null"); } catch {}
+    const custom = pub && qs().get("agent") === "cps-custom";
+    const key = custom ? `ext:${eco}:cps-custom` : `ext:${eco}:${agentId}`;
     const c = conv(key, agentId, eco);
+    if (custom) { c.label = pub.name; S.ctxFor[key] = () => [`Application: Microsoft 365 Copilot. The user is chatting with "${pub.name}", an agent Harborview built in Copilot Studio and published to Copilot and Teams.`, `Agent instructions: ${pub.instructions.join(" ")}`, "Answer as this agent. Show results directly; do not draft or post a channel message.", `Today: ${new Date().toISOString().slice(0, 10)}.`].join("\n"); }
     const blocked = (S.meta.clientStatus[eco] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => cpsChat(cc, agentId, avail, blocked);
     (S.conFor ??= {})[key] = "context";
@@ -948,7 +979,8 @@
     return `<div class="cop ${S.cps.side ? "side-open" : ""}">
       <aside class="cop-side"><div class="cop-brand"><span>Copilot</span><span class="cop-tiny">simulated</span><span class="cop-sp"></span><button class="cop-ib" title="Apps">${ic("grid")}</button><button class="cop-ib cop-x" data-copside="0" title="Close">${ic("x")}</button></div>
         ${nav.map(([i, l, h]) => `<button class="cop-nav" ${h}>${ic(i)}<span>${l}</span></button>`).join("")}
-        <div class="cop-sec">Pinned</div><div class="cop-agents"><button class="cop-chatlink ${agentId === "context-assistant" ? "on" : ""}" data-cpsuse="context-assistant">${ic("sparkle")}<span>Copilot</span></button></div>
+        <div class="cop-sec">Pinned</div><div class="cop-agents"><button class="cop-chatlink ${!custom ? "on" : ""}" data-cpsuse="context-assistant">${ic("sparkle")}<span>Copilot</span></button></div>
+        ${pub ? `<div class="cop-sec">Agents</div><div class="cop-agents"><button class="cop-chatlink ${custom ? "on" : ""}" data-cpsuse="cps-custom"><i>${esc(initials(pub.name))}</i><span>${esc(pub.name)}</span></button></div>` : ""}
         ${chats.length ? `<div class="cop-sec">Chats</div>${chats.map(([id, t]) => `<button class="cop-chatlink" data-cpsuse="${id}"><span>${esc(t.slice(0, 48))}</span></button>`).join("")}` : ""}
         <div class="cop-prof"><div class="avatar sm">JL</div><div><div class="n">${esc(S.meta.persona.name)}</div><div class="s">Harborview Retail Group</div></div></div></aside>
       <div class="cop-scrim" data-copside="0"></div>
@@ -962,16 +994,16 @@
       turns: [{ text: "How is onboarding progressing for Cedar Valley Furniture?", as: "Jordan Lee" }, { text: "Raise a change request for Cedar Valley's inbound 810 invoice map, using the spec on file.", as: "Morgan Chen" }, { approve: true }] },
     servicenow: { n: 2, sugg: ["Summarize inbound failures in the last 24 hours", "Which partner certificates expire this quarter?", "Show other open incidents for Northfield Foods"], connector: "agents", title: "AS2 certificate failure for one partner", setup: "Northfield Foods' AS2 signing certificate expired and inbound 855, 856 and 810 files are being rejected. Jordan tracks the fix from incident INC0041873 in Service Operations Workspace, with Now Assist calling the Trading Grid Agent.", env: ["ServiceNow Service Operations Workspace", "Now Assist", "Jordan Lee, delegated"],
       turns: [{ text: "What is the status of the AS2 certificate fix for Northfield Foods?" }, { text: "Add a work note to this incident summarizing the failure, the fix in progress under ST-10500 and WO-5600, and who owns it." }, { text: "Is there an estimate for when the new certificate will go live?" }] },
-    copilot: { n: 5, sugg: ["Which 940s have no 945 yet?", "Show Crestline shipment volume by day", "Summarize Crestline 214 delays this week"], connector: "context", title: "Building a monitoring agent in Copilot Studio", setup: "Distribution operations checks Crestline 945s in Copilot, then builds a daily short-shipment monitor in Copilot Studio.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
-      turns: [{ text: "Show yesterday's Crestline shipment confirmations." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { text: "Run it for yesterday." }] },
+    copilot: { n: 5, sugg: ["Which 940s have no 945 yet?", "Show Crestline shipment volume by day", "Summarize Crestline 214 delays this week"], connector: "context", title: "From Copilot to a published Copilot Studio agent", setup: "Crestline Logistics, Harborview's 3PL, ships store orders from the distribution center. Distribution operations checks Crestline's shipment confirmations in Copilot, builds a daily short-shipment monitor in Copilot Studio, tests and publishes it, then uses it back in Copilot.", env: ["Microsoft Copilot and Copilot Studio", "Trading Grid connector", "Jordan Lee, delegated"],
+      turns: [{ text: "Crestline Logistics ships our store orders from the distribution center. Show yesterday's shipment confirmations (945s) against the warehouse shipping orders (940s) we sent them." }, { src: "/c/copilotstudio", into: "[data-studiodesc]", then: "[data-studiocreate]", text: "Every morning, compare Crestline 945s to their 940s and post short shipments by order to the Distribution Ops channel." }, { click: "[data-studiotest]" }, { text: "Run the monitor for yesterday: match each Crestline 945 to its 940 and list the orders that shipped short, with ordered and shipped quantities by store." }, { click: "[data-studiopublish]" }, { src: "/copilot?agent=cps-custom", text: "Which orders shipped short from Crestline this week, and which stores did they affect?" }] },
     joule: { n: 4, sugg: ["Which Pinegate POs ship this week?", "Compare Pinegate's 855 rate with similar suppliers", "Show Pinegate's 997 acknowledgment history"], connector: "agents", title: "Supplier compliance: missing PO acknowledgments", setup: "Pinegate Home went live on Trading Grid 65 days ago. Compliance reviews Pinegate's purchase orders in S/4HANA, opens an unconfirmed PO and asks Joule, which calls the Trading Grid Agent and combines its evidence with SAP order values and the supplier agreement.", env: ["SAP S/4HANA, Monitor Supplier Confirmations", "Joule", "SAP service identity: status and references only"],
       turns: [{ s4open: true }, { text: "Pinegate hasn't confirmed this purchase order. Is this a one-off, or has Pinegate been missing PO acknowledgments since it went live?" }, { text: "Which Pinegate POs already have an ASN in Trading Grid but never received the mandatory PO acknowledgment (855)? Show the evidence.", on: "phone" }, { text: "Our agreement requires an 855 within 24 hours of each PO. For the POs on this list, which breached it, what order value is affected, and what compliance fee applies?" }] },
-    gemini: { n: 6, sugg: ["Show the access grant for our agent", "Which sub-agents are incubating?", "What does Error Analysis return for a failed 810?"], connector: "agents", title: "Agents that work with the Trading Grid Agent", setup: "Harborview's AI team builds a Supplier Operations agent that calls the Trading Grid Agent and its sub-agents.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
-      turns: [{ text: "Which Trading Grid agents can our agent call, and under what access?" }, { text: "Build an agent that sends failed inbound documents to Trading Grid for error analysis." }, { text: "Test it on a failed Northfield 856." }] },
+    gemini: { n: 6, sugg: ["What can the Error Analysis agent return for a failed 810?", "Show the access grant for our agent identity", "Which agents help with mapping questions?"], connector: "agents", title: "Gemini agents that call Trading Grid agents", setup: "Priya Raman, Harborview's AI transformation lead, builds a Gemini Enterprise agent that calls Trading Grid agents every morning, analyzes failed transactions and stores the results in BigQuery for the supplier operations team.", env: ["Gemini Enterprise", "Priya Raman, AI transformation lead", "Agent service identity under GRT-HRG-2026-014"],
+      turns: [{ text: "Which Trading Grid agents do we have access to, and what can each one do?" }, { text: "Build a Gemini agent that runs every morning at 8 AM, takes the failed transaction report from Trading Grid Insights, sends each failure to the Trading Grid Error Analysis agent, and stores the analysis in BigQuery for further analysis." }, { text: "Publish the agent to Gemini Enterprise for the supplier operations team." }, { text: "Run the agent now on the latest failed Northfield Foods 856." }] },
     chatgpt: { n: 3, sugg: ["Which change requests were completed this week?", "List partners with missing 997s yesterday", "Summarize Trading Grid activity for the last 7 days"], connector: "context", title: "Recurring follow-up task", setup: "B2B operations runs a scheduled ChatGPT task each weekday morning to review work orders on hold, then follows up with the suppliers who owe a test file.", env: ["ChatGPT Enterprise", "Trading Grid connector", "Jordan Lee, delegated"],
       turns: [{ text: "Every weekday at 8 AM, check Trading Grid for work orders on hold and tell me who owns the next action on each." }, { text: "Draft an email to Sunfield's EDI contact asking for the 945 test file our mapping team needs to finish the unit of measure change." }, { text: "Who is the contact at Rocky Coast for their test file?" }] },
-    claude: { n: 7, sugg: ["Chart weekly 810 volume by supplier", "Table of short shipments over 10%", "Which suppliers invoice above shipped quantity?"], connector: "context", title: "Rapid prototype: AP quantity dashboard", setup: "Accounts payable prototypes a 30-day PO, ASN and invoice quantity dashboard from live Trading Grid data.", env: ["Claude", "Trading Grid connector", "Jordan Lee, delegated"],
-      turns: [{ text: "Build an AP dashboard for the last 30 days comparing PO ordered quantity with ASN shipped quantity and invoiced quantity, by PO and supplier." }, { text: "Flag invoices received before the ASN." }, { text: "Show the documents for Meridian's latest flagged PO." }] },
+    claude: { n: 7, sugg: ["Which Meridian invoices exceed the shipped quantity?", "Chart Meridian's fill rate by week", "Compare Meridian with our other personal care suppliers"], connector: "context", title: "Accounts payable reconciliation built in Claude", setup: "Harborview's accounts payable team reconciles Meridian Personal Care's EDI documents by hand and keeps finding quantity discrepancies. Priya Raman builds a live reconciliation dashboard in Claude on Trading Grid data, publishes it to the team, adds a daily invoice check and a weekly reconciliation agent.", env: ["Claude", "Trading Grid Context Connectors", "Priya Raman, delegated"],
+      turns: [{ text: "Our accounts payable team reconciles Meridian Personal Care's EDI documents by hand and keeps finding quantity discrepancies. Build an accounts payable dashboard for Meridian covering the last 90 days: ordered (850), shipped (856) and invoiced (810) quantities by purchase order, with the exceptions highlighted." }, { click: "[data-artpub]" }, { click: "[data-artpubgo]" }, { text: "Every day at 7 AM, check Meridian's new invoices for any that have no shipment (ASN) matching their purchase order, and flag them in the dashboard for manual review." }, { text: "Create an agent that runs a weekly reconciliation roll-up for Meridian every Monday, monitors the health of their B2B transactions and sends the accounts payable team a summary." }] },
     tgo: { n: 8, sugg: ["Which maps changed in the last 30 days?", "Find failed ASNs from yesterday", "Which cross-references do the most maps use?"], connector: "native", title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must include it before the store's first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
       turns: [{ text: "Which maps and partners use STORE_TO_GLN, and what happens to an ASN for a store that isn't in it?" }, { text: "Prepare the STORE_TO_GLN entry for store 0844 Lynchburg, GLN 0614141084470." }, { approve: true }] },
   };
@@ -991,7 +1023,7 @@
       hello: () => "Test your agent", noStarters: true, sim: "Simulated client · Trading Grid Context Connectors" },
     chatgpt: { connector: "context", name: "ChatGPT Enterprise", host: "chatgpt-enterprise", ph: "Ask anything", auto: "ChatGPT",
       hello: () => "What can I help with?", sim: "Simulated client · Trading Grid Context Connectors" },
-    claude: { connector: "context", name: "Claude", host: "claude-ui", ph: "Reply to Claude", ph0: "How can I help you today?", auto: "Claude",
+    claude: { connector: "context", name: "Claude", host: "claude-ui", ph: "Reply to Claude", ph0: "How can I help you today?", auto: "Claude", who: "Priya Raman",
       hello: (n) => `${new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 18 ? "Afternoon" : "Evening"}, ${n}`, sim: "Simulated client · Trading Grid Context Connectors" },
   };
   function clCard(p) {
@@ -1012,6 +1044,17 @@
     servicenow: [["copy", "Copy"], ["thumbup", "Helpful"], ["thumbdown", "Not helpful"]] };
   const nextWeekday8 = () => { const d = new Date(); d.setHours(8, 0, 0, 0); do d.setDate(d.getDate() + 1); while (d.getDay() === 0 || d.getDay() === 6); return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + ", 8:00 AM"; };
   // ChatGPT scheduled task details, opened from the task card.
+  // BigQuery confirmation after the published Gemini agent runs: the row it wrote, from the answer's record block.
+  function bqCard(id, c, m, mi) {
+    if (id !== "gemini" || !S.gem?.published || m.thinking || !m.text) return "";
+    const prev = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
+    if (!/^(run|test)/i.test(prev)) return "";
+    const rec = m.text.match(/```record\n([\s\S]*?)```/)?.[1] ?? "";
+    const rows = rec.split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((r) => r.length >= 2 && r[0] && !/^(title|status):/i.test(r[0]));
+    if (!rows.length) return "";
+    return `<div class="bq-card"><div class="bq-h"><span class="bq-ic">${ic("chart")}</span><div><b>BigQuery</b><span>1 row inserted into <code>${esc(GEM_AGENT.table)}</code></span></div><em>Succeeded</em></div>
+      <div class="bq-t"><table><thead><tr>${rows.map((r) => `<th>${esc(r[0].toLowerCase().replace(/[^a-z0-9]+/g, "_"))}</th>`).join("")}</tr></thead><tbody><tr>${rows.map((r) => `<td>${esc(r.slice(1).join(", "))}</td>`).join("")}</tr></tbody></table></div></div>`;
+  }
   function cgTaskModal(prompt) {
     const runs = [0, 1, 2].map((k) => { const d = new Date(); d.setHours(8, 0, 0, 0); let n = 0; while (n <= k) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) n++; } return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + ", 8:00 AM"; });
     return `<div class="cg-ov" data-cgtask="0"><div class="cg-modal" data-stop="1"><div class="cg-mh"><b>Scheduled task</b><button class="cg-x" data-cgtask="0" title="Close">${ic("x")}</button></div>
@@ -1031,8 +1074,10 @@
     const prevUser = [...c.items.slice(0, mi)].reverse().find((x) => x.role === "user")?.text ?? "";
     const acts = (CL_ACTS[id] ?? []).map(([i, t]) => `<button title="${t}" ${i === "copy" ? `data-copy="${esc(m.text)}"` : i === "refresh" ? `data-prompt="${esc(prevUser)}"` : ""}>${ic(i)}</button>`).join("");
     const task = id === "chatgpt" && /^every (weekday|day|week)/i.test(prevUser) ? `<div class="cl-task">${ic("calendar")}<div><b>Task scheduled</b><span>Weekdays at 8:00 AM · next run ${nextWeekday8()}</span></div><button class="cl-taskbtn" data-cgtask="1">View task</button></div>${S.cgTask ? cgTaskModal(prevUser) : ""}` : "";
-    const artCard = id === "claude" && m.steps?.some((x) => x.name === "tgi_get_quantity_reconciliation" && x.done) ? `<div class="cl-artcard">${ic("chart")}<div><b>AP quantity variance</b><span>Interactive artifact</span></div></div>` : "";
-    const body = `${task}${subLine(m, id === "teams")}${nativeActivity(id, m, mi)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.plans.map(clCard).join("")}${artCard}`;
+    const artCard = (id === "claude" && m.steps?.some((x) => x.name === "tgi_get_quantity_reconciliation" && x.done) ? `<button class="cl-artcard" data-artopen="1">${ic("chart")}<div><b>Meridian accounts payable reconciliation</b><span>Interactive artifact</span></div></button>` : "")
+      + (id === "claude" && done && /^every day/i.test(prevUser) ? `<div class="cl-sched">${ic("clock")}<div><b>Daily check scheduled</b><span>Every day at 7:00 AM · flags Meridian invoices with no matching ASN in the dashboard</span></div></div>` : "")
+      + (id === "claude" && done && /^create an agent/i.test(prevUser) ? `<div class="cl-sched">${ic("agent")}<div><b>Agent created: Meridian weekly reconciliation</b><span>Mondays 7:00 AM · roll-up and B2B health summary to accounts-payable@harborviewretail.com</span></div></div>` : "");
+    const body = `${task}${subLine(m, id === "teams")}${nativeActivity(id, m, mi)}${m.error ? `<div class="cl-err">${esc(m.error)}</div>` : ""}${m.text ? `<div class="cl-md md">${md(m.text)}</div>` : ""}${m.html ?? ""}${m.plans.map(clCard).join("")}${artCard}${bqCard(id, c, m, mi)}`;
     if (id === "teams") return `<div class="cl-b"><div class="cl-av sq">${esc(initials(c.botName))}</div><div class="cl-bb"><div class="cl-meta">${esc(c.botName)} <span>${hhmm(m.t0)}</span></div>${body}${done ? `<div class="cl-aig">AI generated</div>` : ""}</div></div>`;
     const disc = id === "claude" && last && done ? `<span class="cl-sp"></span><span class="cl-disc">Claude can make mistakes. Please double-check responses.</span>` : "";
     return `<div class="cl-b">${id === "servicenow" ? `<div class="cl-bh">${ic("sparkle")}<b>Now Assist</b></div>` : ""}<div class="cl-bb">${body}${done && acts ? `<div class="cl-acts">${acts}${disc}</div>` : ""}</div></div>`;
@@ -1077,23 +1122,35 @@
   }
   const n0 = (v) => (v == null ? "-" : Number(v).toLocaleString());
   function artView(d, c) {
-    const flag = c.items.some((m) => m.role === "user" && /before the asn/i.test(m.text));
-    const sup = S.art.supplier;
-    const rows = d.rows.filter((r) => (!sup || r.supplier === sup) && (!flag || r.invoiceBeforeAsn || !S.art.flagOnly));
-    const shown = flag && S.art.flagOnly !== false ? rows.filter((r) => r.invoiceBeforeAsn) : rows;
-    const tot = d.suppliers.reduce((a, x) => ({ s: a.s + x.shortShipped, o: a.o + x.overInvoiced, b: a.b + x.invoiceBeforeAsn }), { s: 0, o: 0, b: 0 });
-    const sups = [...d.suppliers].sort((x, y) => (y.shortShipped + y.overInvoiced + y.invoiceBeforeAsn) - (x.shortShipped + x.overInvoiced + x.invoiceBeforeAsn));
-    const kpi = (l, v, cls = "") => `<div class="ak ${cls}"><span>${l}</span><b>${n0(v)}</b></div>`;
+    S.art.made = true;
+    const said = (re) => c.items.some((m) => m.role === "user" && re.test(m.text));
+    const flagOn = said(/no (matching )?shipment|without .*(asn|shipment)|flag them/i), weeklyOn = said(/weekly/i);
+    const su = d.suppliers[0] ?? { supplier: "Meridian Personal Care", purchaseOrders: 0, ordered: 0, shipped: 0, invoiced: 0, shortShipped: 0, overInvoiced: 0, invoiceBeforeAsn: 0, invoiceWithoutAsn: 0 };
+    const kpi = (l, v, n, cls = "") => `<div class="ak ${cls}"><span>${l}</span><b>${n0(v)}</b>${n ? `<em>${n}</em>` : ""}</div>`;
+    const wk = d.weekly ?? [];
+    const mx = Math.max(1, ...wk.map((w) => w.ordered));
+    const bars = wk.map((w) => `<div class="aw"><div class="awb"><i style="height:${(w.ordered / mx) * 100}%"></i><i class="s" style="height:${(w.shipped / mx) * 100}%"></i><i class="v" style="height:${(w.invoiced / mx) * 100}%"></i></div><span>${esc(w.weekOf.slice(5))}</span></div>`).join("");
+    const flagged = d.rows.filter((r) => r.invoiceWithoutAsn);
+    const tab = S.art.tab ?? "ex";
     const doc = (t, id, stt) => `<div class="ad"><b>${t}</b><span class="mono">${esc(id ?? "Not received")}</span><i>${esc(stt ?? "")}</i></div>`;
-    return `<div class="art-h"><span class="art-t">AP quantity variance</span><span class="art-v">Interactive artifact</span><span class="cl-sp"></span><span class="art-seg"><b>Preview</b><span>Code</span></span>${ic("copy")}${ic("download")}</div>
-      <div class="art-b"><h2>AP quantity variance</h2><div class="art-sub">Last ${d.window.days} days · ${n0(d.purchaseOrders)} purchase orders · Trading Grid (850, 856, 810)</div>
-        <div class="art-k">${kpi("Purchase orders", d.purchaseOrders)}${kpi("Short shipped", tot.s)}${kpi("Invoiced over shipped", tot.o)}${kpi("Invoice before ASN", tot.b, flag ? "hl" : "")}</div>
-        <div class="art-f"><label>Supplier <select data-artsup><option value="">All suppliers</option>${d.suppliers.map((x) => `<option ${x.supplier === sup ? "selected" : ""}>${esc(x.supplier)}</option>`).join("")}</select></label>${flag ? `<button class="art-chip ${S.art.flagOnly !== false ? "on" : ""}" data-artflag="1">Invoice before ASN only</button>` : ""}</div>
-        <h3>By supplier</h3><table class="art-tb"><thead><tr><th>Supplier</th><th>POs</th><th>Ordered</th><th>Shipped</th><th>Invoiced</th><th>Short</th><th>Over</th><th>Inv. before ASN</th></tr></thead><tbody>
-        ${sups.filter((x) => !sup || x.supplier === sup).slice(0, sup ? 1 : 8).map((x) => `<tr class="${flag && x.invoiceBeforeAsn ? "fl" : ""}"><td>${esc(x.supplier)}</td><td>${n0(x.purchaseOrders)}</td><td>${n0(x.ordered)}</td><td>${n0(x.shipped)}</td><td>${n0(x.invoiced)}</td><td>${n0(x.shortShipped)}</td><td>${n0(x.overInvoiced)}</td><td>${flag && x.invoiceBeforeAsn ? `<span class="art-flag">${n0(x.invoiceBeforeAsn)}</span>` : n0(x.invoiceBeforeAsn)}</td></tr>`).join("")}</tbody></table>
-        <h3>Exceptions by PO <span>${shown.length} of ${d.exceptions}</span></h3><table class="art-tb"><thead><tr><th>PO</th><th>Supplier</th><th>Ordered</th><th>Shipped</th><th>Invoiced</th><th>Variance</th><th></th></tr></thead><tbody>
-        ${shown.slice(0, 40).map((r) => `<tr class="art-row ${r.invoiceBeforeAsn && flag ? "fl" : ""}" data-artrow="${r.po}"><td class="mono">${r.po}</td><td>${esc(r.supplier)}</td><td>${n0(r.ordered)}</td><td>${n0(r.shipped)}</td><td>${n0(r.invoiced)}</td><td class="${(r.shipVariance ?? 0) < 0 || (r.invoiceVariance ?? 0) > 0 ? "neg" : ""}">${r.shipVariance != null && r.shipVariance !== 0 ? `${r.shipVariance > 0 ? "+" : ""}${r.shipVariance} shipped` : ""}${r.invoiceVariance ? ` ${r.invoiceVariance > 0 ? "+" : ""}${r.invoiceVariance} invoiced` : ""}</td><td>${r.invoiceBeforeAsn && flag ? `<span class="art-flag">Invoice before ASN</span>` : ""}</td></tr>
-          ${S.art.open[r.po] ? `<tr class="art-drill"><td colspan="7"><div class="ads">${doc("850 Purchase order", r.documents["850"], "Sent")}${doc("856 Ship notice", r.documents["856"], r.status["856"])}${doc("810 Invoice", r.documents["810"], r.status["810"])}</div></td></tr>` : ""}`).join("")}</tbody></table></div>`;
+    const rows = tab === "fl" ? flagged : d.rows;
+    const exTable = `<table class="art-tb"><thead><tr><th>PO</th><th>Ordered</th><th>Shipped</th><th>Invoiced</th><th>Issue</th></tr></thead><tbody>
+        ${rows.slice(0, 40).map((r) => `<tr class="art-row ${r.invoiceWithoutAsn ? "fl" : ""}" data-artrow="${r.po}"><td class="mono">${r.po}</td><td>${n0(r.ordered)}</td><td>${n0(r.shipped)}</td><td>${n0(r.invoiced)}</td><td>${r.invoiceWithoutAsn ? `<span class="art-flag">Invoice, no ASN</span>` : r.invoiceBeforeAsn ? `<span class="art-tag">Invoice before ASN</span>` : (r.shipVariance ?? 0) < 0 ? `<span class="art-tag">Short ${-r.shipVariance}</span>` : (r.invoiceVariance ?? 0) > 0 ? `<span class="art-tag">Over-invoiced ${r.invoiceVariance}</span>` : ""}</td></tr>
+          ${S.art.open[r.po] ? `<tr class="art-drill"><td colspan="5"><div class="ads">${doc("850 Purchase order", r.documents["850"], "Sent")}${doc("856 Ship notice", r.documents["856"], r.status["856"])}${doc("810 Invoice", r.documents["810"], r.status["810"])}</div></td></tr>` : ""}`).join("")}</tbody></table>`;
+    const roll = weeklyOn && wk.length ? (() => { const last = wk[wk.length - 1], avg = wk.reduce((a, w) => a + w.shortShipped + w.overInvoiced + w.invoiceBeforeAsn + w.invoiceWithoutAsn, 0) / wk.length, ex = last.shortShipped + last.overInvoiced + last.invoiceBeforeAsn + last.invoiceWithoutAsn; const st = (l, ok) => `<div class="ah2 ${ok ? "ok" : "warn"}"><i></i><span>${l}</span><em>${ok ? "Healthy" : "Watch"}</em></div>`;
+      return `<h3>Weekly roll-up <span>Agent runs Mondays 7:00 AM</span></h3><div class="art-roll">${kpi("Exceptions this week", ex, `13-week average ${avg.toFixed(1)}`, ex > avg ? "hl" : "")}${kpi("Fill rate", Math.round((last.shipped / Math.max(1, last.ordered)) * 100) + "%", "shipped vs ordered")}<div class="ahs">${st("ASN before invoice", last.invoiceBeforeAsn + last.invoiceWithoutAsn === 0)}${st("Shipped matches ordered", last.shortShipped <= 1)}${st("Invoiced matches shipped", last.overInvoiced === 0)}</div></div>`; })() : "";
+    return `<div class="art-h"><span class="art-t">Meridian accounts payable reconciliation</span><span class="art-v">${S.art.published ? "Published" : "Interactive artifact"}</span><span class="cl-sp"></span><span class="art-seg"><b>Preview</b><span>Code</span></span><button class="art-pubbtn" data-artpub="1">${S.art.published ? "Share" : "Publish"}</button><button class="art-x" data-artclose="1" title="Close">${ic("x")}</button></div>
+      <div class="art-b"><h2>Meridian Personal Care</h2><div class="art-sub">Accounts payable reconciliation · last ${d.window.days} days · ${n0(su.purchaseOrders)} purchase orders · Trading Grid 850, 856, 810</div>
+        <div class="art-k">${kpi("Ordered units", su.ordered)}${kpi("Shipped units", su.shipped, `${((su.shipped / Math.max(1, su.ordered)) * 100).toFixed(1)}% of ordered`)}${kpi("Invoiced units", su.invoiced, `${n0(su.invoiced - su.shipped)} above shipped`, su.invoiced > su.shipped ? "hl" : "")}${kpi("Invoices with no ASN", su.invoiceWithoutAsn, "need manual review", flagOn ? "hl" : "")}</div>
+        <h3>Units by week <span class="art-lg"><i></i>Ordered <i class="s"></i>Shipped <i class="v"></i>Invoiced</span></h3><div class="art-w">${bars}</div>
+        ${roll}
+        <div class="art-tabs"><button class="${tab === "ex" ? "on" : ""}" data-arttab="ex">Exceptions by PO <span>${n0(d.exceptions)}</span></button>${flagOn ? `<button class="${tab === "fl" ? "on" : ""}" data-arttab="fl">Flagged for review <span class="red">${n0(su.invoiceWithoutAsn)}</span></button>` : ""}</div>
+        ${exTable}</div>
+      ${S.art.share ? `<div class="art-ov"><div class="art-modal" data-stop="1"><div class="art-mh"><b>${S.art.published ? "Published and shared" : "Publish artifact"}</b><button class="art-x" data-artshareclose="1">${ic("x")}</button></div>
+        <p>${S.art.published ? "The accounts payable team can open the live dashboard. It refreshes from Trading Grid each time it opens." : "Publish the dashboard so colleagues can open it. Data refreshes from Trading Grid each time it opens."}</p>
+        <div class="art-link">${ic("link")}<span>claude.ai/public/artifacts/harborview-meridian-ap</span>${S.art.published ? `<button class="rv-cpb" data-copy="https://claude.ai/public/artifacts/harborview-meridian-ap">${ic("copy")}<span class="cp-l">Copy link</span></button>` : ""}</div>
+        <div class="art-ppl"><div class="art-p"><i>AP</i><div><b>Accounts Payable team</b><span>accounts-payable@harborviewretail.com</span></div><em>Can view</em></div><div class="art-p"><i>DW</i><div><b>Dana Whitfield</b><span>Accounts payable manager</span></div><em>Can view</em></div><div class="art-p"><i>JL</i><div><b>Jordan Lee</b><span>B2B operations</span></div><em>Can view</em></div></div>
+        <div class="art-ma">${S.art.published ? `<button class="cg-btn pri" data-artshareclose="1">Done</button>` : `<button class="cg-btn" data-artshareclose="1">Cancel</button><button class="cg-btn pri" data-artpubgo="1">Publish and share</button>`}</div></div></div>` : ""}`;
   }
   function clChat(id, K, c, agentId, avail, blocked) {
     const a = agent(agentId);
@@ -1106,7 +1163,7 @@
     const hello = !c.items.length ? `<div class="cl-hello">${id === "teams" ? `<div class="cl-av sq lg">${esc(initials(title))}</div><h2>${esc(title)}</h2>` : ""}<h1>${esc(K.hello(first))}</h1>${K.sub ? `<div class="cl-sub">${esc(K.sub)}</div>` : ""}</div>` : "";
     const disc = { chatgpt: "ChatGPT can make mistakes. Check important info.", gemini: "Gemini can make mistakes, so double-check it" }[id];
     const art = id === "claude" ? artData(c) : null;
-    if (art) return `<div class="art-split"><div class="art-chat">${clChatBody(id, K, c, title, a, hello, starters, disc)}</div><aside class="art">${artView(art, c)}</aside></div>`;
+    if (art && !S.art.hidden) return `<div class="art-split"><div class="art-chat">${clChatBody(id, K, c, title, a, hello, starters, disc)}</div><aside class="art">${artView(art, c)}</aside></div>`;
     return clChatBody(id, K, c, title, a, hello, starters, disc);
   }
   function clChatBody(id, K, c, title, a, hello, starters, disc) {
@@ -1151,7 +1208,8 @@
         <div class="cs-sugg"><span>Templates</span><button>Website Q&amp;A</button><button>IT helpdesk</button><button>Sales order status</button></div></div></div></div></div>`;
       const card = (t, body, act = "Edit") => `<section class="cs-card"><div class="cs-ch"><b>${esc(t)}</b><span class="cl-sp"></span><button class="cs-link">${act}</button></div>${body}</section>`;
       return `<div class="ws-area cs">${head}<div class="cs-body">${rail}<div class="cs-main">
-        <div class="cs-ah"><div class="cl-av sq">${esc(initials(d.name))}</div><div><h1>${esc(d.name)}</h1><span class="cs-sub">Draft · Last saved just now</span></div><span class="cl-sp"></span><button class="cs-btn">Settings</button><button class="cs-btn pri">Publish</button></div>
+        <div class="cs-ah"><div class="cl-av sq">${esc(initials(d.name))}</div><div><h1>${esc(d.name)}</h1><span class="cs-sub">Draft · Last saved just now</span></div><span class="cl-sp"></span><button class="cs-btn" data-studiotest="1">${ic("chat")}Test</button><button class="cs-btn">Settings</button><button class="cs-btn pri" data-studiopublish="1">${st.published ? "Published" : "Publish"}</button></div>
+        ${st.publishing ? `<div class="cs-pub"><div class="cs-pubm"><b>${st.published ? "Agent published" : "Publishing agent"}</b>${st.published ? `<p>${esc(d.name)} is live in Microsoft 365 Copilot and Microsoft Teams for Harborview Distribution Operations.</p><div class="cs-pubc">${["Microsoft 365 Copilot", "Microsoft Teams", "Daily trigger, 7:00 AM"].map((x) => `<span>${ic("check")}${esc(x)}</span>`).join("")}</div><button class="cs-btn pri" data-studiopubclose="1">Done</button>` : `<p>Validating tools, knowledge and channels...</p><div class="cs-prog"><i></i></div>`}</div></div>` : ""}
         <nav class="cs-tabs">${["Overview", "Knowledge", "Tools", "Agents", "Topics", "Activity", "Analytics", "Channels"].map((t, i) => `<span class="${i === 0 ? "on" : ""}">${t}</span>`).join("")}</nav>
         <div class="cs-grid">${card("Details", `<div class="cs-kv"><span>Name</span><b>${esc(d.name)}</b><span>Description</span><div>${esc(d.description)}</div></div>`)}
           ${card("Instructions", `<ol class="cs-ins">${d.instructions.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>`)}
@@ -1211,7 +1269,7 @@
               <div class="sn-act"><div class="sn-acth">Activity</div>${notes.map(([who, kind, at, txt]) => `<div class="sn-note ${kind === "Work notes" ? "wn" : ""}"><div class="sn-nh"><b>${esc(who)}</b><span>${esc(kind)} · ${ago(at)}</span></div><div>${esc(txt)}</div></div>`).join("")}</div></div></div></div></div></div>`;
   }
   function wsContext(K) {
-    if (K.ws === "studio") { const d = S.studio?.draft; return d ? [`Application: Microsoft Copilot Studio, test pane for the draft agent "${d.name}".`, `Agent instructions: ${d.instructions.join(" ")}`, `Trigger: ${d.trigger}. Channel: ${d.channel}. In the test pane, return the message that would be posted instead of posting it.`, `Today: ${new Date().toISOString().slice(0, 10)}.`].join("\n") : ""; }
+    if (K.ws === "studio") { const d = S.studio?.draft; return d ? [`Application: Microsoft Copilot Studio, test pane for the draft agent "${d.name}".`, `Agent instructions: ${d.instructions.join(" ")}`, `Trigger: ${d.trigger}. Channel: ${d.channel}. In the test pane, show the results directly as the agent's answer. Do not draft or describe a channel message.`, `Today: ${new Date().toISOString().slice(0, 10)}.`].join("\n") : ""; }
     if (K.ws === "s4") {
       const sel = wsSelected(K); const d = S.scene.s4; if (!sel || !d) return "";
       const ag = d.agreement;
@@ -1230,7 +1288,8 @@
     const nav = (i, l, attrs = "") => `<button class="cl-new" ${attrs}>${ic(i)}<span>${esc(l)}</span></button>`;
     const close = `<button class="cl-ib cl-x" data-copside="0" title="Close">${ic("x")}</button>`;
     const hist = chats.length ? `<div class="cl-sec">${id === "claude" ? "Recents" : id === "gemini" ? "Recent" : "Chats"}</div><div class="cl-list">${chats.map(([aid, t]) => `<button class="cl-link" data-cpsuse="${aid}"><span>${esc(t.slice(0, 60))}</span></button>`).join("")}</div>` : "";
-    const prof = (sub) => `<div class="cl-prof"><div class="cl-av round">JL</div><div><div class="n">${name}</div><div class="s">${esc(sub)}</div></div></div>`;
+    const pn = K.who ?? S.meta.persona.name;
+    const prof = (sub) => `<div class="cl-prof"><div class="cl-av round">${esc(initials(pn))}</div><div><div class="n">${esc(pn)}</div><div class="s">${esc(sub)}</div></div></div>`;
     if (id === "teams") {
       const prev = (aid) => { const cc = S.convs[`cl:teams:${aid}`]; const lastU = cc?.items.filter((x) => x.role === "agent" && x.text).pop(); return lastU ? lastU.text.replace(/[*#|`]/g, "").replace(/\s+/g, " ").trim() : agent(aid)?.role ?? "Trading Grid agent"; };
       const when = (aid) => { const cc = S.convs[`cl:teams:${aid}`]; const t = cc?.items.at(-1)?.t0 ?? cc?.items.at(-1)?.t; return t ? hhmm(t) : ""; };
@@ -1245,6 +1304,7 @@
       ${prof(org)}</aside>`;
     if (id === "claude") return `<aside class="cl-side"><div class="cl-brand"><span class="cl-wm">Claude</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span><button class="cl-ib dt" title="Close sidebar">${ic("side")}</button>${close}</div>
       <button class="cl-new cl-newc" data-newconv="${key}"><span class="cl-plus">${ic("plus")}</span><span>New chat</span></button>${nav("chats", "Chats")}${nav("folder", "Projects")}${nav("code", "Artifacts")}
+      ${S.art?.made ? `<div class="cl-sec">Artifacts</div><button class="cl-link cl-artlink ${!S.art.hidden ? "on" : ""}" data-artopen="1">${ic("chart")}<span>Meridian accounts payable reconciliation</span></button>` : ""}
       ${hist}
       ${prof("Enterprise plan")}</aside>`;
     if (id === "gemini") return `<aside class="cl-side"><div class="cl-brand"><button class="cl-ib dt" title="Collapse menu">${ic("menu")}</button><span class="cl-wm">Gemini Enterprise</span><span class="cl-tiny">simulated</span><span class="cl-sp"></span>${close}</div>
@@ -1261,13 +1321,15 @@
     const agentId = K.connector === "agents" ? "tg-aviator" : "context-assistant";
     const key = `cl:${id}:${agentId}`;
     const c = conv(key, agentId, K.host);
+    if (id === "claude" && artData(c)) S.art.made = true;
     const blocked = (S.meta.clientStatus[K.host] ?? "ACTIVE") !== "ACTIVE";
     mounts[key] = (cc) => clChat(id, K, cc, agentId, avail, blocked);
     const list = [[agentId, K.auto]];
     (S.conFor ??= {})[key] = K.connector;
     if (K.ws) S.ctxFor[key] = () => wsContext(K);
+    if (id === "gemini") S.ctxFor[key] = () => S.gem?.published ? [`Application: Gemini Enterprise. The published agent "${GEM_AGENT.name}" is running now (manual run).`, `Agent steps: ${GEM_AGENT.steps.join(" ")}`, `Runs as ${GEM_AGENT.identity}. Output table: ${GEM_AGENT.table}.`, `Today: ${new Date().toISOString().slice(0, 10)}.`].join("\n") : "";
     if (id === "teams") S.ctxFor[key] = () => `Application: Microsoft Teams group chat "Supplier Onboarding". Members: Jordan Lee (jordan.lee), Morgan Chen (m.chen) and the Trading Grid Agent. Latest message from: ${S.lastAs ?? "Jordan Lee"}.`;
-    if (K.ws) return `<div class="cl cl-${id} ws${K.ws === "s4" && !S.jouleOpen ? " jclosed" : ""}">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
+    if (K.ws) return `<div class="cl cl-${id} ws${K.ws === "s4" && !S.jouleOpen ? " jclosed" : ""}${K.ws === "studio" && !S.studio?.test ? " tclosed" : ""}">${wsArea(K)}<main class="cl-main ws-panel" data-conv="${key}">${mounts[key](c)}</main></div>`;
     const chats = Object.values(S.convs).filter((x) => x.key.startsWith(`cl:${id}:`) && x.items.length).map((x) => [x.agentId, x.items.find((i) => i.role === "user")?.text ?? ""]);
     const rail = id === "teams" ? `<header class="tm-bar"><span class="tm-l"><span class="cl-brandtx">Microsoft Teams</span><span class="tm-nav">${ic("left")}${ic("right")}</span></span><span class="tm-search">${ic("search")}<span>Search</span></span><span class="tm-r"><button class="cl-ib" title="Settings and more">${ic("more")}</button><span class="cl-av round sm pres">JL</span></span></header>
       <nav class="cl-rail">${[["bell", "Activity"], ["chats", "Chat", 1], ["teams", "Teams"], ["calendar", "Calendar"], ["phone", "Calls"], ["sparkle", "Copilot"], ["apps", "Apps", 0, 1]].map(([i, l, on, end]) => `<button class="${on ? "on" : ""}${end ? " end" : ""}">${ic(i)}<span>${esc(l)}</span></button>`).join("")}</nav>` : "";
@@ -1287,7 +1349,7 @@
     { id: "copilot", name: "Microsoft Copilot", src: "/copilot", bg: "#ffffff" },
     { id: "gemini", name: "Gemini Enterprise", src: "/c/gemini", bg: "#ffffff" },
     { id: "claude", name: "Claude", src: "/c/claude", bg: "#faf9f5" },
-    { id: "tgo", name: "Trading Grid Aviator", src: "/tgo/insights?aviator=1", bg: "#ffffff", laptopOnly: true },
+    { id: "tgo", name: "Trading Grid Aviator", src: "/tgo/insights?aviator=1", bg: "#ffffff", laptopOnly: true, zoom: 0.72 },
   ];
   const PHONE = { w: 393, h: 852 }, LAPTOP = { w: 1200, h: 750 };
   function pageStage() {
@@ -1317,10 +1379,12 @@
     const t = sc.turns[step]; if (!t) return;
     S.stageStep[id] = step + 1;
     if (t.s4open) { if (mob) return stagePlay(); w.__stageS4Open?.(); return; }
+    if (t.click) { if (mob) return stagePlay(); w.document.querySelector(t.click)?.click(); return; }
+    if (mob && t.into) return stagePlay();
     if (t.approve) { w.__stageApprove?.(); return; }
     const go = () => (mob || t.on === "phone" ? stageFrame(id, "phone") : stageFrame(id, "desktop"))?.contentWindow?.__stageType?.(t.text, mob ? { ...t, into: undefined, then: undefined } : t);
     if (mob) return go();
-    if (t.src && w.location.pathname !== t.src) { lap.addEventListener("load", () => setTimeout(go, 1800), { once: true }); lap.src = `${t.src}?stage=desktop`; return; }
+    if (t.src && w.location.pathname + w.location.search.replace(/[?&]stage=desktop/, "") !== t.src) { lap.addEventListener("load", () => setTimeout(go, 1800), { once: true }); lap.src = `${t.src}${t.src.includes("?") ? "&" : "?"}stage=desktop`; return; }
     go();
   }
   // The play dot shows only when a scenario turn is ready to play: hidden on the intro, while an answer runs,
@@ -1381,7 +1445,7 @@
       const src = (d) => `${cur.src}${cur.src.includes("?") ? "&" : "?"}stage=${d}`;
       row.insertAdjacentHTML("beforeend", `<div class="stage-pair" data-sg="${cur.id}">
         ${cur.laptopOnly && !STAGE_MOBILE() ? "" : `<div class="dev-phone"><div class="dev-phone-screen" style="background:${cur.bg};--foot:${cur.foot ?? cur.bg}"><div class="dev-status${cur.dark ? " dark" : ""}"><span>9:41</span><span><i class="dev-bars"></i><i class="dev-batt"></i></span></div><div class="dev-app"><iframe allow="clipboard-write" title="${esc(cur.name)} on iPhone" src="${src("phone")}" style="width:${PHONE.w}px;height:${PHONE.h - 84}px"></iframe></div><div class="dev-home"></div></div><div class="dev-island"></div></div>`}
-        ${STAGE_MOBILE() ? "" : `<div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe allow="clipboard-write" title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w}px;height:${LAPTOP.h}px"></iframe></div></div><div class="dev-laptop-base"></div></div>`}</div>`);
+        ${STAGE_MOBILE() ? "" : `<div class="dev-laptop"><div class="dev-laptop-lid"><div class="dev-laptop-screen"><iframe allow="clipboard-write" title="${esc(cur.name)} on laptop" src="${src("desktop")}" style="width:${LAPTOP.w / (cur.zoom ?? 1)}px;height:${LAPTOP.h / (cur.zoom ?? 1)}px${cur.zoom ? `;transform:scale(calc(var(--sl, .5) * ${cur.zoom}))` : ""}"></iframe></div></div><div class="dev-laptop-base"></div></div>`}</div>`);
       g = row.lastElementChild;
     }
     row.querySelectorAll(".stage-pair").forEach((x) => x.classList.toggle("on", x === g));
@@ -1470,15 +1534,24 @@
 
 
   app.addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-s4back],[data-s4joule],[data-stop],[data-cgtask],[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
+    const t = ev.target.closest("[data-artpub],[data-artpubgo],[data-artshareclose],[data-artclose],[data-artopen],[data-arttab],[data-studiotest],[data-studiopublish],[data-studiopubclose],[data-s4back],[data-s4joule],[data-stop],[data-cgtask],[data-href],[data-prompt],[data-runuc],[data-publish],[data-blockagent],[data-demoreset],[data-step],[data-approve],[data-reject],[data-newconv],[data-tool],[data-copy],[data-reload],[data-domain],[data-avopen],[data-avclose],[data-avmax],[data-chatmax],[data-avnew],[data-avask],[data-togglesteps],[data-txtab],[data-tx],[data-closetx],[data-analyze],[data-askpayload],[data-facet],[data-unf],[data-clearf],[data-suspend],[data-restore],[data-scrow],[data-scrun],[data-scall],[data-copside],[data-cpsuse],[data-stagego],[data-stagemove],[data-stageplay],[data-stagefs],[data-studiocreate],[data-artrow],[data-artflag],[data-s4po]");
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.stagego) return stageShow(d.stagego);
     if (d.stagemove) return stageMove(Number(d.stagemove));
     if (d.stageplay) return stagePlay();
     if (d.stagefs) { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.(); return; }
+    if (d.artpub) { S.art.share = true; return refreshConv(keyOf(t)); }
+    if (d.artpubgo) { S.art.published = true; return refreshConv(keyOf(t)); }
+    if (d.artshareclose) { S.art.share = false; return refreshConv(keyOf(t)); }
+    if (d.artclose) { S.art.hidden = true; return render(); }
+    if (d.artopen) { S.art.hidden = false; return render(); }
+    if (d.arttab) { S.art.tab = d.arttab; return refreshConv(keyOf(t)); }
     if (d.artrow) { S.art.open[d.artrow] = !S.art.open[d.artrow]; return refreshConv(keyOf(t)); }
     if (d.artflag) { S.art.flagOnly = S.art.flagOnly === false; return refreshConv(keyOf(t)); }
+    if (d.studiotest) { if (S.studio) S.studio.test = !S.studio.test; return render(); }
+    if (d.studiopublish) { if (!S.studio?.draft) return; S.studio.publishing = true; render(); setTimeout(() => { S.studio.published = true; try { sessionStorage.setItem("tg-cps-agent", JSON.stringify(S.studio.draft)); } catch {} render(); }, 1800); return; }
+    if (d.studiopubclose) { S.studio.publishing = false; return render(); }
     if (d.studiocreate) { const v = document.querySelector("[data-studiodesc]")?.value.trim(); if (!v) return; S.studio = { draft: studioDraft(v) }; return render(); }
     if (d.s4po) { const u = new URLSearchParams(location.search); u.set("po", d.s4po); S.s4View = "po"; return go(`${location.pathname}?${u}`); }
     if (d.s4back) { S.s4View = null; return render(); }

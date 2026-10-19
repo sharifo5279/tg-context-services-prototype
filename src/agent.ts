@@ -55,6 +55,7 @@ function systemPrompt(agentId: string, host: HostKey) {
     "  flow: document | state | detail. Document chain for one PO (850, 855, 856, 810).",
     "  record: 'title: <id>', optional 'status: <state>', then field | value rows. One incident, PO, partner, request or prepared change.",
     "  contact: name | role | email | phone. Use for any contact answer.",
+    "  cards: name | what it does | area. A grid of cards for a catalog (agents, apps, capabilities), up to 30 rows.",
     "  alert: severity | title | detail. One critical issue.",
     "  chart bar: label | value. Category comparison, max 8. chart line: period | value. Trend, 4 to 12 points.",
     "  compare: first line 'series: A, B, C', then label | a | b | c. Grouped bars, for example ordered vs shipped vs invoiced.",
@@ -69,6 +70,9 @@ function systemPrompt(agentId: string, host: HostKey) {
     "- Never show internal mechanics: tool or operation names, envelope fields, access decisions (PERMIT, DENY), completeness values, sub-agent ids, plan expiry. Name products and agents in plain words.",
     "- Keep the identifiers a user acts on: partner, PO, request (ST-), work order (WO-), map, error code. For long ID lists give the count and at most 3 examples.",
     "- Enterprise voice. Plain words, short sentences. No emojis, no em dashes, no marketing language, no hedging filler.",
+    "",
+    "### Harborview context",
+    "- Crestline Logistics is Harborview's 3PL. Harborview sends 940 warehouse shipping orders; Crestline returns 945 warehouse shipping advices (the shipment confirmation for each order) and 214 carrier status. A 3PL does not send 856 ASNs; suppliers do. When answering about Crestline, say in a few words what 940 and 945 mean.",
     "",
     "### Accuracy",
     "- Every statement comes from tool results or the screen context. Never invent identifiers, partners, statuses, dates or contacts.",
@@ -90,9 +94,9 @@ function systemPrompt(agentId: string, host: HostKey) {
 /** Client-specific behavior the model cannot infer from the conversation. */
 const HOST_NOTES: Partial<Record<HostKey, string>> = {
   "chatgpt-enterprise": "ChatGPT runs recurring tasks itself. When the user asks for something every day or weekday, ChatGPT has already scheduled it: return this run's result only and do not discuss scheduling.",
-  "claude-ui": "Claude renders the quantity reconciliation result as an interactive dashboard artifact beside the chat. After tgi_get_quantity_reconciliation, do not reproduce its tables: give one sentence pointing to the dashboard and at most one kpi block with headline totals.",
+  "claude-ui": "The user is Priya Raman, a technical builder. Claude renders tgi_get_quantity_reconciliation results as an interactive accounts payable dashboard artifact beside the chat, including a flagged-for-review list and a weekly roll-up. Never write the abbreviation AP; say accounts payable. After the reconciliation tool, do not reproduce its tables: one sentence pointing to the dashboard and at most one kpi block. When asked for a daily check, run it now and answer with one sentence and one status block of the flagged invoices (invoice | Flagged | PO, received date); the client schedules it. When asked for a weekly agent, answer with one sentence, one kpi block (this week vs 13-week average) and one chart line of weekly exceptions; the client creates the agent.",
   "sap-joule": "This client runs as an SAP service identity with status and references only. Answer from metadata; do not mention document content unless the user asks for it. The screen context carries SAP data (purchase orders on the list, order values, the supplier agreement). Combine it with Trading Grid evidence and name the source of each figure in one word where it helps (SAP or Trading Grid). Trading Grid is the source of truth for document timing; SAP is the source for order values and agreement terms.",
-  "gemini-enterprise": "The user builds agents in Gemini Enterprise. When asked to build an agent, give its design as at most 5 short steps; Gemini Enterprise creates it.",
+  "gemini-enterprise": "The user is a technical builder in Gemini Enterprise. When the screen context says a published Gemini agent is running, act as that agent's run: engage the transaction-finder sub-agent to find the failure, then the error-analysis sub-agent to analyze it. Answer with one sentence, then one record block titled 'BigQuery row' with exactly these fields: Run date | Transaction ID | Partner | Document | Error code | Cause | Owner | Next action. Keep each value short. The client writes that row to BigQuery and shows the confirmation.",
 };
 
 export const TG_AGENT = "tg-aviator";
@@ -106,7 +110,7 @@ function toolsFor(agentId: string, host: HostKey) {
   const subs = agentId === TG_AGENT ? subagentsFor(host) : [];
   const orchestration = subs.length ? [
     { name: "engage_subagent", description: `Engage a Trading Grid sub-agent for the current question. Returns its instructions, tools and expected outputs. Sub-agents: ${subs.map((x) => `${x.id} (${x.name})`).join("; ")}.`, inputSchema: { type: "object", properties: { subagent: { type: "string", enum: subs.map((x) => x.id) }, reason: { type: "string", description: "Why this sub-agent fits, in a few words." } }, required: ["subagent"] } },
-    { name: "list_subagents", description: "List the Trading Grid Agent's sub-agents available to this client, with status (Live today, On the roadmap, Incubating, Custom) and focus.", inputSchema: { type: "object", properties: {} } },
+    { name: "list_subagents", description: "List the Trading Grid Agent's sub-agents available to this client, with what each one does.", inputSchema: { type: "object", properties: {} } },
   ] : [];
   return [...list, ...orchestration].map((t: any, i, all) => ({
     name: t.name,
@@ -121,7 +125,7 @@ function subagentCall(name: string, input: any, ctx: Ctx) {
   const t0 = Date.now();
   const src = { sourceRefs: [{ product: "Trading Grid Agent", operation: "Sub-agent registry" }], completeness: "COMPLETE" };
   const tool = { product: "Trading Grid Agent", binding: "Sub-agent registry", basis: "Sub-agents run inside the Trading Grid Agent under the caller's access" } as any;
-  if (name === "list_subagents") return { out: { status: "OK", tool: name, result: { agent: "Trading Grid Agent", client: HOSTS[ctx.host].name, subagents: subs.map((x) => ({ id: x.id, name: x.name, status: x.status, focus: x.role })) }, evidence: src, access: { decision: "PERMIT", operation: "agent.invoke" } }, ms: Date.now() - t0, tool };
+  if (name === "list_subagents") return { out: { status: "OK", tool: name, result: { agent: "Trading Grid Agent", client: HOSTS[ctx.host].name, subagents: subs.map((x) => ({ id: x.id, name: x.name, area: x.subtitle ?? x.persona, does: x.role })) }, evidence: src, access: { decision: "PERMIT", operation: "agent.invoke" } }, ms: Date.now() - t0, tool };
   const a = subs.find((x) => x.id === input?.subagent);
   if (!a) return { out: { status: "DENIED", tool: name, error: { code: "SUBAGENT_NOT_AVAILABLE", message: "Sub-agent is not published to this client or is blocked by the administrator." }, access: { decision: "DENY", operation: "agent.invoke" } }, ms: 0, tool };
   return { out: { status: "OK", tool: name, result: { subagent: a.name, status: a.status, role: a.role, instructions: a.instructions, tools: subTools(a), outputs: a.outputs }, evidence: src, access: { decision: "PERMIT", operation: "agent.invoke" } }, ms: Date.now() - t0, tool, sub: a };

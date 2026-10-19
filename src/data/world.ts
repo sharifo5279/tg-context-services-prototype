@@ -297,7 +297,8 @@ function genSupplierOrder(g: Gen, p: Profile, t850: number, k: number) {
   let t810 = invFirst ? t856 - hours(2 + r() * 20) : t856 + hours(4 + r() * 60);
   const d810 = new Date(t810);
   if (!isMonthEnd(t810) && d810.getUTCDate() >= 20 && r() < 0.35) { const last = lastDayOfMonth(t810); t810 = Date.UTC(d810.getUTCFullYear(), d810.getUTCMonth(), last - Math.floor(r() * 2), 14 + r() * 8); }
-  if (!web || r() < 0.7) {
+  // Some suppliers occasionally invoice orders whose ASN never arrives (asnMissing); only those partners draw this number.
+  if ((!web || r() < 0.7) && !(p.asnMissing && r() < p.asnMissing)) {
     const refs: Refs = { shipmentId: shipId, poNumber: poNum, quantityShipped: qty.shipped, ...(p.storeNumbers ? { storeNumber: store.number } : { shipToGLN: store.gln }) };
     let err: Err | undefined;
     if (p.storeNumbers && dayOf(t856) < store.xrefDay) err = xrefErr(store.number, MAP_NAME[p.map856 ?? "M-1013"] ?? "HRG_856_4010_STORE_IN v2");
