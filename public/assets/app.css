@@ -1623,3 +1623,5 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 @media (min-width: 701px) { .cl-claude .cl-artcard { display: flex; } }
 .cl-sched { display: flex; gap: 10px; align-items: center; border: 1px solid #e8e6dc; border-radius: 12px; padding: 10px 14px; margin: 8px 0; background: #fff; } .cl-sched svg { width: 18px; height: 18px; color: #c96442; flex: none; } .cl-sched b { display: block; font-weight: 600; } .cl-sched span { font-size: 13px; color: #5e5d59; }
 .cl-artlink svg { width: 15px; height: 15px; }
+.stage-pair:not(.intro) { transform: translateX(var(--shift, 0px)); }
+.stage.mob .stage-pair { transform: none; }

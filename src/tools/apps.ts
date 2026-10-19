@@ -1,7 +1,7 @@
 // Application endpoints: Command Center Integration Monitor, TG Insights application features and
 // Command Center Performance Monitor (incubation). Modeled on the Innovation Guide H2 2026; these are demo
 // constructs, not product API contracts. Values are computed from the seeded transaction data.
-import { transactions, txById, Tx, ackOf, docsByPo } from "../data/insights.js";
+import { transactions, txById, Tx, ackOf, docsByPo, docsByKey, STORE_LIST } from "../data/insights.js";
 import { companies, companyById, messagingTuples, addresses, tprs, HUB_ID } from "../data/cms.js";
 import { xrefEntities } from "../data/other.js";
 import { anomalies, partnersDown } from "../data/monitor.js";
@@ -319,6 +319,22 @@ export const ccimTools: ToolDef[] = [
 ];
 
 export const tgiAppTools: ToolDef[] = [
+  { name: "tgi_get_shipment_reconciliation", domain: "TG Insights application", product: TGI, title: "Get 3PL shipment reconciliation", description: "For a 3PL (default Crestline Logistics): each 940 warehouse shipping order matched to its 945 warehouse shipping advice, with ordered and shipped quantities, short shipments by store, and orders still waiting for a 945. Window by 945 arrival day.", operation: "transaction.read", kind: "read", binding: "TG Insights document correlation by shipping order", basis: BASIS_GA,
+    inputSchema: s.obj({ days: s.int("Days back, by 945 arrival. 1 = yesterday only (default 1, max 30).", { minimum: 1, maximum: 30 }), partner: s.str("3PL name or ID (default Crestline Logistics).") }),
+    handler: (a, ctx) => {
+      const p = partnerArg(ctx, "tgi_get_shipment_reconciliation", "transaction.read", a.partner ?? "Crestline Logistics"); if (p.early) return p.early;
+      const days = Math.min(30, Math.max(1, Number(a.days) || 1));
+      const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+      const from = today.getTime() - days * D, to = days === 1 ? today.getTime() : Date.now();
+      const glnStore = new Map(STORE_LIST.map((x) => [x.gln, `${x.number} ${x.name}`]));
+      const adv = within(days * D + 2 * D).filter((t) => t.partnerCompanyId === p.id && t.documentType === "945" && t._t >= from && t._t < to);
+      const rows = adv.map((t) => { const o = docsByKey(t.refs.shippingOrder!).find((x) => x.documentType === "940"); const ordered = o?.refs.quantityOrdered ?? t.refs.quantityOrdered ?? null, shipped = t.refs.quantityShipped ?? null;
+        return { shippingOrder: t.refs.shippingOrder, po: t.refs.poNumber, store: glnStore.get(o?.refs.shipToGLN ?? "") ?? o?.refs.shipToGLN ?? null, ordered, shipped, short: ordered != null && shipped != null ? Math.max(0, ordered - shipped) : null, reason: t.refs.reason ?? null, receivedAt: new Date(t._t).toISOString(), documents: { "940": o?.transactionId ?? null, "945": t.transactionId } }; });
+      const short = rows.filter((r) => (r.short ?? 0) > 0);
+      const pending = within(5 * D).filter((t) => t.partnerCompanyId === p.id && t.documentType === "940" && t.sourceStatus === "DLVD" && Date.now() - t._t > 48 * H && !docsByKey(t.refs.shippingOrder!).some((x) => x.documentType === "945")).map((t) => ({ shippingOrder: t.refs.shippingOrder, sentAt: new Date(t._t).toISOString(), transactionId: t.transactionId }));
+      return ok(ctx, "tgi_get_shipment_reconciliation", "transaction.read", { partner: companyById(p.id!)?.companyName, window: { from: new Date(from).toISOString().slice(0, 10), to: new Date(to - 1).toISOString().slice(0, 10), days }, confirmations945: rows.length, shippedComplete: rows.length - short.length, shortShipped: short.length, unitsOrdered: rows.reduce((x, r) => x + (r.ordered ?? 0), 0), unitsShipped: rows.reduce((x, r) => x + (r.shipped ?? 0), 0), shortOrders: short, awaiting945: pending.slice(0, 20) },
+        { sources: r(TGI, "Transactions correlated by shipping order (940, 945)"), interpretation: "940 = warehouse shipping order Harborview sends; 945 = warehouse shipping advice the 3PL returns after shipping. Quantities are order totals." });
+    } },
   { name: "tgi_get_quantity_reconciliation", domain: "TG Insights application", product: TGI, title: "Get quantity reconciliation", description: "Per purchase order: ordered quantity (850), shipped quantity (856) and invoiced quantity (810), with variances, invoices received before the ASN, invoices with no ASN, and the document IDs for drill-down. Supplier totals included; for one supplier, a weekly roll-up too.", operation: "transaction.read", kind: "read", binding: "TG Insights document correlation by PO", basis: BASIS_GA,
     inputSchema: s.obj({ days: s.int("Look-back window in days (default 30, max 90).", { minimum: 1, maximum: 90 }), partner: s.str("Supplier name or ID."), only_exceptions: s.bool("Return only POs with a variance or an invoice before the ASN (default true).") }),
     handler: (a, ctx) => {
@@ -406,6 +422,7 @@ export const tgiAppTools: ToolDef[] = [
       let fix: { refs?: any; detail: string } | null = null;
       if (e?.code === "XREF-404" && t.refs.storeNumber && xr.STORE_TO_GLN.entries[t.refs.storeNumber]) fix = { refs: { shipToGLN: xr.STORE_TO_GLN.entries[t.refs.storeNumber].gln }, detail: `Ship-to store ${t.refs.storeNumber} resolved to GLN ${xr.STORE_TO_GLN.entries[t.refs.storeNumber].gln}; delivered to Harborview.` };
       else if (e?.code === "XREF-404" && t.refs.statusCode && xr.CARRIER_STATUS_CODE?.entries[t.refs.statusCode]) fix = { detail: `Status code ${t.refs.statusCode} resolved; delivered to Harborview.` };
+      else if (e?.code === "XREF-404" && /ITEM_UPC_TO_SKU/.test(e.message)) { const upc = e.message.match(/key '(\d+)'/)?.[1]; const hit = upc && xr.ITEM_UPC_TO_SKU?.entries[upc]; if (hit) fix = { detail: `UPC ${upc} resolved to SKU ${hit.sku}; delivered to Harborview.` }; }
       else if (e?.code === "MAP-TRN-207" && !incidentAt(t.partnerCompanyId, "MAP_REGRESSION", Date.now())) fix = { detail: "Map version corrected; translation completed and delivered." };
       if (!fix) return ok(ctx, "tgi_reprocess_transaction", "tgi.redeliver", { transactionId: t.transactionId, result: "FAILED_AGAIN", error: e }, { sources: r(TGI, "Reprocess", [t.transactionId]), interpretation: e?.category === "VALIDATION" ? "The document itself is invalid. The partner must correct and resend it." : "The cause is still present. Fix it, then reprocess again." });
       override(t, { refs: fix.refs, o: { ...delivered(), reprocessed: true } });

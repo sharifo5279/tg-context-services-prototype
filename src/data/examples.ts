@@ -18,7 +18,7 @@ export function findExamples() {
   const w7 = within(7), w30 = within(30);
   const failed = (pred: (t: Tx) => boolean, list = w7) => list.find((t) => prod(t) && t.sourceStatus === "FAIL" && pred(t));
   const xrefAsn = failed((t) => t.documentType === "856" && t.errors[0]?.code === "XREF-404", w30);
-  const xrefOpen = failed((t) => t.documentType === "856" && t.errors[0]?.code === "XREF-404" && !xrefEntities.STORE_TO_GLN.entries[t.refs.storeNumber!], w30);
+  const xrefOpen = failed((t) => t.documentType === "856" && t.errors[0]?.code === "XREF-404" && !!t.refs.storeNumber && !xrefEntities.STORE_TO_GLN.entries[t.refs.storeNumber!], w30);
   const delivery = failed((t) => t.errors[0]?.category === "DELIVERY", w30);
   const validation810 = failed((t) => t.documentType === "810" && t.errors[0]?.category === "VALIDATION", w30);
   const anyFailedAsn = failed((t) => t.documentType === "856", w30);

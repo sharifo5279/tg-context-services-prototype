@@ -1,4 +1,5 @@
 // Mapping knowledge and cross-reference tools (Trading Grid Cartographer).
+import { UPC_INCIDENT } from "../data/world.js";
 import * as O from "../data/other.js";
 import { ok, fail, deny, createPlan, approvalRequired, consumePlan, Ctx } from "../runtime.js";
 import { ToolDef, s, MODELED, NEW_CONTRACT } from "./types.js";
@@ -197,6 +198,7 @@ export const cartographerTools: ToolDef[] = [
       if (JSON.stringify(current) !== JSON.stringify(p.before)) { c.plan!.status = "EXPIRED"; return fail(ctx, "apply_cross_reference_change", "xref.write", "CONFLICT", "The entry changed after the plan was prepared. Prepare a new plan."); }
       e.state = { reserved: true, reservedBy: c.plan!.principal };
       if (p.change === "DELETE") delete e.entries[p.key]; else e.entries[p.key] = p.after;
+      if (e.entityName === "ITEM_UPC_TO_SKU" && p.key === UPC_INCIDENT.upc) UPC_INCIDENT.fixedAt = p.change === "DELETE" ? null : Date.now();
       e.lastModifiedOn = new Date().toISOString(); e.lastModifiedBy = c.plan!.principal;
       e.state = { reserved: false, reservedBy: null };
       c.plan!.status = "EXECUTED";

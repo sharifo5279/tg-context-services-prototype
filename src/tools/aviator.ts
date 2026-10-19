@@ -36,6 +36,13 @@ const RULES: Record<string, any[]> = {
       example: { input: "N1*ST*Harborview Store 0214*92*0214~", output: "ILNNR = 0614141002146" }, changedIn: "v7 (WO-5488)" },
     { ruleId: "R-1001-TD-02", targetPath: "DESADV/E1EDL20/BTGEW", targetField: "Gross weight", sourcePaths: ["TD1/TD107"], explanation: "Copies TD107 gross weight; defaults to 0 with a warning if missing.", conditions: [{ when: "TD107 present", then: "BTGEW = TD107" }, { when: "otherwise", then: "BTGEW = 0, warning W-TD1" }], snippet: "BTGEW = TD107 ?? warn(0, \"W-TD1\");", example: { input: "TD1*CTN25*12****G*240*LB~", output: "BTGEW = 240" }, changedIn: "v3" },
   ],
+  "M-1017": [
+    { ruleId: "R-1017-IT-03", targetPath: "DESADV/E1EDL24/MATNR", targetField: "Item SKU (material)", sourcePaths: ["LIN[LIN02='UP']/LIN03"],
+      explanation: "Sets the Harborview SKU for each shipped item. The map reads the supplier UPC from LIN03 (LIN02=UP) and looks it up in ITEM_UPC_TO_SKU. A UPC that is not in the cross-reference fails the whole ASN, so new products need an entry before the first shipment.",
+      conditions: [{ when: "LIN02 = 'UP' and UPC found in ITEM_UPC_TO_SKU", then: "MATNR = xref('ITEM_UPC_TO_SKU', LIN03).sku" }, { when: "LIN02 = 'UP' and UPC missing", then: "fail with XREF-404" }, { when: "LIN02 is not 'UP'", then: "fail with MAP-TRN-231 'Item qualifier not supported'" }],
+      snippet: "if (LIN02 == \"UP\") { MATNR = lookup(\"ITEM_UPC_TO_SKU\", LIN03, \"sku\", onMissing: FAIL(\"XREF-404\")); }\nelse { FAIL(\"MAP-TRN-231\"); }",
+      example: { input: "LIN**UP*012345678905~", output: "MATNR = HRG-118204" }, changedIn: "v4 (WO-5530)" },
+  ],
   "M-1002": [
     { ruleId: "R-1002-IT-04", targetPath: "INVOIC/E1EDP01/VPREI", targetField: "Unit price", sourcePaths: ["IT1/IT104"], explanation: "Parses IT104 as a decimal with a period separator. A comma separator fails validation before translation.", conditions: [{ when: "IT104 matches ^\\d+(\\.\\d+)?$", then: "VPREI = IT104" }, { when: "otherwise", then: "fail with X12-SYN-104" }], snippet: "VPREI = decimal(IT104, separator: \".\", onError: FAIL(\"X12-SYN-104\"));", example: { input: "IT1*1*24*EA*12.40**UP*012345678905~", output: "VPREI = 12.40" }, changedIn: "v2" },
   ],

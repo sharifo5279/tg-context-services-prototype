@@ -106,6 +106,9 @@ export function incidentAt(pid: string, kind: Kind, t: number) {
 // Demo incident: Northfield Foods' AS2 signing certificate expired two hours before the current time.
 // Inbound production files from the partner fail AS2 signature verification at receipt.
 export const CERT_INCIDENT = { partnerCompanyId: "C20001", hours: 2 };
+/** Kestrel Electronics launched a new product; its UPC is missing from ITEM_UPC_TO_SKU, so inbound 856s fail in translation until the entry is added. */
+export const UPC_INCIDENT = { partnerCompanyId: "C20023", upc: "0845973051124", hours: 30, fixedAt: null as number | null, map: "HRG_856_4010_IN v4" };
+const upcErr = (): Err => ({ code: "XREF-404", category: "TRANSLATION", message: `Cross-reference lookup failed: entity ITEM_UPC_TO_SKU, key '${UPC_INCIDENT.upc}' not found (map ${UPC_INCIDENT.map}, LIN*UP item 1)`, service: "Translation", step: "Transform" });
 export const certIncidentStart = (now = Date.now()) => now - CERT_INCIDENT.hours * HOUR;
 const certErr = (): Err => ({ code: "AS2-SIG-401", category: "COMMUNICATION", message: `AS2 signature verification failed: partner signing certificate expired ${new Date(certIncidentStart()).toISOString().slice(0, 16).replace("T", " ")} UTC (CN=as2.northfieldfoods.example)`, service: "Communications gateway", step: "Receive" });
 
@@ -180,16 +183,17 @@ export class Tx {
   get senderTransactionId() { return `${this.sender.tradingAddress.split(":")[1].slice(0, 4)}-${pad(this._n % 10000000, 7)}`; }
   get receivedAt() { return new Date(this._t).toISOString(); }
   get controlNumbers(): Record<string, string> { return this.standard === "X12" ? { isa13: pad(this._n, 9), gs06: String(this._n), st02: "0001" } : { unb0020: `HRG${pad(this._n, 8)}`, unh0062: "1" }; }
+  get _upcFail() { const now = Date.now(); return this.partnerCompanyId === UPC_INCIDENT.partnerCompanyId && this.documentType === "856" && this.direction === "INBOUND" && this.environment === "PRODUCTION" && this._t >= now - UPC_INCIDENT.hours * HOUR && this._t <= (UPC_INCIDENT.fixedAt ?? now); }
   get _certFail() { return this.partnerCompanyId === CERT_INCIDENT.partnerCompanyId && this.direction === "INBOUND" && this.environment === "PRODUCTION" && this.documentType !== "997" && this._t >= certIncidentStart() && this._t <= Date.now(); }
-  get sourceStatus(): "DLVD" | "FAIL" | "INPR" | "RCVD" { if (this._o?.sourceStatus) return this._o.sourceStatus; if (this._certFail) return "FAIL"; if (this._base === "DLVD" && Date.now() < this._t + this._settle) return "INPR"; return this._base; }
+  get sourceStatus(): "DLVD" | "FAIL" | "INPR" | "RCVD" { if (this._o?.sourceStatus) return this._o.sourceStatus; if (this._certFail || this._upcFail) return "FAIL"; if (this._base === "DLVD" && Date.now() < this._t + this._settle) return "INPR"; return this._base; }
   set sourceStatus(v) { (this._o ??= {}).sourceStatus = v; }
-  get errors(): Err[] { return this._o?.errors ?? (this._certFail ? [certErr()] : this._err ? [this._err] : []); }
+  get errors(): Err[] { return this._o?.errors ?? (this._certFail ? [certErr()] : this._upcFail ? [upcErr()] : this._err ? [this._err] : []); }
   set errors(v) { (this._o ??= {}).errors = v; }
   get keys() { const k = (KEYS[this.documentType] ?? (() => ({})))(this.refs); for (const x of Object.keys(k)) if (k[x] === undefined) delete k[x]; return k; }
   get statusHistory(): { step: string; status: string; at: string }[] {
     if (this._o?.statusHistory) return this._o.statusHistory;
     const st = this.sourceStatus;
-    const failIdx = this._certFail ? 0 : this._err ? STEPS.indexOf(this._err.step) : -1;
+    const failIdx = this._certFail ? 0 : this._upcFail ? STEPS.indexOf("Transform") : this._err ? STEPS.indexOf(this._err.step) : -1;
     const span = st === "INPR" ? Math.max(1, Math.min(4, Math.floor(((Date.now() - this._t) / Math.max(1, this._settle)) * 4))) : 0;
     const lastIdx = st === "DLVD" ? 4 : st === "FAIL" ? failIdx : st === "INPR" ? Math.min(2, span) : 0;
     const step = st === "DLVD" ? Math.min(40_000, this._settle / 5) : 40_000;

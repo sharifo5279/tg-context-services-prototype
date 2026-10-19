@@ -953,7 +953,7 @@
     const starters = !c.items.length ? `<div class="cop-starters">${(c.label ? ["Which stores were affected by short shipments this week?", "Show Crestline orders still waiting for a 945"] : stagePrompts("copilot") ?? (a?.starters ?? []).slice(0, 4).map(promptOf)).map((p) => `<button class="cop-starter" data-prompt="${esc(p)}">${esc(p)}</button>`).join("")}</div>` : "";
     const dis = c.busy ? "disabled" : "";
     return `<header class="cop-top"><button class="cop-round cop-menu" data-copside="1" title="Menu">${ic("menu")}</button>
-        <label class="cop-pick"><select data-cpsagent>${avail.map((x) => `<option value="${x.id}" ${x.id === agentId ? "selected" : ""}>${esc(x.id === "context-assistant" ? "Copilot" : x.name)}</option>`).join("")}</select><span>${esc(label)}</span>${ic("chev")}</label>
+        <label class="cop-pick"><select data-cpsagent><option value="context-assistant">Copilot</option></select><span>${esc(label)}</span>${ic("chev")}</label>
         <span class="cop-sp"></span><span class="cop-iq" title="Work IQ">Work IQ <i>Auto</i>${ic("chev")}</span>
         <button class="cop-round" data-newconv="${c.key}" title="New chat">${ic("compose")}</button></header>
       ${blocked ? `<div class="cop-warn">Trading Grid access for this client is suspended by the Harborview administrator.</div>` : ""}
@@ -1004,8 +1004,8 @@
       turns: [{ text: "Every weekday at 8 AM, check Trading Grid for work orders on hold and tell me who owns the next action on each." }, { text: "Draft an email to Sunfield's EDI contact asking for the 945 test file our mapping team needs to finish the unit of measure change." }, { text: "Who is the contact at Rocky Coast for their test file?" }] },
     claude: { n: 7, sugg: ["Which Meridian invoices exceed the shipped quantity?", "Chart Meridian's fill rate by week", "Compare Meridian with our other personal care suppliers"], connector: "context", title: "Accounts payable reconciliation built in Claude", setup: "Harborview's accounts payable team reconciles Meridian Personal Care's EDI documents by hand and keeps finding quantity discrepancies. Priya Raman builds a live reconciliation dashboard in Claude on Trading Grid data, publishes it to the team, adds a daily invoice check and a weekly reconciliation agent.", env: ["Claude", "Trading Grid Context Connectors", "Priya Raman, delegated"],
       turns: [{ text: "Our accounts payable team reconciles Meridian Personal Care's EDI documents by hand and keeps finding quantity discrepancies. Build an accounts payable dashboard for Meridian covering the last 90 days: ordered (850), shipped (856) and invoiced (810) quantities by purchase order, with the exceptions highlighted." }, { click: "[data-artpub]" }, { click: "[data-artpubgo]" }, { text: "Every day at 7 AM, check Meridian's new invoices for any that have no shipment (ASN) matching their purchase order, and flag them in the dashboard for manual review." }, { text: "Create an agent that runs a weekly reconciliation roll-up for Meridian every Monday, monitors the health of their B2B transactions and sends the accounts payable team a summary." }] },
-    tgo: { n: 8, sugg: ["Which maps changed in the last 30 days?", "Find failed ASNs from yesterday", "Which cross-references do the most maps use?"], connector: "native", title: "Mapping intelligence", setup: "A new store opens next week. STORE_TO_GLN must include it before the store's first ASN arrives.", env: ["Trading Grid Online, TG Insights", "TG Aviator", "Jordan Lee, signed in"],
-      turns: [{ text: "Which maps and partners use STORE_TO_GLN, and what happens to an ASN for a store that isn't in it?" }, { text: "Prepare the STORE_TO_GLN entry for store 0844 Lynchburg, GLN 0614141084470." }, { approve: true }] },
+    tgo: { n: 8, sugg: ["Which maps changed in the last 30 days?", "Find failed invoices from yesterday", "Which cross-references do the most maps use?"], connector: "native", title: "From a failed transaction to a mapping fix", setup: "Kestrel Electronics launched a new product and its advance ship notices are failing. In Trading Grid Insights, Jordan asks Aviator to find the failures, trace them to the map in Cartographer, and fix the item cross-reference with an approval.", env: ["Trading Grid Online, TG Insights", "Trading Grid Aviator", "Jordan Lee, signed in"],
+      turns: [{ text: "Kestrel Electronics' advance ship notices have been failing since this morning. Find the failed transactions and tell me why they failed." }, { text: "Which map is failing, which partners use it, and how does it look up the item UPC? Check Cartographer." }, { text: "Add UPC 0845973051124 to ITEM_UPC_TO_SKU as SKU HRG-415220, description USB-C charging dock, 3-port." }, { approve: true }] },
   };
   const CLIENTS = {
     teams: { connector: "agents", name: "Microsoft Teams", host: "copilot-studio", ph: "Type a message", auto: "Supplier Onboarding", bot: "TG",
@@ -1117,8 +1117,9 @@
   // ---------- Claude artifact: AP quantity variance built from the Trading Grid reconciliation tool ----------
   S.art = { supplier: "", open: {} };
   function artData(c) {
-    for (let i = c.items.length - 1; i >= 0; i--) { const m = c.items[i]; const st = m.steps?.filter((x) => x.name === "tgi_get_quantity_reconciliation" && x.done && x.envelope?.result).pop(); if (st) return st.envelope.result; }
-    return null;
+    let best = null;
+    for (const m of c.items) for (const x of m.steps ?? []) if (x.name === "tgi_get_quantity_reconciliation" && x.done && x.envelope?.result) { const r = x.envelope.result; if (!best || r.window.days >= best.window.days) best = r; }
+    return best;
   }
   const n0 = (v) => (v == null ? "-" : Number(v).toLocaleString());
   function artView(d, c) {
@@ -1195,7 +1196,7 @@
     const when = /every morning|daily|every day/i.test(desc) ? "Every day at 7:00 AM" : /weekday/i.test(desc) ? "Weekdays at 7:00 AM" : "Every day at 7:00 AM";
     return { name: `${partner} short shipment monitor`, description: desc,
       instructions: [`Get yesterday's ${partner} Logistics ${a} shipment confirmations from Trading Grid.`, `Match each ${a} to its ${b} shipping order and compare ordered and shipped quantities.`, `Post a short message to the ${channel} channel listing each short-shipped order with ordered, shipped and short quantities.`, "If nothing was short shipped, post that all orders shipped complete."],
-      tools: ["Trading Grid Context Connectors (MCP): search_transactions", "Trading Grid Context Connectors (MCP): get_related_transactions", "Microsoft Teams: Post message in a channel"], trigger: `Recurrence: ${when}`, channel: `Microsoft Teams: ${channel}` };
+      tools: ["Trading Grid Context Connectors (MCP): tgi_get_shipment_reconciliation", "Microsoft Teams: Post message in a channel"], trigger: `Recurrence: ${when}`, channel: `Microsoft Teams: ${channel}` };
   }
   function wsArea(K) {
     if (K.ws === "studio") {
@@ -1464,7 +1465,8 @@
   }
   function stageFit() {
     const st = document.querySelector(".stage"); if (!st) return;
-    const W = st.clientWidth - 72, H = st.clientHeight * 0.9;
+    const W = st.clientWidth - 120, H = st.clientHeight * 0.9;
+    st.style.setProperty("--shift", "0px");
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client"));
     if (cur?.intro) return;
@@ -1476,12 +1478,21 @@
     const rowH = st.querySelector(".stage-row")?.clientHeight ?? H;
     st.style.setProperty("--pb", `${Math.max(8, (rowH - Hc) / 2)}px`);
     st.style.setProperty("--sl", sL); st.style.setProperty("--sp", sP);
+    // Balance the composition on the laptop screen, not its wider base: the gap left of the phone matches the gap right of the screen.
+    st.style.setProperty("--shift", `${(70 * sL) / 2}px`);
   }
   window.addEventListener("resize", () => { if (location.pathname === "/stage") stageFit(); });
   // Stage: hide the pointer after 0.5 seconds without movement.
   let curT = 0;
   const wake = () => { if (location.pathname !== "/stage" && !STAGE) return; document.documentElement.classList.remove("nocur"); clearTimeout(curT); curT = setTimeout(() => document.documentElement.classList.add("nocur"), 500); };
   ["mousemove", "mousedown", "wheel"].forEach((e) => document.addEventListener(e, wake, { passive: true }));
+  // Space plays the next scripted turn when the play dot is showing; it does nothing otherwise.
+  document.addEventListener("keydown", (ev) => {
+    if (ev.code !== "Space" || ev.target.closest?.("textarea,input,select,[contenteditable]")) return;
+    if (location.pathname === "/stage") { ev.preventDefault(); stagePlay(); }
+    else if (STAGE && window.parent !== window) { ev.preventDefault(); window.parent.postMessage({ stagePlay: 1 }, location.origin); }
+  });
+  window.addEventListener("message", (ev) => { if (ev.origin === location.origin && ev.data?.stagePlay && location.pathname === "/stage") stagePlay(); });
   const arrowOk = (ev) => (ev.key === "ArrowLeft" || ev.key === "ArrowRight") && !ev.target.closest?.("textarea,input,select,[contenteditable]");
   document.addEventListener("keydown", (ev) => {
     if (!arrowOk(ev)) return;
@@ -1542,7 +1553,7 @@
     if (d.stageplay) return stagePlay();
     if (d.stagefs) { if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.(); return; }
     if (d.artpub) { S.art.share = true; return refreshConv(keyOf(t)); }
-    if (d.artpubgo) { S.art.published = true; return refreshConv(keyOf(t)); }
+    if (d.artpubgo) { S.art.published = true; const k = keyOf(t); setTimeout(() => { S.art.share = false; refreshConv(k); }, 2600); return refreshConv(k); }
     if (d.artshareclose) { S.art.share = false; return refreshConv(keyOf(t)); }
     if (d.artclose) { S.art.hidden = true; return render(); }
     if (d.artopen) { S.art.hidden = false; return render(); }
