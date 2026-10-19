@@ -1495,7 +1495,7 @@
   function stageShow(id) {
     const cur = STAGE_CLIENTS.find((x) => x.id === id) ?? STAGE_CLIENTS[0];
     history.replaceState({}, "", `/stage?client=${cur.id}`);
-    stageFrames(cur); stageFit();
+    stageFrames(cur); stageFit(); document.fonts?.ready.then(stageFit);
   }
   function stageMove(d) {
     const i = STAGE_CLIENTS.findIndex((x) => x.id === (qs().get("client") ?? STAGE_CLIENTS[0].id));
@@ -1507,7 +1507,14 @@
     st.style.setProperty("--shift", "0px");
     const lw = (LAPTOP.w + 32) * 1.114, lh = LAPTOP.h + 32 + 22, pw = PHONE.w + 28, ph = PHONE.h + 28;
     const cur = STAGE_CLIENTS.find((x) => x.id === qs().get("client"));
-    if (cur?.intro) return;
+    if (cur?.intro) {
+      if (STAGE_MOBILE()) return;
+      const pair = st.querySelector(`[data-sg="${cur.id}"]`), el = pair?.firstElementChild; if (!el) return;
+      el.style.zoom = 1;
+      const room = pair.clientHeight - 48, roomW = pair.clientWidth - 96;
+      el.style.zoom = Math.min(1, room / el.scrollHeight, roomW / el.scrollWidth);
+      return;
+    }
     if (STAGE_MOBILE()) { const rowH = st.querySelector(".stage-row")?.clientHeight ?? H; const sP = Math.min(st.clientWidth / PHONE.w, rowH / (PHONE.h - 84)); st.style.setProperty("--sp", sP); st.style.setProperty("--pb", "0px"); return; }
     if (cur?.laptopOnly) { const sl = Math.min(W / lw, (H - 20) / lh); st.style.setProperty("--sl", sl); st.style.setProperty("--pb", `${Math.max(8, ((st.querySelector(".stage-row")?.clientHeight ?? H) - lh * sl) / 2)}px`); return; }
     // Phone and laptop share one visual height; the scenario card sits above the laptop.

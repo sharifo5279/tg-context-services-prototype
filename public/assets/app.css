@@ -1659,3 +1659,7 @@ html.stagefr *:focus { outline: none; }
 .so-pt p { margin: 0; font-size: 16px; line-height: 1.55; color: #3f4d62; }
 .stage.mob .so h1 { font-size: 64px; } .stage.mob .so-lead { font-size: 16px; margin: 18px 0 24px; } .stage.mob .so-grid { grid-template-columns: 1fr; gap: 10px; } .stage.mob .so { width: 100%; }
 .stage-pair.outro { align-items: center; }
+
+.stage, .stage * { caret-color: transparent; }
+.stage-pair.intro .si, .stage-pair.intro .so { user-select: none; -webkit-user-select: none; cursor: default; }
+.stage:not(.mob) .stage-pair.intro { overflow: hidden; align-items: center; padding: 0; }
