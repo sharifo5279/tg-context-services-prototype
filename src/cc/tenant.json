@@ -1,0 +1,5131 @@
+{
+ "generatedAt": "2026-10-25T22:35:41.918Z",
+ "source": "Command Center prototype (process-genome)",
+ "perspectives": {
+  "retailer": {
+   "perspective": "retailer",
+   "company": "Northfield Stores",
+   "industry": "Retail and CPG",
+   "snapshot": "24 Oct 2026, 09:30 ET",
+   "user": {
+    "name": "Alex Morgan",
+    "title": "EDI operations lead",
+    "email": "alex.morgan@northfieldstores.example"
+   },
+   "processes": [
+    {
+     "id": 1,
+     "name": "Purchase to pay",
+     "short": "Purchase to pay",
+     "owner": "Buying, receiving and accounts payable",
+     "documentsToday": 1021,
+     "onTrack": 661,
+     "atRisk": 113,
+     "breached": 247,
+     "overdue997": 52,
+     "rejects824": 121,
+     "steps": [
+      {
+       "step": "Purchase order",
+       "documents": "850 / ORDERS",
+       "direction": "Out",
+       "today": 340
+      },
+      {
+       "step": "Order acknowledgment",
+       "documents": "855 / ORDRSP",
+       "direction": "In",
+       "today": 262
+      },
+      {
+       "step": "Order change",
+       "documents": "860, 865 / ORDCHG, ORDRSP",
+       "direction": "Out / In",
+       "today": 41
+      },
+      {
+       "step": "Validate ship notice",
+       "documents": "856, 824 / DESADV, APERAK",
+       "direction": "In",
+       "today": 58
+      },
+      {
+       "step": "Receiving advice",
+       "documents": "861 / RECADV",
+       "direction": "Out",
+       "today": 66
+      },
+      {
+       "step": "Invoice in",
+       "documents": "810 / INVOIC",
+       "direction": "In",
+       "today": 226
+      },
+      {
+       "step": "Pay and remit",
+       "documents": "820 / REMADV",
+       "direction": "Out",
+       "today": 28
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "name": "Routing and delivery",
+     "short": "Routing and delivery",
+     "owner": "Supplier shipping and retailer transportation",
+     "documentsToday": 248,
+     "onTrack": 238,
+     "atRisk": 1,
+     "breached": 9,
+     "overdue997": 1,
+     "rejects824": 0,
+     "steps": [
+      {
+       "step": "Request routing",
+       "documents": "753",
+       "direction": "In",
+       "today": 22
+      },
+      {
+       "step": "Routing instructions",
+       "documents": "754",
+       "direction": "Out",
+       "today": 20
+      },
+      {
+       "step": "Tender load",
+       "documents": "204, 990 / IFTMIN",
+       "direction": "Out / In",
+       "today": 31
+      },
+      {
+       "step": "Track and deliver",
+       "documents": "214 / IFTSTA",
+       "direction": "In",
+       "today": 140
+      },
+      {
+       "step": "Freight invoice",
+       "documents": "210 / INVOIC",
+       "direction": "In",
+       "today": 35
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "name": "Chargebacks and deductions",
+     "short": "Chargebacks",
+     "owner": "Vendor compliance and accounts payable",
+     "documentsToday": 100,
+     "onTrack": 99,
+     "atRisk": 0,
+     "breached": 1,
+     "overdue997": 0,
+     "rejects824": 0,
+     "steps": [
+      {
+       "step": "Debit memo",
+       "documents": "812",
+       "direction": "Out",
+       "today": 46
+      },
+      {
+       "step": "Net remittance",
+       "documents": "820 / REMADV",
+       "direction": "Out",
+       "today": 38
+      },
+      {
+       "step": "Settle",
+       "documents": "812, 820 / REMADV",
+       "direction": "Out",
+       "today": 16
+      }
+     ]
+    }
+   ],
+   "partners": [
+    {
+     "name": "Nuvori Beauty",
+     "alias": "NUV-SP-0112",
+     "status": "Active",
+     "buid": "BU-1451",
+     "onboarded": "Mar 4, 2021",
+     "lastActivity": "Today, 09:12",
+     "protocol": "AS2",
+     "documents30d": 14200,
+     "errors30d": 64,
+     "topError": "Signature verification failed",
+     "ediAddresses": [
+      "ZZ:NUV-SP-0112",
+      "01:100000000"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:12",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:05",
+       "detail": "Configured and active; business deadlines are evaluated per order in PM."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:45",
+       "detail": "No 856 since 05:45 while 855 and 810 traffic continues."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:45",
+       "detail": "Invoice feed is active."
+      },
+      {
+       "document": "820",
+       "label": "Remittance",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "22 Oct 07:40",
+       "detail": "Weekly remittance exchanged on schedule."
+      },
+      {
+       "document": "824",
+       "label": "Application advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:40",
+       "detail": "Application advice route is active."
+      },
+      {
+       "document": "861",
+       "label": "Receiving advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:10",
+       "detail": "Exchanged after each receipt; none yet for ASN-10391."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:46",
+       "detail": "Functional acknowledgment route is active."
+      },
+      {
+       "document": "846",
+       "label": "Inventory advice",
+       "required": false,
+       "status": "Not required",
+       "lastSeen": "Not required",
+       "detail": "Excluded from this relationship's required-feed coverage."
+      }
+     ],
+     "owner": "Alex Morgan"
+    },
+    {
+     "name": "Meadowline Care",
+     "alias": "MDC-SP-0207",
+     "status": "Active",
+     "buid": "BU-1367",
+     "onboarded": "Jun 18, 2020",
+     "lastActivity": "Today, 09:18",
+     "protocol": "AS2",
+     "documents30d": 11800,
+     "errors30d": 296,
+     "topError": "AS2 connection refused",
+     "ediAddresses": [
+      "ZZ:MDC-SP-0207",
+      "01:107316451"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:52",
+       "detail": "No 850 exchanged since 05:52; AS2 failures on this connection."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:02",
+       "detail": "The feed is active."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:51",
+       "detail": "Ship-notice feed is active."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:42",
+       "detail": "Invoice feed is active."
+      },
+      {
+       "document": "820",
+       "label": "Remittance",
+       "required": true,
+       "status": "Missing",
+       "lastSeen": "17 Oct 05:40",
+       "detail": "Weekly 820 due today at 06:00 was not exchanged."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:52",
+       "detail": "Acknowledgments stopped with the AS2 failures at 05:52."
+      }
+     ],
+     "owner": "Dana Ortiz"
+    },
+    {
+     "name": "Copperleaf Living",
+     "alias": "CPL-SP-0331",
+     "status": "Active",
+     "buid": "BU-1442",
+     "onboarded": "Jan 9, 2022",
+     "lastActivity": "Today, 09:22",
+     "protocol": "SFTP",
+     "documents30d": 10400,
+     "errors30d": 38,
+     "topError": "Invalid interchange receiver ID",
+     "ediAddresses": [
+      "ZZ:CPL-SP-0331",
+      "01:114632902"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:22",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:10",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:50",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:05",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "852",
+       "label": "Product activity",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "06:00",
+       "detail": "Daily activity feed exchanged within its configured window."
+      },
+      {
+       "document": "861",
+       "label": "Receiving advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:30",
+       "detail": "Receiving advice exchanged after each receipt."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:22",
+       "detail": "Functional acknowledgment route is active."
+      }
+     ],
+     "owner": "Casey Park"
+    },
+    {
+     "name": "Tidewell Home",
+     "alias": "TDH-DS-0415",
+     "status": "Active",
+     "buid": "BU-1249",
+     "onboarded": "Sep 27, 2023",
+     "lastActivity": "Today, 09:24",
+     "protocol": "API",
+     "documents30d": 7400,
+     "errors30d": 21,
+     "topError": "Duplicate control number",
+     "ediAddresses": [
+      "ZZ:TDH-DS-0415",
+      "01:121949353"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:24",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "860",
+       "label": "Order change",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:00",
+       "detail": "Revision 2 for PO-78288 processed successfully."
+      },
+      {
+       "document": "865",
+       "label": "Change acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:15",
+       "detail": "Accepted change processed successfully."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:05",
+       "detail": "Feed is active."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:18",
+       "detail": "52 invoices since 05:00 have no 997."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:00",
+       "detail": "Acknowledgments for invoices behind since 05:00."
+      },
+      {
+       "document": "846",
+       "label": "Inventory advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:00",
+       "detail": "Hourly inventory feed is within the configured schedule."
+      }
+     ],
+     "owner": "Sam Lee"
+    },
+    {
+     "name": "Solara Personal Care",
+     "alias": "SPC-SP-0520",
+     "status": "Active",
+     "buid": "BU-1425",
+     "onboarded": "Feb 2, 2024",
+     "lastActivity": "Today, 09:15",
+     "protocol": "AS2",
+     "documents30d": 5200,
+     "errors30d": 12,
+     "topError": "Unknown trading partner",
+     "ediAddresses": [
+      "ZZ:SPC-SP-0520",
+      "01:129265804"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:15",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:48",
+       "detail": "Acknowledgment feed is active."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:12",
+       "detail": "Transmission completed; ASN-10482 has a separate PM carton-conformance finding."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "07:30",
+       "detail": "112 invoices rejected by 824 on unit price since 04:20."
+      },
+      {
+       "document": "832",
+       "label": "Price catalog",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "Mon 10:05",
+       "detail": "Cost change for 9 items exchanged Monday."
+      },
+      {
+       "document": "824",
+       "label": "Application advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:22",
+       "detail": "Application advice route is active."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:13",
+       "detail": "Functional acknowledgment recorded for ASN-10482."
+      }
+     ],
+     "owner": "Priya Shah"
+    },
+    {
+     "name": "Fieldstone Essentials",
+     "alias": "FSE-SP-0618",
+     "status": "Active",
+     "buid": "BU-1019",
+     "onboarded": "Nov 15, 2019",
+     "lastActivity": "Today, 09:10",
+     "protocol": "VAN",
+     "documents30d": 3100,
+     "errors30d": 57,
+     "topError": "Missing required segment",
+     "ediAddresses": [
+      "ZZ:FSE-SP-0618",
+      "01:136582255"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:55",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "753",
+       "label": "Routing request",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:00",
+       "detail": "Routing request processed successfully."
+      },
+      {
+       "document": "754",
+       "label": "Routing instructions",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:10",
+       "detail": "Routing instructions exchanged; PM checks their sequence against shipment."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:32",
+       "detail": "Feed is active."
+      },
+      {
+       "document": "214",
+       "label": "Shipment status",
+       "required": false,
+       "status": "Not configured",
+       "lastSeen": "No route",
+       "detail": "No carrier events configured. Excluded from required integration coverage but shown as a PM evidence gap."
+      }
+     ],
+     "owner": "Taylor Chen"
+    },
+    {
+     "name": "Liora Wellness",
+     "alias": "LRW-SP-0702",
+     "status": "Onboarding",
+     "buid": "BU-1480",
+     "onboarded": "Oct 20, 2026",
+     "lastActivity": "Yesterday, 16:20",
+     "protocol": "AS2",
+     "documents30d": 60,
+     "errors30d": 3,
+     "topError": "Duplicate control number",
+     "ediAddresses": [
+      "ZZ:LRW-SP-0702",
+      "01:143898706"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:05",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:10",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Not configured",
+       "lastSeen": "No route",
+       "detail": "Required under profile RT-CPG-02. Route and subsequent test are outstanding."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:15",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:20",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "846",
+       "label": "Inventory advice",
+       "required": false,
+       "status": "Not required",
+       "lastSeen": "Not required",
+       "detail": "Optional for this relationship and excluded from coverage."
+      }
+     ],
+     "owner": "Jordan Lee"
+    },
+    {
+     "name": "Brookfield Pet Supply",
+     "alias": "BPS-SP-0811",
+     "status": "Inactive",
+     "buid": "BU-1082",
+     "onboarded": "Jul 21, 2022",
+     "lastActivity": "Aug 3, 2026",
+     "protocol": "VAN",
+     "documents30d": 0,
+     "errors30d": 0,
+     "topError": "None",
+     "ediAddresses": [
+      "ZZ:BPS-SP-0811",
+      "01:151215157"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "855",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "856",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "810",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "820",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": null,
+     "owner": null
+    },
+    {
+     "name": "Ridgeway Freight",
+     "alias": "RDF-CA-0905",
+     "status": "Active",
+     "buid": "BU-1395",
+     "onboarded": "May 6, 2021",
+     "lastActivity": "Today, 08:40",
+     "protocol": "SFTP",
+     "documents30d": 1800,
+     "errors30d": 26,
+     "topError": "Invalid date format",
+     "ediAddresses": [
+      "ZZ:RDF-CA-0905",
+      "01:158531608"
+     ],
+     "documentTypes": [
+      {
+       "document": "214",
+       "direction": "In",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": null,
+     "owner": null
+    },
+    {
+     "name": "Bayview Carriers",
+     "alias": "BVC-CA-1010",
+     "status": "Active",
+     "buid": "BU-1132",
+     "onboarded": "Oct 11, 2020",
+     "lastActivity": "Today, 09:26",
+     "protocol": "AS2",
+     "documents30d": 1200,
+     "errors30d": 14,
+     "topError": "Missing required segment",
+     "ediAddresses": [
+      "ZZ:BVC-CA-1010",
+      "01:165848059"
+     ],
+     "documentTypes": [
+      {
+       "document": "214",
+       "direction": "In",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": null,
+     "owner": null
+    }
+   ],
+   "findings": [
+    {
+     "id": "f1",
+     "title": "No ship notices for 14 inbound loads",
+     "partner": "Nuvori Beauty",
+     "module": "Performance Monitor",
+     "agent": "Lex, Timing and SLA agent",
+     "check": "Ship notice within 1 hour of shipment",
+     "document": "Ship notice (856)",
+     "process": "Purchase to pay",
+     "step": "Validate ship notice",
+     "severity": "High",
+     "detectedAt": "07:10",
+     "transactions": 14,
+     "valueAtRisk": 8400,
+     "observation": "Carrier pickup confirmed at 06:10 for 14 Nuvori Beauty loads. No 856 received, and the loads reach the DC in about 5 hours.",
+     "impact": "14 inbound loads will be received by hand. Loads that arrive before their ship notice cannot be scanned at the dock.",
+     "rootCause": "Nuvori Beauty has sent no ship notices since 05:45. Its acknowledgments and invoices arrive normally.",
+     "suggestedNextStep": "Request the 14 ship notices from Nuvori Beauty and alert DC receiving to plan for manual receipt.",
+     "usuallyHandledBy": "Supplier compliance lead",
+     "teams": [
+      "Supplier compliance",
+      "DC receiving",
+      "Merchandising"
+     ],
+     "nextDocumentOwedBy": "partner",
+     "internalTeam": "DC receiving",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "06:10",
+       "event": "Carrier pickup confirmed for 14 loads"
+      },
+      {
+       "time": "07:10",
+       "event": "Rule breached: no 856 within 1 hour of pickup"
+      },
+      {
+       "time": "08:05",
+       "event": "Predicted arrival before ship notice for all 14 loads"
+      }
+     ],
+     "recoveryCriteria": [
+      "856 received for each of 14 loads",
+      "997 sent for each (AK9 A)",
+      "No 824 sent within 30 minutes"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100869958",
+       "st02": "0001",
+       "reference": "ASN-91174",
+       "time": "09:20",
+       "document": "856",
+       "direction": "In",
+       "check": "Rule and prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100872185",
+       "st02": "0002",
+       "reference": "ASN-91305",
+       "time": "08:52",
+       "document": "856",
+       "direction": "In",
+       "check": "Rule and prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100874412",
+       "st02": "0003",
+       "reference": "ASN-91436",
+       "time": "08:33",
+       "document": "856",
+       "direction": "In",
+       "check": "Rule and prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100876639",
+       "st02": "0004",
+       "reference": "ASN-91567",
+       "time": "08:05",
+       "document": "856",
+       "direction": "In",
+       "check": "Rule and prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100878866",
+       "st02": "0005",
+       "reference": "ASN-91698",
+       "time": "07:46",
+       "document": "856",
+       "direction": "In",
+       "check": "Rule and prediction",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f2",
+     "title": "74 purchase orders failed AS2 delivery to Meadowline Care",
+     "partner": "Meadowline Care",
+     "module": "Integration Monitor",
+     "agent": "Ivy, Volume agent",
+     "check": "Order volume against projection",
+     "document": "Purchase order (850)",
+     "process": "Purchase to pay",
+     "step": "Purchase order",
+     "severity": "High",
+     "detectedAt": "06:30",
+     "transactions": 74,
+     "valueAtRisk": 182000,
+     "observation": "Trading Grid holds 74 purchase orders for Meadowline Care since 05:52. Deliveries to its AS2 endpoint fail with connection errors.",
+     "impact": "Replenishment orders not reaching Meadowline Care. About $182,000 in store replenishment orders is waiting for delivery.",
+     "rootCause": "Meadowline Care moved its AS2 endpoint in a maintenance window. Deliveries to the previous address fail.",
+     "suggestedNextStep": "Confirm the new AS2 endpoint with Meadowline Care, ask the Trading Grid administrator to update it, then redeliver the held orders from TG Insights.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Replenishment",
+      "Supplier compliance",
+      "Information security"
+     ],
+     "nextDocumentOwedBy": "partner",
+     "internalTeam": "Trading Grid administrator",
+     "linkedFindings": [
+      "f7"
+     ],
+     "events": [
+      {
+       "time": "05:52",
+       "event": "Last 850 delivered to Meadowline Care"
+      },
+      {
+       "time": "06:30",
+       "event": "Volume fell below the projected band"
+      },
+      {
+       "time": "06:41",
+       "event": "AS2 deliveries returning connection errors"
+      },
+      {
+       "time": "07:15",
+       "event": "Anomaly confirmed across two order windows"
+      }
+     ],
+     "recoveryCriteria": [
+      "Test delivery to the new endpoint returns a positive MDN",
+      "Held purchase orders delivered: 74 of 74",
+      "997 received for each (AK9 A)"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100886567",
+       "st02": "0001",
+       "reference": "PO-92151",
+       "time": "09:15",
+       "document": "850",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100888794",
+       "st02": "0002",
+       "reference": "PO-92282",
+       "time": "08:56",
+       "document": "850",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100891021",
+       "st02": "0003",
+       "reference": "PO-92413",
+       "time": "08:28",
+       "document": "850",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100893248",
+       "st02": "0004",
+       "reference": "PO-92544",
+       "time": "08:09",
+       "document": "850",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100895475",
+       "st02": "0005",
+       "reference": "PO-92675",
+       "time": "07:41",
+       "document": "850",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f3",
+     "title": "37 acknowledgments past the 24-hour window",
+     "partner": "Copperleaf Living",
+     "module": "Performance Monitor",
+     "agent": "Lex, Timing and SLA agent",
+     "check": "Acknowledgment within 24 hours",
+     "document": "Order acknowledgment (855)",
+     "process": "Purchase to pay",
+     "step": "Order acknowledgment",
+     "severity": "Medium",
+     "detectedAt": "05:00",
+     "transactions": 37,
+     "valueAtRisk": 91000,
+     "observation": "Purchase orders sent to Copperleaf Living yesterday have no 855. Store allocation waits on confirmed quantities.",
+     "impact": "37 orders not confirmed by Copperleaf Living. Unconfirmed orders delay allocation and may need another source.",
+     "rootCause": "Copperleaf Living received the orders. Its order acknowledgments have not been generated.",
+     "suggestedNextStep": "Send an acknowledgment reminder to Copperleaf Living and flag the 37 orders to buying.",
+     "usuallyHandledBy": "Buying operations lead",
+     "teams": [
+      "Buying",
+      "Replenishment"
+     ],
+     "nextDocumentOwedBy": "partner",
+     "internalTeam": "Merchandising",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "Yesterday 04:58",
+       "event": "37 purchase orders delivered and functionally acknowledged"
+      },
+      {
+       "time": "05:00",
+       "event": "24-hour acknowledgment window closed"
+      }
+     ],
+     "recoveryCriteria": [
+      "855 received for each of 37 orders"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100903176",
+       "st02": "0001",
+       "reference": "PO-93128",
+       "time": "09:19",
+       "document": "855",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100905403",
+       "st02": "0002",
+       "reference": "PO-93259",
+       "time": "08:51",
+       "document": "855",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100907630",
+       "st02": "0003",
+       "reference": "PO-93390",
+       "time": "08:32",
+       "document": "855",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100909857",
+       "st02": "0004",
+       "reference": "PO-93521",
+       "time": "08:04",
+       "document": "855",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100912084",
+       "st02": "0005",
+       "reference": "PO-93652",
+       "time": "07:45",
+       "document": "855",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f4",
+     "title": "112 supplier invoices rejected on unit price",
+     "partner": "Solara Personal Care",
+     "module": "Performance Monitor",
+     "agent": "Nora, Conformance agent",
+     "check": "Invoice matches order price",
+     "document": "Invoice (810)",
+     "process": "Purchase to pay",
+     "step": "Invoice in",
+     "severity": "High",
+     "detectedAt": "04:20",
+     "transactions": 112,
+     "valueAtRisk": 46200,
+     "observation": "824 rejections sent to Solara Personal Care cite unit price on 9 items. The invoices carry new costs; the purchase orders carry the previous cost.",
+     "impact": "112 invoices rejected with 824 (unit price). Rejected invoices are rebilled or disputed, which delays payment.",
+     "rootCause": "Invoice cost differs from PO cost on 9 items; the 832 with the new costs arrived Monday.",
+     "suggestedNextStep": "Ask merchandising to send 860 cost changes for open orders, or ask Solara Personal Care to rebill at the PO cost.",
+     "usuallyHandledBy": "Accounts payable lead",
+     "teams": [
+      "Accounts payable",
+      "Merchandising",
+      "Master data"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Merchandising",
+     "linkedFindings": [
+      "f9"
+     ],
+     "events": [
+      {
+       "time": "Monday",
+       "event": "832 cost change received from Solara Personal Care"
+      },
+      {
+       "time": "04:20",
+       "event": "First invoice failed price match"
+      },
+      {
+       "time": "07:30",
+       "event": "112 invoices held on the same 9 items"
+      }
+     ],
+     "recoveryCriteria": [
+      "Rebilled invoices received for the 112 rejections",
+      "No 824 sent on the rebills"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100919785",
+       "st02": "0001",
+       "reference": "INV-94105",
+       "time": "09:14",
+       "document": "810",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100922012",
+       "st02": "0002",
+       "reference": "INV-94236",
+       "time": "08:55",
+       "document": "810",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100924239",
+       "st02": "0003",
+       "reference": "INV-94367",
+       "time": "08:27",
+       "document": "810",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100926466",
+       "st02": "0004",
+       "reference": "INV-94498",
+       "time": "08:08",
+       "document": "810",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100928693",
+       "st02": "0005",
+       "reference": "INV-94629",
+       "time": "07:40",
+       "document": "810",
+       "direction": "In",
+       "check": "Rule",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f7",
+     "title": "Remittance advice not delivered",
+     "partner": "Meadowline Care",
+     "module": "Integration Monitor",
+     "agent": "Ivy, Volume agent",
+     "check": "Remittance advice on schedule",
+     "document": "Remittance advice (820)",
+     "process": "Purchase to pay",
+     "step": "Pay and remit",
+     "severity": "Medium",
+     "detectedAt": "06:00",
+     "transactions": 1,
+     "valueAtRisk": 0,
+     "observation": "The weekly 820 to Meadowline Care was due at 06:00. The last remittance went out 7 days ago.",
+     "impact": "Meadowline Care cannot apply this week's payments. Supplier collections may escalate while payments stay unapplied.",
+     "rootCause": "Same AS2 endpoint change as the order volume finding for Meadowline Care.",
+     "suggestedNextStep": "Redeliver the 820 from TG Insights once the Meadowline Care endpoint is updated.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Accounts payable",
+      "Supplier collaboration"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Accounts payable",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "Last Saturday 05:40",
+       "event": "Last 820 delivered"
+      },
+      {
+       "time": "06:00",
+       "event": "Expected remittance window closed"
+      }
+     ],
+     "recoveryCriteria": [
+      "820 delivered to Meadowline Care"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "REM-97036",
+       "time": "09:17",
+       "document": "820",
+       "direction": "Out",
+       "check": "Missing document",
+       "status": "Not sent"
+      }
+     ]
+    },
+    {
+     "id": "f9",
+     "title": "Cost change not applied to 61 open orders",
+     "partner": "Solara Personal Care",
+     "module": "Performance Monitor",
+     "agent": "Liz, Process agent",
+     "check": "Cost change applied to open orders",
+     "document": "Price catalog (832)",
+     "process": "Purchase to pay",
+     "step": "Purchase order",
+     "severity": "Medium",
+     "detectedAt": "07:50",
+     "transactions": 61,
+     "valueAtRisk": 28400,
+     "observation": "New costs for 9 Solara Personal Care items are not on 61 open purchase orders. Invoices for these orders will fail price match.",
+     "impact": "$28,400 in invoices likely to fail match. The same price mismatch will affect 61 orders that are not invoiced yet.",
+     "rootCause": "Purchase orders sent after Monday's 832 still carry the previous cost.",
+     "suggestedNextStep": "Ask merchandising to send 860 cost changes for the 61 open orders.",
+     "usuallyHandledBy": "Merchandising analyst",
+     "teams": [
+      "Merchandising",
+      "Accounts payable"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Merchandising",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "Monday",
+       "event": "832 cost change received for 9 items"
+      },
+      {
+       "time": "07:50",
+       "event": "61 open orders found with the previous cost"
+      }
+     ],
+     "recoveryCriteria": [
+      "860 sent with the new cost for each of 61 orders"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "101002830",
+       "st02": "0001",
+       "reference": "CAT-98990",
+       "time": "09:16",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101005057",
+       "st02": "0002",
+       "reference": "CAT-99121",
+       "time": "08:57",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101007284",
+       "st02": "0003",
+       "reference": "CAT-99252",
+       "time": "08:29",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101009511",
+       "st02": "0004",
+       "reference": "CAT-99383",
+       "time": "08:10",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101011738",
+       "st02": "0005",
+       "reference": "CAT-99514",
+       "time": "07:42",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f10",
+     "title": "Functional acknowledgments not sent for 52 invoices",
+     "partner": "Tidewell Home",
+     "module": "Integration Monitor",
+     "agent": "Ivy, Volume agent",
+     "check": "Functional acknowledgments on time",
+     "document": "Functional acknowledgment (997)",
+     "process": "Purchase to pay",
+     "step": "Invoice in",
+     "severity": "Medium",
+     "detectedAt": "08:10",
+     "transactions": 52,
+     "valueAtRisk": 0,
+     "observation": "52 invoices from Tidewell Home were delivered to your AS2 endpoint since 05:00 (MDNs returned). No 997 has gone back.",
+     "impact": "52 inbound invoices not acknowledged (no 997 sent). Tidewell Home cannot confirm delivery and may resend, which risks duplicate invoices.",
+     "rootCause": "Your inbound translator queue for invoices paused after a restart at 04:55.",
+     "suggestedNextStep": "Ask the integration team to restart the inbound invoice queue. The 52 997s go out when it resumes.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Accounts payable",
+      "IT and ERP"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Integration team",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "05:00",
+       "event": "Last 997 sent for an invoice"
+      },
+      {
+       "time": "06:00",
+       "event": "Acknowledgment volume fell below the projected band"
+      },
+      {
+       "time": "08:10",
+       "event": "52 invoices held in the inbound queue"
+      }
+     ],
+     "recoveryCriteria": [
+      "997 sent for each of 52 invoices"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "INV-91174",
+       "time": "09:20",
+       "document": "997",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "INV-91305",
+       "time": "08:52",
+       "document": "997",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "INV-91436",
+       "time": "08:33",
+       "document": "997",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "INV-91567",
+       "time": "08:05",
+       "document": "997",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "INV-91698",
+       "time": "07:46",
+       "document": "997",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Not sent"
+      }
+     ]
+    }
+   ],
+   "networkEvents": [
+    {
+     "time": "10:15",
+     "finding": "f10",
+     "detail": "997s leaving for Tidewell Home: 20 of 52"
+    },
+    {
+     "time": "10:20",
+     "finding": "f2",
+     "detail": "Test delivery to the new Meadowline Care endpoint returned a positive MDN"
+    },
+    {
+     "time": "10:22",
+     "finding": "f10",
+     "detail": "52 of 52 997s sent to Tidewell Home"
+    },
+    {
+     "time": "10:31",
+     "finding": "f2",
+     "detail": "74 held purchase orders delivered from TG Insights; positive MDNs"
+    },
+    {
+     "time": "10:33",
+     "finding": "f7",
+     "detail": "820 delivered to Meadowline Care; positive MDN"
+    },
+    {
+     "time": "10:40",
+     "finding": "f3",
+     "detail": "37 acknowledgments received from Copperleaf Living"
+    },
+    {
+     "time": "10:52",
+     "finding": "f1",
+     "detail": "First ship notices received from Nuvori Beauty: 3 of 14"
+    },
+    {
+     "time": "10:58",
+     "finding": "f2",
+     "detail": "74 997s received from Meadowline Care (AK9 A)"
+    },
+    {
+     "time": "11:08",
+     "finding": "f1",
+     "detail": "14 of 14 ship notices received; 997s sent"
+    },
+    {
+     "time": "11:30",
+     "finding": "f9",
+     "detail": "61 860 cost changes sent to Solara Personal Care"
+    },
+    {
+     "time": "11:40",
+     "finding": "f1",
+     "detail": "No 824 sent for the 14 ship notices in 30 minutes"
+    },
+    {
+     "time": "12:20",
+     "finding": "f4",
+     "detail": "112 rebilled invoices received from Solara Personal Care"
+    },
+    {
+     "time": "12:50",
+     "finding": "f4",
+     "detail": "Rebills passed the price check; no 824 sent"
+    }
+   ],
+   "retailCases": [
+    {
+     "id": "rt-order-change",
+     "title": "Ship notice exceeds the accepted order revision",
+     "partner": "Tidewell Home",
+     "reference": "PO-78288 / ASN-10512",
+     "monitor": "Performance Monitor",
+     "agent": "Reese",
+     "workflow": "Order commitments",
+     "process": "Purchase to pay",
+     "severity": "High",
+     "owner": "Sam Lee · Supplier compliance",
+     "summary": "Tidewell Home accepted a reduction from 1,000 to 800 units, but its ship notice ASN-10512 advises 1,000.",
+     "impact": "Receiving will see 200 units more than the accepted order. The overage is advised, not yet received.",
+     "explanation": "Reese correlates the order, its accepted revision and the ship notice by PO number, line and normalized units. The accepted revision is the baseline. The ship notice advises 200 units more than the supplier accepted.",
+     "nextAction": "Prepare a quantity review with Tidewell Home before the shipment arrives.",
+     "policy": "Order rule REV-02: ship notice quantities must not exceed the latest accepted order revision; no quantity tolerance is configured for this supplier.",
+     "evidenceGap": "Goods are not received yet, so no 861 has been sent.",
+     "amount": null,
+     "documents": [
+      {
+       "document": "850",
+       "id": "PO-78288 v1",
+       "time": "23 Oct 16:00",
+       "status": "pass",
+       "detail": "Original quantity: 1,000 units"
+      },
+      {
+       "document": "860",
+       "id": "CHG-78288 v2",
+       "time": "08:00",
+       "status": "pass",
+       "detail": "Requested quantity: 800 units"
+      },
+      {
+       "document": "865",
+       "id": "ACK-78288 v2",
+       "time": "08:15",
+       "status": "pass",
+       "detail": "Revision 2 accepted"
+      },
+      {
+       "document": "856",
+       "id": "ASN-10512",
+       "time": "08:40",
+       "status": "fail",
+       "detail": "Advises 1,000 units"
+      },
+      {
+       "document": "861",
+       "id": "Not sent",
+       "time": "09:30",
+       "status": "unknown",
+       "detail": "Goods not received yet"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Latest accepted revision",
+       "expected": "Accepted 860/865 pair for revision 2",
+       "observed": "Revision 2 accepted at 08:15",
+       "status": "pass"
+      },
+      {
+       "name": "Ship notice quantity",
+       "expected": "800 units under accepted revision 2",
+       "observed": "856 advises 1,000 units; difference +200",
+       "status": "fail"
+      },
+      {
+       "name": "Item and unit alignment",
+       "expected": "Same item and each-unit basis",
+       "observed": "CW-120; units normalized to each",
+       "status": "pass"
+      },
+      {
+       "name": "Receipt",
+       "expected": "861 after the goods arrive",
+       "observed": "Not sent yet",
+       "status": "unknown"
+      }
+     ],
+     "lines": [
+      {
+       "sku": "CW-120",
+       "description": "Cloudwash cleanser 120 ml",
+       "ordered": 800,
+       "acknowledged": 800,
+       "shipped": 1000,
+       "invoiced": null,
+       "price": 12,
+       "expectedPrice": 12,
+       "originalOrdered": 1000
+      }
+     ],
+     "deductions": null
+    },
+    {
+     "id": "rt-shipment-labels",
+     "title": "Ship notice repeats two carton identifiers",
+     "partner": "Solara Personal Care",
+     "reference": "ASN-10482",
+     "monitor": "Performance Monitor",
+     "agent": "Nora",
+     "workflow": "Shipment readiness",
+     "process": "Purchase to pay",
+     "severity": "High",
+     "owner": "Priya Shah · Shipment compliance",
+     "summary": "ASN-10482 describes eight cartons but has only six distinct carton identifiers. Application advice reports the duplicate references.",
+     "impact": "The notice does not meet this relationship's receiving requirements.",
+     "explanation": "Nora checks the carton records within the ASN against the partner's configured guide. Two repeated identifiers explain the application rejection. The check covers the ship notice content.",
+     "nextAction": "Prepare the failed carton references for supplier correction and receiving-team review.",
+     "policy": "ASN guide PACK-08: all eight cartons in this shipment require distinct SSCC identifiers. This is the configured receiving requirement for this relationship.",
+     "evidenceGap": "No corrected 856 received yet.",
+     "amount": null,
+     "documents": [
+      {
+       "document": "856",
+       "id": "ASN-10482",
+       "time": "08:12",
+       "status": "fail",
+       "detail": "Eight carton records; six distinct SSCC values"
+      },
+      {
+       "document": "997",
+       "id": "FA-10482",
+       "time": "08:13",
+       "status": "pass",
+       "detail": "Functional acknowledgment recorded"
+      },
+      {
+       "document": "824",
+       "id": "AA-10482",
+       "time": "08:22",
+       "status": "fail",
+       "detail": "Application rejection: duplicate carton references"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Required carton references present",
+       "expected": "8 carton records with an SSCC value",
+       "observed": "8 of 8 carton records populated",
+       "status": "pass"
+      },
+      {
+       "name": "Carton identifier uniqueness",
+       "expected": "8 distinct values; 0 duplicate occurrences",
+       "observed": "6 distinct values; 2 duplicate occurrences",
+       "status": "fail"
+      },
+      {
+       "name": "Advised item quantity",
+       "expected": "576 units across the three order lines",
+       "observed": "576 units advised",
+       "status": "pass"
+      },
+      {
+       "name": "Corrected notice",
+       "expected": "Replacement 856 for ASN-10482",
+       "observed": "Not received",
+       "status": "unknown"
+      }
+     ],
+     "lines": [
+      {
+       "sku": "CW-120",
+       "description": "Cloudwash cleanser 120 ml",
+       "ordered": 192,
+       "acknowledged": 192,
+       "shipped": 192,
+       "invoiced": null,
+       "price": 12,
+       "expectedPrice": 12
+      },
+      {
+       "sku": "BL-250",
+       "description": "Hydrating body lotion 250 ml",
+       "ordered": 192,
+       "acknowledged": 192,
+       "shipped": 192,
+       "invoiced": null,
+       "price": 8.4,
+       "expectedPrice": 8.4
+      },
+      {
+       "sku": "HC-075",
+       "description": "Daily hand cream 75 ml",
+       "ordered": 192,
+       "acknowledged": 192,
+       "shipped": 192,
+       "invoiced": null,
+       "price": 4.8,
+       "expectedPrice": 4.8
+      }
+     ],
+     "deductions": null
+    },
+    {
+     "id": "rt-shipment-sequence",
+     "title": "Ship notice received before routing instructions",
+     "partner": "Fieldstone Essentials",
+     "reference": "ROUTE-38106 / ASN-10520",
+     "monitor": "Performance Monitor",
+     "agent": "Liz",
+     "workflow": "Shipment readiness",
+     "process": "Routing and delivery",
+     "severity": "Medium",
+     "owner": "Taylor Chen · Transportation planning",
+     "summary": "Fieldstone Essentials sent ASN-10520 at 08:20; routing instructions for this collect-freight shipment were issued at 09:10.",
+     "impact": "The shipment may move on a carrier other than the routed one, outside the collect-freight program.",
+     "explanation": "Liz compares the routing request, the instructions Northfield Stores issued and the supplier's ship notice. The supplier advised shipment 50 minutes before instructions were issued, so the carrier may not be the routed one.",
+     "nextAction": "Prepare a routing review with Fieldstone Essentials and Transportation planning before the load is tendered.",
+     "policy": "Collect-freight program COLLECT-03: suppliers must not ship or send an 856 before Northfield Stores issues the 754.",
+     "evidenceGap": "No 214 pickup event received yet.",
+     "amount": null,
+     "documents": [
+      {
+       "document": "753",
+       "id": "ROUTE-38106",
+       "time": "08:00",
+       "status": "pass",
+       "detail": "Routing request received"
+      },
+      {
+       "document": "856",
+       "id": "ASN-10520",
+       "time": "08:20",
+       "status": "fail",
+       "detail": "Shipment advised before routing instructions"
+      },
+      {
+       "document": "754",
+       "id": "APP-38106",
+       "time": "09:10",
+       "status": "pass",
+       "detail": "Routing instructions sent"
+      },
+      {
+       "document": "214",
+       "id": "Not received",
+       "time": "09:30",
+       "status": "unknown",
+       "detail": "No carrier pickup event"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Program applicability",
+       "expected": "Collect-freight program assigned",
+       "observed": "COLLECT-03 applies to this order",
+       "status": "pass"
+      },
+      {
+       "name": "Routing request correlation",
+       "expected": "Request and instructions use the same routing reference",
+       "observed": "ROUTE-38106 matched",
+       "status": "pass"
+      },
+      {
+       "name": "Instructions before shipment",
+       "expected": "754 at or before the supplier's 856",
+       "observed": "856 at 08:20; 754 at 09:10; 50-minute gap",
+       "status": "fail"
+      },
+      {
+       "name": "Carrier pickup",
+       "expected": "214 pickup event",
+       "observed": "Not received",
+       "status": "unknown"
+      }
+     ],
+     "lines": null,
+     "deductions": null
+    },
+    {
+     "id": "rt-invoice-deduction",
+     "title": "Deductions taken without a receiving advice",
+     "partner": "Nuvori Beauty",
+     "reference": "REM-88027 / INV-10230",
+     "monitor": "Performance Monitor",
+     "agent": "Reese",
+     "workflow": "Invoice and deduction control",
+     "process": "Chargebacks and deductions",
+     "severity": "Medium",
+     "owner": "Jamie Brooks · Vendor compliance",
+     "summary": "The 820 to Nuvori Beauty deducts $450 for notice timing and $300 for shortage, but no 861 was sent for ASN-10391, so the supplier has no receiving evidence to reconcile against.",
+     "impact": "The supplier is likely to dispute both deductions.",
+     "explanation": "Reese reconciles the invoice, net settlement and adjustment amounts, then checks the evidence required by each deduction reason. The arithmetic matches. Without a 214 delivery event and 861 receiving advice, validity cannot be concluded. The review deadline comes from the configured terms for this relationship.",
+     "nextAction": "Send the 861 for ASN-10391, or attach receipt detail to the deduction, before the supplier disputes.",
+     "policy": "Settlement terms REM-10: this account has a 30-calendar-day review window from remittance posting. The 22 Oct posting gives a configured review deadline of 21 Nov 2026, 23:59 ET.",
+     "evidenceGap": "No 861 sent for ASN-10391.",
+     "amount": 750,
+     "documents": [
+      {
+       "document": "856",
+       "id": "ASN-10391",
+       "time": "14 Sep 15:25",
+       "status": "pass",
+       "detail": "Ship notice received"
+      },
+      {
+       "document": "997",
+       "id": "FA-10391",
+       "time": "14 Sep 15:26",
+       "status": "pass",
+       "detail": "Functional acknowledgment sent"
+      },
+      {
+       "document": "810",
+       "id": "INV-10230",
+       "time": "15 Sep 12:10",
+       "status": "pass",
+       "detail": "Invoice total $25,000"
+      },
+      {
+       "document": "820",
+       "id": "REM-88027",
+       "time": "22 Oct 07:40",
+       "status": "pass",
+       "detail": "$24,250 settlement plus two deductions totaling $750"
+      },
+      {
+       "document": "861",
+       "id": "Not sent",
+       "time": "09:30",
+       "status": "fail",
+       "detail": "No receiving advice sent for ASN-10391"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Remittance arithmetic",
+       "expected": "Invoice = net settlement + adjustments",
+       "observed": "$25,000 = $24,250 + $450 + $300",
+       "status": "pass"
+      },
+      {
+       "name": "Invoice correlation",
+       "expected": "Remittance references an identified invoice",
+       "observed": "INV-10230 matched",
+       "status": "pass"
+      },
+      {
+       "name": "Receiving advice sent",
+       "expected": "861 for ASN-10391 before the deduction",
+       "observed": "Not sent",
+       "status": "fail"
+      },
+      {
+       "name": "Deduction support",
+       "expected": "Received quantities and arrival time on file for both reason codes",
+       "observed": "Not on Trading Grid",
+       "status": "unknown"
+      }
+     ],
+     "lines": null,
+     "deductions": [
+      {
+       "code": "ASN-TIME",
+       "label": "Notice timing",
+       "amount": 450,
+       "evidence": "214 delivery event and the notice-timing rule",
+       "status": "unknown"
+      },
+      {
+       "code": "QTY-SHORT",
+       "label": "Quantity shortage",
+       "amount": 300,
+       "evidence": "861 received quantities by line",
+       "status": "unknown"
+      }
+     ]
+    }
+   ],
+   "rules": [
+    {
+     "name": "Ship notice within 1 hour of shipment",
+     "agent": "Lex, Timing and SLA agent",
+     "module": "Performance Monitor",
+     "document": "Ship notice (856)",
+     "processes": "Purchase to pay",
+     "conformancePct": 97.1,
+     "findings30d": 31,
+     "lastRun": "1 minute ago",
+     "status": "Active"
+    },
+    {
+     "name": "Acknowledgment within 24 hours",
+     "agent": "Lex, Timing and SLA agent",
+     "module": "Performance Monitor",
+     "document": "Order acknowledgment (855)",
+     "processes": "Purchase to pay",
+     "conformancePct": 96.5,
+     "findings30d": 44,
+     "lastRun": "3 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Invoice matches order price",
+     "agent": "Nora, Conformance agent",
+     "module": "Performance Monitor",
+     "document": "Invoice (810)",
+     "processes": "Purchase to pay",
+     "conformancePct": 96.6,
+     "findings30d": 38,
+     "lastRun": "2 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Required fields by partner guide",
+     "agent": "Nora, Conformance agent",
+     "module": "Performance Monitor",
+     "document": "All outbound documents",
+     "processes": "All processes",
+     "conformancePct": 99.4,
+     "findings30d": 6,
+     "lastRun": "5 minutes ago",
+     "status": "Over budget"
+    },
+    {
+     "name": "Cost change applied to open orders",
+     "agent": "Liz, Process agent",
+     "module": "Performance Monitor",
+     "document": "Price catalog (832)",
+     "processes": "Purchase to pay",
+     "conformancePct": 94.1,
+     "findings30d": 17,
+     "lastRun": "8 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Ship notice before invoice",
+     "agent": "Liz, Process agent",
+     "module": "Performance Monitor",
+     "document": "Ship notice (856), Invoice (810)",
+     "processes": "Purchase to pay",
+     "conformancePct": 99.3,
+     "findings30d": 4,
+     "lastRun": "7 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Remittance matches open invoices",
+     "agent": "Reese, Reconciliation agent",
+     "module": "Performance Monitor",
+     "document": "Remittance advice (820)",
+     "processes": "Purchase to pay, Chargebacks",
+     "conformancePct": 97.9,
+     "findings30d": 5,
+     "lastRun": "19 minutes ago",
+     "status": "Paused"
+    },
+    {
+     "name": "Order volume against projection",
+     "agent": "Ivy, Volume agent",
+     "module": "Integration Monitor",
+     "document": "Purchase order (850)",
+     "processes": "Purchase to pay",
+     "conformancePct": 93.2,
+     "findings30d": 11,
+     "lastRun": "1 minute ago",
+     "status": "Active"
+    },
+    {
+     "name": "Remittance advice on schedule",
+     "agent": "Ivy, Volume agent",
+     "module": "Integration Monitor",
+     "document": "Remittance advice (820)",
+     "processes": "Purchase to pay",
+     "conformancePct": 98.7,
+     "findings30d": 3,
+     "lastRun": "11 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Functional acknowledgments on time",
+     "agent": "Ivy, Volume agent",
+     "module": "Integration Monitor",
+     "document": "Functional acknowledgment (997)",
+     "processes": "Purchase to pay, Chargebacks",
+     "conformancePct": 96,
+     "findings30d": 8,
+     "lastRun": "2 minutes ago",
+     "status": "Active"
+    }
+   ],
+   "retailPolicies": [
+    {
+     "id": "rt-rule-ack",
+     "name": "Drop ship acknowledgment deadline",
+     "agent": "Lex",
+     "scope": "Drop ship policy ACK-120 for marketplace orders",
+     "condition": "Start from confirmed order receipt and seek a correlated business acknowledgment within the configured window.",
+     "threshold": 120,
+     "unit": "minutes after receipt",
+     "evidence": "Order receipt timestamp, order/partner correlation, 855 or equivalent business response and service calendar"
+    },
+    {
+     "id": "rt-rule-sscc",
+     "name": "Distinct carton identifiers in the ASN",
+     "agent": "Nora",
+     "scope": "Receiving guide PACK-08",
+     "condition": "Require an SSCC value on each applicable carton and check uniqueness within the shipment notice.",
+     "threshold": 0,
+     "unit": "duplicate occurrences",
+     "evidence": "856 carton hierarchy and SSCC values, assigned partner packing guide and any 824 response"
+    },
+    {
+     "id": "rt-rule-asn-revision",
+     "name": "Ship notice within accepted order revision",
+     "agent": "Reese",
+     "scope": "Order rule REV-02",
+     "condition": "Compare ship notice quantities with the latest accepted 860/865 revision by order, line, item and normalized unit.",
+     "threshold": 0,
+     "unit": "quantity tolerance",
+     "evidence": "850, accepted 860/865 revision, 856 and unit/item reference data"
+    },
+    {
+     "id": "rt-rule-routing-asn",
+     "name": "Routing instructions before ship notice",
+     "agent": "Liz",
+     "scope": "Collect-freight program COLLECT-03",
+     "condition": "For collect-freight orders, compare the 754 timestamp with the supplier's 856.",
+     "threshold": 0,
+     "unit": "minutes shipped before instructions",
+     "evidence": "753 request, 754 instructions, 856 ship notice and program assignment"
+    },
+    {
+     "id": "rt-rule-price",
+     "name": "Invoice matches accepted order price",
+     "agent": "Nora",
+     "scope": "Pricing agreement PRICE-06",
+     "condition": "Compare invoice unit prices with the latest accepted order on the same item, unit and currency basis.",
+     "threshold": 0,
+     "unit": "USD per-unit price tolerance",
+     "evidence": "Accepted order, business acknowledgment, invoice lines, revision history and item/unit references"
+    },
+    {
+     "id": "rt-rule-deduction",
+     "name": "Deduction evidence and review window",
+     "agent": "Reese",
+     "scope": "Settlement terms REM-10",
+     "condition": "Reconcile adjustments to the invoice and require the evidence assigned to each reason code before concluding validity.",
+     "threshold": 30,
+     "unit": "calendar days in this account's review window",
+     "evidence": "820 adjustments, 810 invoice, 856 and 997, 214 delivery event, 861 receiving advice, reason mappings and settlement terms"
+    }
+   ],
+   "projections": [
+    {
+     "watchlist": "Meadowline Care orders",
+     "status": "Order volume drop",
+     "alerts": 5,
+     "direction": "Outbound",
+     "document": "Purchase order (850)",
+     "standard": "X12",
+     "partner": "Meadowline Care",
+     "finding": "f2"
+    },
+    {
+     "watchlist": "Tidewell Home acknowledgments",
+     "status": "Volume drop",
+     "alerts": 3,
+     "direction": "Outbound",
+     "document": "Functional acknowledgment (997)",
+     "standard": "X12",
+     "partner": "Tidewell Home",
+     "finding": "f10"
+    },
+    {
+     "watchlist": "Meadowline Care remittances",
+     "status": "Document missing",
+     "alerts": 1,
+     "direction": "Outbound",
+     "document": "Remittance advice (820)",
+     "standard": "X12",
+     "partner": "Meadowline Care",
+     "finding": "f7"
+    },
+    {
+     "watchlist": "Nuvori Beauty invoices",
+     "status": "Within projection",
+     "alerts": 0,
+     "direction": "Inbound",
+     "document": "Invoice (810)",
+     "standard": "X12",
+     "partner": "Nuvori Beauty",
+     "finding": null
+    },
+    {
+     "watchlist": "Copperleaf Living orders",
+     "status": "Within projection",
+     "alerts": 0,
+     "direction": "Outbound",
+     "document": "Purchase order (850)",
+     "standard": "X12",
+     "partner": "Copperleaf Living",
+     "finding": null
+    },
+    {
+     "watchlist": "Failed transactions, all partners",
+     "status": "Failed transactions above threshold",
+     "alerts": 2,
+     "direction": "Both",
+     "document": "All document types",
+     "standard": "X12",
+     "partner": "All partners",
+     "finding": null
+    }
+   ],
+   "dailyDigest": {
+    "date": "2026-10-23",
+    "documents": 4612,
+    "documentsChangePct": 4,
+    "failedTransactions": 37,
+    "partnersWithFailures": 9,
+    "partnersOnboarding": 1,
+    "onboardingPartner": "Liora Wellness",
+    "anomaliesDetected": 3,
+    "topPartners": [
+     {
+      "partner": "Nuvori Beauty",
+      "documents": 473,
+      "errors": 4,
+      "topError": "Signature verification failed"
+     },
+     {
+      "partner": "Meadowline Care",
+      "documents": 393,
+      "errors": 3,
+      "topError": "AS2 connection refused"
+     },
+     {
+      "partner": "Copperleaf Living",
+      "documents": 347,
+      "errors": 4,
+      "topError": "Invalid interchange receiver ID"
+     },
+     {
+      "partner": "Tidewell Home",
+      "documents": 247,
+      "errors": 2,
+      "topError": "Duplicate control number"
+     },
+     {
+      "partner": "Fieldstone Essentials",
+      "documents": 103,
+      "errors": 5,
+      "topError": "Missing required segment"
+     }
+    ],
+    "documentMix": [
+     {
+      "period": "Yesterday",
+      "dates": "Friday, October 23, 2026",
+      "top": [
+       {
+        "document": "997 Functional acknowledgment",
+        "count": 1384
+       },
+       {
+        "document": "850 Purchase order",
+        "count": 1180
+       },
+       {
+        "document": "856 Ship notice",
+        "count": 922
+       }
+      ],
+      "other": 1126
+     },
+     {
+      "period": "Last month",
+      "dates": "Tuesday, September 1 to Wednesday, September 30, 2026",
+      "top": [
+       {
+        "document": "997 Functional acknowledgment",
+        "count": 41460
+       },
+       {
+        "document": "850 Purchase order",
+        "count": 30400
+       },
+       {
+        "document": "856 Ship notice",
+        "count": 27640
+       }
+      ],
+      "other": 38700
+     }
+    ]
+   },
+   "networkActivity": {
+    "documentsThisWeek": 27400,
+    "weekChangePct": 11,
+    "openAnomalies": 3,
+    "failedToday": 74,
+    "failedSince": "05:52",
+    "activePartners": 163,
+    "connectedPartners": 208
+   },
+   "kpis": [
+    {
+     "category": "Order and acknowledgment",
+     "documents": "850 PO · 855 PO acknowledgment",
+     "avgScore": 90,
+     "measures": [
+      {
+       "name": "PO acknowledgment rate",
+       "basis": "855 PO acknowledgment",
+       "value": "96.5%",
+       "target": "≥ 98%",
+       "score": 88,
+       "weightPct": 5,
+       "offTarget": true
+      },
+      {
+       "name": "PO acknowledgment cycle time",
+       "basis": "850 PO to 855 PO acknowledgment",
+       "value": "5.5 hrs",
+       "target": "≤ 4 hrs",
+       "score": 73,
+       "weightPct": 4,
+       "offTarget": true
+      },
+      {
+       "name": "Order accuracy",
+       "basis": "850 PO and 855 PO acknowledgment",
+       "value": "98.2%",
+       "target": "≥ 99%",
+       "score": 92,
+       "weightPct": 5,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Shipping",
+     "documents": "856 Ship notice",
+     "avgScore": 97,
+     "measures": [
+      {
+       "name": "Ship notice timeliness",
+       "basis": "856 before arrival",
+       "value": "97.1%",
+       "target": "≥ 98%",
+       "score": 86,
+       "weightPct": 6,
+       "offTarget": true
+      },
+      {
+       "name": "Ship notice accuracy",
+       "basis": "856 against 861 receipt",
+       "value": "98.8%",
+       "target": "≥ 99%",
+       "score": 89,
+       "weightPct": 5,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Invoicing",
+     "documents": "810 Invoice · 820 Remittance",
+     "avgScore": 92,
+     "measures": [
+      {
+       "name": "Invoice accuracy rate",
+       "basis": "810 against 850 and 856",
+       "value": "96.6%",
+       "target": "≥ 98%",
+       "score": 92,
+       "weightPct": 6,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Partner compliance and EDI health",
+     "documents": "997 Functional acknowledgments",
+     "avgScore": 82,
+     "measures": [
+      {
+       "name": "First-pass acceptance",
+       "basis": "997 and 824",
+       "value": "97.4%",
+       "target": "≥ 98%",
+       "score": 87,
+       "weightPct": 5,
+       "offTarget": true
+      },
+      {
+       "name": "Transaction rejection rate",
+       "basis": "824 rejections",
+       "value": "1.8%",
+       "target": "≤ 1%",
+       "score": 70,
+       "weightPct": 4,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Retail KPIs",
+     "documents": "OTIF · fill rate · deductions",
+     "avgScore": 79,
+     "measures": [
+      {
+       "name": "On-time in-full (OTIF)",
+       "basis": "856, 214 and 861 where sent",
+       "value": "91.5%",
+       "target": "≥ 95%",
+       "score": 96,
+       "weightPct": 8,
+       "offTarget": true
+      },
+      {
+       "name": "Acknowledged fill rate",
+       "basis": "855 against 850",
+       "value": "95.5%",
+       "target": "≥ 98%",
+       "score": 97,
+       "weightPct": 5,
+       "offTarget": true
+      },
+      {
+       "name": "Backorder rate",
+       "basis": "855 PO acknowledgment",
+       "value": "3.5%",
+       "target": "≤ 2%",
+       "score": 57,
+       "weightPct": 4,
+       "offTarget": true
+      },
+      {
+       "name": "Chargeback and deduction rate",
+       "basis": "812 against 810",
+       "value": "2.1%",
+       "target": "≤ 1.5%",
+       "score": 64,
+       "weightPct": 5,
+       "offTarget": true
+      }
+     ]
+    }
+   ]
+  },
+  "supplier": {
+   "perspective": "supplier",
+   "company": "Nuvori Beauty",
+   "industry": "Retail and CPG",
+   "snapshot": "24 Oct 2026, 09:30 ET",
+   "user": {
+    "name": "Alex Morgan",
+    "title": "EDI operations lead",
+    "email": "alex.morgan@nuvoribeauty.example"
+   },
+   "processes": [
+    {
+     "id": 0,
+     "name": "Order to cash",
+     "short": "Order to cash",
+     "owner": "Customer operations and accounts receivable",
+     "documentsToday": 1230,
+     "onTrack": 937,
+     "atRisk": 120,
+     "breached": 173,
+     "overdue997": 59,
+     "rejects824": 121,
+     "steps": [
+      {
+       "step": "Purchase order",
+       "documents": "850 / ORDERS",
+       "direction": "In",
+       "today": 310
+      },
+      {
+       "step": "Acknowledge order",
+       "documents": "855 / ORDRSP",
+       "direction": "Out",
+       "today": 262
+      },
+      {
+       "step": "Order change",
+       "documents": "860, 865 / ORDCHG, ORDRSP",
+       "direction": "In",
+       "today": 38
+      },
+      {
+       "step": "Ship and label",
+       "documents": "856 / DESADV",
+       "direction": "Out",
+       "today": 248
+      },
+      {
+       "step": "Invoice",
+       "documents": "810 / INVOIC",
+       "direction": "Out",
+       "today": 226
+      },
+      {
+       "step": "Payment and remittance",
+       "documents": "820 / REMADV",
+       "direction": "In",
+       "today": 146
+      }
+     ]
+    },
+    {
+     "id": 8,
+     "name": "3PL fulfillment",
+     "short": "3PL",
+     "owner": "Distribution and logistics operations",
+     "documentsToday": 197,
+     "onTrack": 194,
+     "atRisk": 1,
+     "breached": 2,
+     "overdue997": 1,
+     "rejects824": 0,
+     "steps": [
+      {
+       "step": "Stock the warehouse",
+       "documents": "944 / RECADV",
+       "direction": "In",
+       "today": 18
+      },
+      {
+       "step": "Shipping order",
+       "documents": "940 / INSDES",
+       "direction": "Out",
+       "today": 64
+      },
+      {
+       "step": "Routing request",
+       "documents": "753",
+       "direction": "Out",
+       "today": 24
+      },
+      {
+       "step": "Routing instructions",
+       "documents": "754",
+       "direction": "In",
+       "today": 22
+      },
+      {
+       "step": "Shipping advice",
+       "documents": "945 / DESADV",
+       "direction": "In",
+       "today": 57
+      },
+      {
+       "step": "Inventory reconciliation",
+       "documents": "846, 947 / INVRPT",
+       "direction": "In",
+       "today": 12
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "name": "Deductions, chargebacks and disputes",
+     "short": "Deductions",
+     "owner": "Accounts receivable and deductions management",
+     "documentsToday": 100,
+     "onTrack": 98,
+     "atRisk": 0,
+     "breached": 2,
+     "overdue997": 0,
+     "rejects824": 0,
+     "steps": [
+      {
+       "step": "Debit memo",
+       "documents": "812",
+       "direction": "In",
+       "today": 46
+      },
+      {
+       "step": "Net remittance",
+       "documents": "820 / REMADV",
+       "direction": "In",
+       "today": 38
+      },
+      {
+       "step": "Settle",
+       "documents": "812, 820 / REMADV",
+       "direction": "Out / In",
+       "today": 16
+      }
+     ]
+    }
+   ],
+   "partners": [
+    {
+     "name": "Northfield Stores",
+     "alias": "NFS-RT-0112",
+     "status": "Active",
+     "buid": "BU-0451",
+     "onboarded": "Mar 4, 2021",
+     "lastActivity": "Today, 08:42",
+     "protocol": "AS2",
+     "documents30d": 14200,
+     "errors30d": 64,
+     "topError": "Signature verification failed",
+     "ediAddresses": [
+      "ZZ:NFS-RT-0112",
+      "01:100000000"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:12",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:05",
+       "detail": "Configured and active; business deadlines are evaluated per order in PM."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:45",
+       "detail": "No 856 since 05:45 while 855 and 810 traffic continues."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:45",
+       "detail": "Invoice feed is active."
+      },
+      {
+       "document": "820",
+       "label": "Remittance",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "22 Oct 07:40",
+       "detail": "Weekly remittance exchanged on schedule."
+      },
+      {
+       "document": "824",
+       "label": "Application advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:40",
+       "detail": "Application advice route is active."
+      },
+      {
+       "document": "861",
+       "label": "Receiving advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:10",
+       "detail": "Exchanged after each receipt; none yet for ASN-10391."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:46",
+       "detail": "Functional acknowledgment route is active."
+      },
+      {
+       "document": "846",
+       "label": "Inventory advice",
+       "required": false,
+       "status": "Not required",
+       "lastSeen": "Not required",
+       "detail": "Excluded from this relationship's required-feed coverage."
+      }
+     ],
+     "owner": "Alex Morgan"
+    },
+    {
+     "name": "Harbor Grocers",
+     "alias": "HBG-RT-0207",
+     "status": "Active",
+     "buid": "BU-0367",
+     "onboarded": "Jun 18, 2020",
+     "lastActivity": "Today, 05:52",
+     "protocol": "AS2",
+     "documents30d": 11800,
+     "errors30d": 296,
+     "topError": "Signature verification failed",
+     "ediAddresses": [
+      "ZZ:HBG-RT-0207",
+      "01:107316451"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:52",
+       "detail": "No 850 exchanged since 05:52; AS2 failures on this connection."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:02",
+       "detail": "The feed is active."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:51",
+       "detail": "Ship-notice feed is active."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:42",
+       "detail": "Invoice feed is active."
+      },
+      {
+       "document": "820",
+       "label": "Remittance",
+       "required": true,
+       "status": "Missing",
+       "lastSeen": "17 Oct 05:40",
+       "detail": "Weekly 820 due today at 06:00 was not exchanged."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:52",
+       "detail": "Acknowledgments stopped with the AS2 failures at 05:52."
+      }
+     ],
+     "owner": "Dana Ortiz"
+    },
+    {
+     "name": "Westline Home",
+     "alias": "WLH-RT-0331",
+     "status": "Active",
+     "buid": "BU-0442",
+     "onboarded": "Jan 9, 2022",
+     "lastActivity": "Today, 08:31",
+     "protocol": "SFTP",
+     "documents30d": 10400,
+     "errors30d": 38,
+     "topError": "Invalid interchange receiver ID",
+     "ediAddresses": [
+      "ZZ:WLH-RT-0331",
+      "01:114632902"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:22",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:10",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:50",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:05",
+       "detail": "Configured and active."
+      },
+      {
+       "document": "852",
+       "label": "Product activity",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "06:00",
+       "detail": "Daily activity feed exchanged within its configured window."
+      },
+      {
+       "document": "861",
+       "label": "Receiving advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:30",
+       "detail": "Receiving advice exchanged after each receipt."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:22",
+       "detail": "Functional acknowledgment route is active."
+      }
+     ],
+     "owner": "Casey Park"
+    },
+    {
+     "name": "Brightway Marketplace",
+     "alias": "BWM-MP-0415",
+     "status": "Active",
+     "buid": "BU-0249",
+     "onboarded": "Sep 27, 2023",
+     "lastActivity": "Today, 09:24",
+     "protocol": "API",
+     "documents30d": 7400,
+     "errors30d": 21,
+     "topError": "Duplicate control number",
+     "ediAddresses": [
+      "ZZ:BWM-MP-0415",
+      "01:121949353"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:24",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "860",
+       "label": "Order change",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:00",
+       "detail": "Revision 2 for PO-78288 processed successfully."
+      },
+      {
+       "document": "865",
+       "label": "Change acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:15",
+       "detail": "Accepted change processed successfully."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:05",
+       "detail": "Feed is active."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:18",
+       "detail": "52 invoices since 05:00 have no 997."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "05:00",
+       "detail": "Acknowledgments for invoices behind since 05:00."
+      },
+      {
+       "document": "846",
+       "label": "Inventory advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:00",
+       "detail": "Hourly inventory feed is within the configured schedule."
+      }
+     ],
+     "owner": "Sam Lee"
+    },
+    {
+     "name": "Cedar & Coast",
+     "alias": "CDC-RT-0520",
+     "status": "Active",
+     "buid": "BU-0425",
+     "onboarded": "Feb 2, 2024",
+     "lastActivity": "Today, 08:12",
+     "protocol": "AS2",
+     "documents30d": 5200,
+     "errors30d": 12,
+     "topError": "Unknown trading partner",
+     "ediAddresses": [
+      "ZZ:CDC-RT-0520",
+      "01:129265804"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:15",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:48",
+       "detail": "Acknowledgment feed is active."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:12",
+       "detail": "Transmission completed; ASN-10482 has a separate PM carton-conformance finding."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Late",
+       "lastSeen": "07:30",
+       "detail": "112 invoices rejected by 824 on unit price since 04:20."
+      },
+      {
+       "document": "832",
+       "label": "Price catalog",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "Mon 10:05",
+       "detail": "Cost change for 9 items exchanged Monday."
+      },
+      {
+       "document": "824",
+       "label": "Application advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:22",
+       "detail": "Application advice route is active."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:13",
+       "detail": "Functional acknowledgment recorded for ASN-10482."
+      }
+     ],
+     "owner": "Priya Shah"
+    },
+    {
+     "name": "Eastbank Market",
+     "alias": "EBM-RT-0618",
+     "status": "Active",
+     "buid": "BU-0019",
+     "onboarded": "Nov 15, 2019",
+     "lastActivity": "Today, 07:58",
+     "protocol": "VAN",
+     "documents30d": 3100,
+     "errors30d": 57,
+     "topError": "Missing required segment",
+     "ediAddresses": [
+      "ZZ:EBM-RT-0618",
+      "01:136582255"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:55",
+       "detail": "Order feed is active."
+      },
+      {
+       "document": "753",
+       "label": "Routing request",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:00",
+       "detail": "Routing request processed successfully."
+      },
+      {
+       "document": "754",
+       "label": "Routing instructions",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:10",
+       "detail": "Routing instructions exchanged; PM checks their sequence against shipment."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:32",
+       "detail": "Feed is active."
+      },
+      {
+       "document": "214",
+       "label": "Shipment status",
+       "required": false,
+       "status": "Not configured",
+       "lastSeen": "No route",
+       "detail": "No carrier events configured. Excluded from required integration coverage but shown as a PM evidence gap."
+      }
+     ],
+     "owner": "Taylor Chen"
+    },
+    {
+     "name": "Coastal Drug",
+     "alias": "CDR-RT-1020",
+     "status": "Onboarding",
+     "buid": "BU-0512",
+     "onboarded": "Oct 20, 2026",
+     "lastActivity": "Yesterday, 16:20",
+     "protocol": "AS2",
+     "documents30d": 60,
+     "errors30d": 3,
+     "topError": "Duplicate control number",
+     "ediAddresses": [
+      "ZZ:CDR-RT-1020",
+      "01:143898706"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "850",
+       "label": "Purchase order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:05",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "855",
+       "label": "Order acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:10",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "856",
+       "label": "Ship notice",
+       "required": true,
+       "status": "Not configured",
+       "lastSeen": "No route",
+       "detail": "Required under profile RT-CPG-02. Route and subsequent test are outstanding."
+      },
+      {
+       "document": "810",
+       "label": "Invoice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:15",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "997",
+       "label": "Functional acknowledgment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "23 Oct 16:20",
+       "detail": "Configured; onboarding test evidence available."
+      },
+      {
+       "document": "846",
+       "label": "Inventory advice",
+       "required": false,
+       "status": "Not required",
+       "lastSeen": "Not required",
+       "detail": "Optional for this relationship and excluded from coverage."
+      }
+     ],
+     "owner": "Jordan Lee"
+    },
+    {
+     "name": "Summit Beauty Supply",
+     "alias": "SBS-DS-0811",
+     "status": "Inactive",
+     "buid": "BU-0082",
+     "onboarded": "Jul 21, 2022",
+     "lastActivity": "Aug 3, 2026",
+     "protocol": "VAN",
+     "documents30d": 0,
+     "errors30d": 0,
+     "topError": "None",
+     "ediAddresses": [
+      "ZZ:SBS-DS-0811",
+      "01:151215157"
+     ],
+     "documentTypes": [
+      {
+       "document": "850",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "855",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "856",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "810",
+       "direction": "Out",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "820",
+       "direction": "In",
+       "status": "Configured, no traffic in 180 days"
+      },
+      {
+       "document": "846",
+       "direction": "Out",
+       "status": "Not configured"
+      }
+     ],
+     "requiredDocuments": null,
+     "owner": null
+    },
+    {
+     "name": "Ridgeway Freight",
+     "alias": "RDF-CA-0905",
+     "status": "Active",
+     "buid": "BU-0395",
+     "onboarded": "May 6, 2021",
+     "lastActivity": "Today, 08:40",
+     "protocol": "SFTP",
+     "documents30d": 1800,
+     "errors30d": 26,
+     "topError": "Invalid date format",
+     "ediAddresses": [
+      "ZZ:RDF-CA-0905",
+      "01:158531608"
+     ],
+     "documentTypes": [
+      {
+       "document": "214",
+       "direction": "In",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": null,
+     "owner": null
+    },
+    {
+     "name": "Crestline Logistics",
+     "alias": "CRL-3P-1010",
+     "status": "Active",
+     "buid": "BU-0132",
+     "onboarded": "Oct 11, 2020",
+     "lastActivity": "Today, 07:20",
+     "protocol": "AS2",
+     "documents30d": 1200,
+     "errors30d": 14,
+     "topError": "Missing required segment",
+     "ediAddresses": [
+      "ZZ:CRL-3P-1010",
+      "01:165848059"
+     ],
+     "documentTypes": [
+      {
+       "document": "846",
+       "direction": "In",
+       "status": "Active"
+      },
+      {
+       "document": "940",
+       "direction": "Out",
+       "status": "Active"
+      },
+      {
+       "document": "945",
+       "direction": "In",
+       "status": "Active"
+      }
+     ],
+     "requiredDocuments": [
+      {
+       "document": "940",
+       "label": "Warehouse shipping order",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:26",
+       "detail": "Warehouse release feed is active; individual release content is evaluated in PM."
+      },
+      {
+       "document": "945",
+       "label": "Warehouse shipping advice",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "09:21",
+       "detail": "Shipping advice feed is active; absence for an individual order requires a configured process rule."
+      },
+      {
+       "document": "944",
+       "label": "Transfer receipt",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "08:45",
+       "detail": "Warehouse transfer-receipt feed is active; this is not retail delivery evidence."
+      },
+      {
+       "document": "947",
+       "label": "Inventory adjustment",
+       "required": true,
+       "status": "Active",
+       "lastSeen": "07:55",
+       "detail": "Inventory-adjustment feed is within its configured schedule."
+      }
+     ],
+     "owner": "Sam Lee"
+    }
+   ],
+   "findings": [
+    {
+     "id": "f1",
+     "title": "Ship notices not sent for 14 shipments",
+     "partner": "Northfield Stores",
+     "module": "Performance Monitor",
+     "agent": "Lex, Timing and SLA agent",
+     "check": "Ship notice within 1 hour of shipment",
+     "document": "Ship notice (856)",
+     "process": "Order to cash",
+     "step": "Ship and label",
+     "severity": "High",
+     "detectedAt": "07:10",
+     "transactions": 14,
+     "valueAtRisk": 8400,
+     "observation": "Crestline Logistics confirmed 14 loads shipped (945) at 06:10. No 856 sent to Northfield Stores, and the loads arrive at its DC in about 5 hours.",
+     "impact": "14 shipments arriving before their ship notice. Northfield Stores cannot receive the loads by scan until the ship notices arrive.",
+     "rootCause": "No 856 has been sent since 05:45, while 855 and 810 traffic continues. The ship notice feed into Trading Grid stopped.",
+     "suggestedNextStep": "Ask shipping and the ERP team to restart the 856 feed. Command Center confirms when the 14 ship notices are sent and accepted.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Supply chain",
+      "IT and ERP",
+      "Customer service"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Shipping",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "05:45",
+       "event": "Last 856 sent to Northfield Stores"
+      },
+      {
+       "time": "06:10",
+       "event": "Shipping advice (945) from Crestline Logistics for 14 loads"
+      },
+      {
+       "time": "07:10",
+       "event": "Rule breached: no 856 within 1 hour of shipment"
+      },
+      {
+       "time": "08:05",
+       "event": "Predicted arrival before ship notice for all 14 loads"
+      }
+     ],
+     "recoveryCriteria": [
+      "856 sent for each of 14 loads",
+      "997 received for each (AK9 A)",
+      "No 824 within 30 minutes"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "ASN-91174",
+       "time": "09:20",
+       "document": "856",
+       "direction": "Out",
+       "check": "Rule and prediction",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "ASN-91305",
+       "time": "08:52",
+       "document": "856",
+       "direction": "Out",
+       "check": "Rule and prediction",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "ASN-91436",
+       "time": "08:33",
+       "document": "856",
+       "direction": "Out",
+       "check": "Rule and prediction",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "ASN-91567",
+       "time": "08:05",
+       "document": "856",
+       "direction": "Out",
+       "check": "Rule and prediction",
+       "status": "Not sent"
+      },
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "ASN-91698",
+       "time": "07:46",
+       "document": "856",
+       "direction": "Out",
+       "check": "Rule and prediction",
+       "status": "Not sent"
+      }
+     ]
+    },
+    {
+     "id": "f2",
+     "title": "Order volume 64% below projection",
+     "partner": "Harbor Grocers",
+     "module": "Integration Monitor",
+     "agent": "Ivy, Volume agent",
+     "check": "Order volume against projection",
+     "document": "Purchase order (850)",
+     "process": "Order to cash",
+     "step": "Purchase order",
+     "severity": "High",
+     "detectedAt": "06:30",
+     "transactions": 74,
+     "valueAtRisk": 182000,
+     "observation": "Harbor Grocers sent 41 purchase orders since 05:00 against 115 projected. Last interchange at 05:52.",
+     "impact": "Harbor Grocers orders down 64% this morning. About $182,000 in expected orders has not arrived in this window.",
+     "rootCause": "The partner rotated its AS2 signing certificate. Messages fail signature checks at the connection.",
+     "suggestedNextStep": "Confirm the new certificate fingerprint with Harbor Grocers by phone and ask the Trading Grid administrator to load it. Then ask the partner to resend orders since 05:52.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Customer service",
+      "Information security",
+      "Sales and key accounts"
+     ],
+     "nextDocumentOwedBy": "partner",
+     "internalTeam": "Trading Grid administrator",
+     "linkedFindings": [
+      "f7"
+     ],
+     "events": [
+      {
+       "time": "05:52",
+       "event": "Last 850 interchange received"
+      },
+      {
+       "time": "06:30",
+       "event": "Volume fell below the projected band"
+      },
+      {
+       "time": "06:41",
+       "event": "AS2 receipts from the partner failing signature checks"
+      },
+      {
+       "time": "07:15",
+       "event": "Anomaly confirmed across two order windows"
+      }
+     ],
+     "recoveryCriteria": [
+      "Signature check passing for Harbor Grocers",
+      "Resent purchase orders received: 74 of 74",
+      "850 volume within projected band for 1 hour"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100886567",
+       "st02": "0001",
+       "reference": "PO-92151",
+       "time": "09:15",
+       "document": "850",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100888794",
+       "st02": "0002",
+       "reference": "PO-92282",
+       "time": "08:56",
+       "document": "850",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100891021",
+       "st02": "0003",
+       "reference": "PO-92413",
+       "time": "08:28",
+       "document": "850",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100893248",
+       "st02": "0004",
+       "reference": "PO-92544",
+       "time": "08:09",
+       "document": "850",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100895475",
+       "st02": "0005",
+       "reference": "PO-92675",
+       "time": "07:41",
+       "document": "850",
+       "direction": "In",
+       "check": "Anomaly",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f3",
+     "title": "37 acknowledgments past the 24-hour window",
+     "partner": "Westline Home",
+     "module": "Performance Monitor",
+     "agent": "Lex, Timing and SLA agent",
+     "check": "Acknowledgment within 24 hours",
+     "document": "Order acknowledgment (855)",
+     "process": "Order to cash",
+     "step": "Acknowledge order",
+     "severity": "Medium",
+     "detectedAt": "05:00",
+     "transactions": 37,
+     "valueAtRisk": 91000,
+     "observation": "Purchase orders received yesterday have no 855. Westline Home requires acknowledgment within 24 hours.",
+     "impact": "37 orders not confirmed with Westline Home. Unconfirmed orders risk cancellation by the customer.",
+     "rootCause": "Only these 37 orders lack an 855 while other orders are acknowledged, which points to an order hold before acknowledgment.",
+     "suggestedNextStep": "Ask order management to release the 37 orders or acknowledge them with a hold status.",
+     "usuallyHandledBy": "Customer service lead",
+     "teams": [
+      "Customer service",
+      "Finance and treasury"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Order management",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "Yesterday 04:58",
+       "event": "37 purchase orders received and loaded"
+      },
+      {
+       "time": "05:00",
+       "event": "24-hour acknowledgment window closed"
+      },
+      {
+       "time": "05:05",
+       "event": "Acknowledgments sent for other orders; none for these 37"
+      }
+     ],
+     "recoveryCriteria": [
+      "855 sent for each of 37 orders",
+      "997 received for each (AK9 A)"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100903176",
+       "st02": "0001",
+       "reference": "PO-93128",
+       "time": "09:19",
+       "document": "855",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100905403",
+       "st02": "0002",
+       "reference": "PO-93259",
+       "time": "08:51",
+       "document": "855",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100907630",
+       "st02": "0003",
+       "reference": "PO-93390",
+       "time": "08:32",
+       "document": "855",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100909857",
+       "st02": "0004",
+       "reference": "PO-93521",
+       "time": "08:04",
+       "document": "855",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100912084",
+       "st02": "0005",
+       "reference": "PO-93652",
+       "time": "07:45",
+       "document": "855",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f4",
+     "title": "112 invoices rejected on unit price",
+     "partner": "Northfield Stores",
+     "module": "Performance Monitor",
+     "agent": "Nora, Conformance agent",
+     "check": "Invoice matches order price",
+     "document": "Invoice (810)",
+     "process": "Order to cash",
+     "step": "Invoice",
+     "severity": "High",
+     "detectedAt": "04:20",
+     "transactions": 112,
+     "valueAtRisk": 46200,
+     "observation": "824 application advice cites a price mismatch on 9 items since Monday's cost change.",
+     "impact": "$46,200 in invoices held for price mismatch. Northfield Stores will not pay the invoices until prices match the order.",
+     "rootCause": "Northfield Stores' purchase orders still carry the pre-Monday cost; the invoices bill the new 832 cost.",
+     "suggestedNextStep": "Ask billing to rebill the 112 invoices at the PO cost, or ask Northfield Stores for 860 changes with the new cost.",
+     "usuallyHandledBy": "Billing and pricing",
+     "teams": [
+      "Finance and treasury",
+      "Master data"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Billing and pricing",
+     "linkedFindings": [
+      "f9"
+     ],
+     "events": [
+      {
+       "time": "Monday",
+       "event": "New costs sent in the 832 price catalog"
+      },
+      {
+       "time": "04:20",
+       "event": "First 824 rejection on unit price"
+      },
+      {
+       "time": "07:30",
+       "event": "112 rejections on the same 9 items"
+      }
+     ],
+     "recoveryCriteria": [
+      "Rebilled 810 sent for each of 112 invoices",
+      "997 received for each (AK9 A)",
+      "No 824 on the rebills within 2 hours"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100919785",
+       "st02": "0001",
+       "reference": "INV-94105",
+       "time": "09:14",
+       "document": "810",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100922012",
+       "st02": "0002",
+       "reference": "INV-94236",
+       "time": "08:55",
+       "document": "810",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100924239",
+       "st02": "0003",
+       "reference": "INV-94367",
+       "time": "08:27",
+       "document": "810",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100926466",
+       "st02": "0004",
+       "reference": "INV-94498",
+       "time": "08:08",
+       "document": "810",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100928693",
+       "st02": "0005",
+       "reference": "INV-94629",
+       "time": "07:40",
+       "document": "810",
+       "direction": "Out",
+       "check": "Rule",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f7",
+     "title": "Remittance advice not received",
+     "partner": "Harbor Grocers",
+     "module": "Integration Monitor",
+     "agent": "Ivy, Volume agent",
+     "check": "Remittance advice on schedule",
+     "document": "Remittance advice (820)",
+     "process": "Order to cash",
+     "step": "Payment and remittance",
+     "severity": "Medium",
+     "detectedAt": "06:00",
+     "transactions": 1,
+     "valueAtRisk": 0,
+     "observation": "The weekly 820 from Harbor Grocers was due at 06:00. The last remittance arrived 7 days ago.",
+     "impact": "Harbor Grocers payments cannot be applied. Cash received without remittance detail stays unapplied until the 820 arrives.",
+     "rootCause": "Same certificate change as the order volume finding for Harbor Grocers.",
+     "suggestedNextStep": "Ask Harbor Grocers to resend the 820 once its certificate is loaded.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Accounts receivable",
+      "Sales and key accounts"
+     ],
+     "nextDocumentOwedBy": "partner",
+     "internalTeam": "Accounts receivable",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "Last Saturday 05:40",
+       "event": "Last 820 received"
+      },
+      {
+       "time": "06:00",
+       "event": "Expected remittance window closed"
+      }
+     ],
+     "recoveryCriteria": [
+      "Weekly 820 received from Harbor Grocers"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": null,
+       "st02": null,
+       "reference": "REM-97036",
+       "time": "09:17",
+       "document": "820",
+       "direction": "In",
+       "check": "Missing document",
+       "status": "Not sent"
+      }
+     ]
+    },
+    {
+     "id": "f9",
+     "title": "Cost change not applied to 61 open orders",
+     "partner": "Northfield Stores",
+     "module": "Performance Monitor",
+     "agent": "Liz, Process agent",
+     "check": "Cost change applied to open orders",
+     "document": "Price catalog (832)",
+     "process": "Order to cash",
+     "step": "Invoice",
+     "severity": "Medium",
+     "detectedAt": "07:50",
+     "transactions": 61,
+     "valueAtRisk": 28400,
+     "observation": "Open orders still carry the old cost for 9 items. Invoices from these orders will reject.",
+     "impact": "$28,400 in invoices likely to reject. The same price mismatch will hit 61 orders that have not been invoiced yet.",
+     "rootCause": "Purchase orders received after Monday's 832 still carry the old cost.",
+     "suggestedNextStep": "Ask pricing to invoice the 61 open orders at the PO cost, or ask Northfield Stores for 860 changes.",
+     "usuallyHandledBy": "Pricing analyst",
+     "teams": [
+      "Master data",
+      "Finance and treasury"
+     ],
+     "nextDocumentOwedBy": "us",
+     "internalTeam": "Billing and pricing",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "Monday",
+       "event": "832 cost change sent for 9 items"
+      },
+      {
+       "time": "07:50",
+       "event": "61 open orders found with the old cost"
+      }
+     ],
+     "recoveryCriteria": [
+      "860 received with the new cost for each of 61 orders"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "101002830",
+       "st02": "0001",
+       "reference": "CAT-98990",
+       "time": "09:16",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101005057",
+       "st02": "0002",
+       "reference": "CAT-99121",
+       "time": "08:57",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101007284",
+       "st02": "0003",
+       "reference": "CAT-99252",
+       "time": "08:29",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101009511",
+       "st02": "0004",
+       "reference": "CAT-99383",
+       "time": "08:10",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      },
+      {
+       "isa13": "101011738",
+       "st02": "0005",
+       "reference": "CAT-99514",
+       "time": "07:42",
+       "document": "832",
+       "direction": "Out",
+       "check": "Prediction",
+       "status": "Observed"
+      }
+     ]
+    },
+    {
+     "id": "f10",
+     "title": "Functional acknowledgments missing for 52 invoices",
+     "partner": "Brightway Marketplace",
+     "module": "Integration Monitor",
+     "agent": "Ivy, Volume agent",
+     "check": "Functional acknowledgments on time",
+     "document": "Functional acknowledgment (997)",
+     "process": "Order to cash",
+     "step": "Invoice",
+     "severity": "Medium",
+     "detectedAt": "08:10",
+     "transactions": 52,
+     "valueAtRisk": 0,
+     "observation": "Brightway Marketplace has returned no 997 for invoices sent since 05:00. Its 997s for ship notices and its purchase orders arrive normally.",
+     "impact": "52 invoices without confirmed receipt. Invoices without a 997 may not have reached Brightway Marketplace.",
+     "rootCause": "Not yet known. The partner's acknowledgments for other document types are flowing.",
+     "suggestedNextStep": "Ask Brightway Marketplace to confirm receipt. Redeliver any invoice it did not receive from TG Insights.",
+     "usuallyHandledBy": "EDI operations lead",
+     "teams": [
+      "Accounts receivable",
+      "IT and ERP"
+     ],
+     "nextDocumentOwedBy": "partner",
+     "internalTeam": "Accounts receivable",
+     "linkedFindings": [],
+     "events": [
+      {
+       "time": "05:00",
+       "event": "Last 997 received for an invoice"
+      },
+      {
+       "time": "06:00",
+       "event": "Acknowledgment volume fell below the projected band"
+      },
+      {
+       "time": "08:10",
+       "event": "52 invoices unacknowledged"
+      }
+     ],
+     "recoveryCriteria": [
+      "997 received for each of 52 invoices",
+      "No AK9 R or E"
+     ],
+     "sampleTransactions": [
+      {
+       "isa13": "100869958",
+       "st02": "0001",
+       "reference": "INV-91174",
+       "time": "09:20",
+       "document": "997",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100872185",
+       "st02": "0002",
+       "reference": "INV-91305",
+       "time": "08:52",
+       "document": "997",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100874412",
+       "st02": "0003",
+       "reference": "INV-91436",
+       "time": "08:33",
+       "document": "997",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100876639",
+       "st02": "0004",
+       "reference": "INV-91567",
+       "time": "08:05",
+       "document": "997",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      },
+      {
+       "isa13": "100878866",
+       "st02": "0005",
+       "reference": "INV-91698",
+       "time": "07:46",
+       "document": "997",
+       "direction": "Out",
+       "check": "Anomaly",
+       "status": "Observed"
+      }
+     ]
+    }
+   ],
+   "networkEvents": [
+    {
+     "time": "10:21",
+     "finding": "f2",
+     "detail": "AS2 test message from Harbor Grocers passed the signature check; positive MDN"
+    },
+    {
+     "time": "10:35",
+     "finding": "f3",
+     "detail": "37 acknowledgments sent to Westline Home; 997s received (AK9 A)"
+    },
+    {
+     "time": "10:52",
+     "finding": "f1",
+     "detail": "First 856 sent to Northfield Stores: 3 of 14"
+    },
+    {
+     "time": "10:55",
+     "finding": "f7",
+     "detail": "Weekly 820 received from Harbor Grocers"
+    },
+    {
+     "time": "11:08",
+     "finding": "f1",
+     "detail": "14 of 14 ship notices sent; 997s received (AK9 A)"
+    },
+    {
+     "time": "11:18",
+     "finding": "f10",
+     "detail": "46 of 52 invoices acknowledged (AK9 A)"
+    },
+    {
+     "time": "11:20",
+     "finding": "f2",
+     "detail": "74 resent purchase orders received; 997s sent"
+    },
+    {
+     "time": "11:40",
+     "finding": "f1",
+     "detail": "No 824 for the 14 ship notices in 30 minutes"
+    },
+    {
+     "time": "11:40",
+     "finding": "f2",
+     "detail": "850 volume within the projected band since 10:45"
+    },
+    {
+     "time": "11:44",
+     "finding": "f10",
+     "detail": "6 invoices redelivered from TG Insights; 6 997s received (AK9 A)"
+    },
+    {
+     "time": "12:20",
+     "finding": "f4",
+     "detail": "112 rebilled invoices sent at the PO cost; 997s received (AK9 A)"
+    },
+    {
+     "time": "14:20",
+     "finding": "f4",
+     "detail": "No 824 on the rebills in 2 hours"
+    },
+    {
+     "time": "15:10",
+     "finding": "f9",
+     "detail": "860s received for 58 of 61 open orders"
+    }
+   ],
+   "retailCases": [
+    {
+     "id": "rt-order-change",
+     "title": "Warehouse release uses the superseded quantity",
+     "partner": "Brightway Marketplace",
+     "reference": "PO-78288 / WH-45018",
+     "monitor": "Performance Monitor",
+     "agent": "Reese",
+     "workflow": "Order commitments",
+     "process": "3PL fulfillment",
+     "severity": "High",
+     "owner": "Sam Lee · Fulfillment coordination",
+     "summary": "Brightway Marketplace's reduction to 800 units was accepted, but the release to the warehouse still contains the original 1,000 units.",
+     "impact": "The warehouse has superseded fulfillment instructions. Shipment quantity is unknown until shipping evidence is received.",
+     "explanation": "Reese correlates the original order, its accepted revision and the warehouse release using order number, line identifier and normalized units. The accepted revision is the comparison baseline. The 200-unit difference is evidenced in instructions; no shipping outcome has been inferred.",
+     "nextAction": "Prepare a hold-and-correct request for Fulfillment coordination before the 10:00 planned pick cutoff.",
+     "policy": "Fulfillment rule REV-01: the latest accepted order revision governs the quantity released to the warehouse; no quantity tolerance is configured for this account.",
+     "evidenceGap": "No 945 shipping advice received yet, so the shipped quantity is not known.",
+     "amount": null,
+     "documents": [
+      {
+       "document": "850",
+       "id": "PO-78288 v1",
+       "time": "23 Oct 16:00",
+       "status": "pass",
+       "detail": "Original quantity: 1,000 units"
+      },
+      {
+       "document": "860",
+       "id": "CHG-78288 v2",
+       "time": "08:00",
+       "status": "pass",
+       "detail": "Requested quantity: 800 units"
+      },
+      {
+       "document": "865",
+       "id": "ACK-78288 v2",
+       "time": "08:15",
+       "status": "pass",
+       "detail": "Revision 2 accepted"
+      },
+      {
+       "document": "940",
+       "id": "WH-45018",
+       "time": "08:40",
+       "status": "fail",
+       "detail": "Warehouse release still requests 1,000 units"
+      },
+      {
+       "document": "945",
+       "id": "Not observed",
+       "time": "09:30",
+       "status": "unknown",
+       "detail": "No shipping advice in this snapshot"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Latest accepted revision",
+       "expected": "Accepted 860/865 pair for revision 2",
+       "observed": "Revision 2 accepted at 08:15",
+       "status": "pass"
+      },
+      {
+       "name": "Order-to-release quantity",
+       "expected": "800 units under accepted revision 2",
+       "observed": "940 requests 1,000 units; difference +200",
+       "status": "fail"
+      },
+      {
+       "name": "Item and unit alignment",
+       "expected": "Same item and each-unit basis",
+       "observed": "CW-120; units normalized to each",
+       "status": "pass"
+      },
+      {
+       "name": "Actual shipment",
+       "expected": "945 or equivalent shipping evidence",
+       "observed": "Not available",
+       "status": "unknown"
+      }
+     ],
+     "lines": [
+      {
+       "sku": "CW-120",
+       "description": "Cloudwash cleanser 120 ml",
+       "ordered": 800,
+       "acknowledged": 800,
+       "released": 1000,
+       "shipped": null,
+       "invoiced": null,
+       "price": 12,
+       "expectedPrice": 12,
+       "originalOrdered": 1000
+      }
+     ],
+     "deductions": null
+    },
+    {
+     "id": "rt-shipment-labels",
+     "title": "Ship notice repeats two carton identifiers",
+     "partner": "Cedar & Coast",
+     "reference": "ASN-10482",
+     "monitor": "Performance Monitor",
+     "agent": "Nora",
+     "workflow": "Shipment readiness",
+     "process": "Order to cash",
+     "severity": "High",
+     "owner": "Priya Shah · Shipment compliance",
+     "summary": "The ASN sent to Cedar & Coast repeats two carton identifiers. Its application advice rejects the carton-reference content.",
+     "impact": "The transmitted notice requires correction. A successful functional acknowledgment did not establish business acceptance.",
+     "explanation": "Nora checks the carton records within the ASN against the partner's configured guide. Two repeated identifiers explain the application rejection. The check covers the ship notice content.",
+     "nextAction": "Prepare a corrected-notice review with the retailer's duplicate-reference errors.",
+     "policy": "ASN guide PACK-08: all eight cartons in this shipment require distinct SSCC identifiers. This is the configured receiving requirement for this relationship.",
+     "evidenceGap": "No corrected 856 sent yet.",
+     "amount": null,
+     "documents": [
+      {
+       "document": "856",
+       "id": "ASN-10482",
+       "time": "08:12",
+       "status": "fail",
+       "detail": "Eight carton records; six distinct SSCC values"
+      },
+      {
+       "document": "997",
+       "id": "FA-10482",
+       "time": "08:13",
+       "status": "pass",
+       "detail": "Functional acknowledgment recorded"
+      },
+      {
+       "document": "824",
+       "id": "AA-10482",
+       "time": "08:22",
+       "status": "fail",
+       "detail": "Application rejection: duplicate carton references"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Required carton references present",
+       "expected": "8 carton records with an SSCC value",
+       "observed": "8 of 8 carton records populated",
+       "status": "pass"
+      },
+      {
+       "name": "Carton identifier uniqueness",
+       "expected": "8 distinct values; 0 duplicate occurrences",
+       "observed": "6 distinct values; 2 duplicate occurrences",
+       "status": "fail"
+      },
+      {
+       "name": "Advised item quantity",
+       "expected": "576 units across the three order lines",
+       "observed": "576 units advised",
+       "status": "pass"
+      },
+      {
+       "name": "Corrected notice",
+       "expected": "Replacement 856 for ASN-10482",
+       "observed": "Not sent",
+       "status": "unknown"
+      }
+     ],
+     "lines": [
+      {
+       "sku": "CW-120",
+       "description": "Cloudwash cleanser 120 ml",
+       "ordered": 192,
+       "acknowledged": 192,
+       "shipped": 192,
+       "invoiced": null,
+       "price": 12,
+       "expectedPrice": 12
+      },
+      {
+       "sku": "BL-250",
+       "description": "Hydrating body lotion 250 ml",
+       "ordered": 192,
+       "acknowledged": 192,
+       "shipped": 192,
+       "invoiced": null,
+       "price": 8.4,
+       "expectedPrice": 8.4
+      },
+      {
+       "sku": "HC-075",
+       "description": "Daily hand cream 75 ml",
+       "ordered": 192,
+       "acknowledged": 192,
+       "shipped": 192,
+       "invoiced": null,
+       "price": 4.8,
+       "expectedPrice": 4.8
+      }
+     ],
+     "deductions": null
+    },
+    {
+     "id": "rt-shipment-sequence",
+     "title": "Shipped before routing instructions arrived",
+     "partner": "Eastbank Market",
+     "reference": "ROUTE-38106 / WH-45022",
+     "monitor": "Performance Monitor",
+     "agent": "Liz",
+     "workflow": "Shipment readiness",
+     "process": "3PL fulfillment",
+     "severity": "Medium",
+     "owner": "Taylor Chen · Transportation planning",
+     "summary": "Crestline Logistics confirmed WH-45022 shipped at 08:20 (945), 50 minutes before Eastbank Market's routing instructions arrived.",
+     "impact": "The load may have moved on a carrier other than the routed one, outside the collect-freight program.",
+     "explanation": "Liz compares the routing request, the 3PL's shipping advice and the retailer's instructions. The load shipped 50 minutes before instructions arrived, so the carrier may not be the routed one.",
+     "nextAction": "Prepare a routing review with Transportation planning and confirm the carrier used before the 856 is sent.",
+     "policy": "Collect-freight program COLLECT-03: the supplier must not ship or send an 856 before the retailer's routing instructions (754) arrive.",
+     "evidenceGap": "No 856 sent yet, so the carrier used is not confirmed on Trading Grid.",
+     "amount": null,
+     "documents": [
+      {
+       "document": "753",
+       "id": "ROUTE-38106",
+       "time": "07:40",
+       "status": "pass",
+       "detail": "Routing request sent with cartons, weight and cube"
+      },
+      {
+       "document": "945",
+       "id": "WH-45022",
+       "time": "08:20",
+       "status": "fail",
+       "detail": "3PL confirms the load shipped"
+      },
+      {
+       "document": "754",
+       "id": "APP-38106",
+       "time": "09:10",
+       "status": "pass",
+       "detail": "Routing instructions received"
+      },
+      {
+       "document": "856",
+       "id": "Not sent",
+       "time": "09:30",
+       "status": "unknown",
+       "detail": "Ship notice not yet sent"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Program applicability",
+       "expected": "Collect-freight program assigned",
+       "observed": "COLLECT-03 applies to this order",
+       "status": "pass"
+      },
+      {
+       "name": "Routing request correlation",
+       "expected": "Request and approval use the same routing reference",
+       "observed": "ROUTE-38106 matched",
+       "status": "pass"
+      },
+      {
+       "name": "Instructions before shipment",
+       "expected": "754 at or before the 945 ship time",
+       "observed": "945 at 08:20; 754 at 09:10; 50-minute gap",
+       "status": "fail"
+      },
+      {
+       "name": "Ship notice",
+       "expected": "856 with the routed carrier",
+       "observed": "Not sent",
+       "status": "unknown"
+      }
+     ],
+     "lines": null,
+     "deductions": null
+    },
+    {
+     "id": "rt-invoice-deduction",
+     "title": "Two deductions without delivery or receipt documents",
+     "partner": "Northfield Stores",
+     "reference": "REM-88027 / INV-10230",
+     "monitor": "Performance Monitor",
+     "agent": "Reese",
+     "workflow": "Invoice and deduction control",
+     "process": "Deductions, chargebacks and disputes",
+     "severity": "Medium",
+     "owner": "Jamie Brooks · Deductions review",
+     "summary": "Northfield Stores' remittance deducts $450 for notice timing and $300 for shortage from a $25,000 invoice. No 214 delivery event or 861 receiving advice is on file.",
+     "impact": "The $750 is an observed deduction, not a recoverable amount. Validity and dispute eligibility remain unconfirmed.",
+     "explanation": "Reese reconciles the invoice, net settlement and adjustment amounts, then checks the evidence required by each deduction reason. The arithmetic matches. Without a 214 delivery event and 861 receiving advice, validity cannot be concluded. The review deadline comes from the configured terms for this relationship.",
+     "nextAction": "Prepare the remittance, invoice and ASN evidence for a deductions analyst and request the 861 receiving advice before 21 Nov.",
+     "policy": "Settlement terms REM-10: this account has a 30-calendar-day review window from remittance posting. The 22 Oct posting gives a configured review deadline of 21 Nov 2026, 23:59 ET.",
+     "evidenceGap": "No 214 delivery event or 861 receiving advice for ASN-10391.",
+     "amount": 750,
+     "documents": [
+      {
+       "document": "856",
+       "id": "ASN-10391",
+       "time": "14 Sep 15:25",
+       "status": "pass",
+       "detail": "Ship-notice timestamp available"
+      },
+      {
+       "document": "997",
+       "id": "FA-10391",
+       "time": "14 Sep 15:26",
+       "status": "pass",
+       "detail": "Functional acknowledgment available"
+      },
+      {
+       "document": "810",
+       "id": "INV-10230",
+       "time": "15 Sep 12:10",
+       "status": "pass",
+       "detail": "Invoice total $25,000"
+      },
+      {
+       "document": "820",
+       "id": "REM-88027",
+       "time": "22 Oct 07:40",
+       "status": "pass",
+       "detail": "$24,250 settlement plus two deductions totaling $750"
+      },
+      {
+       "document": "214",
+       "id": "Not received",
+       "time": "09:30",
+       "status": "unknown",
+       "detail": "No delivery event for ASN-10391"
+      },
+      {
+       "document": "861",
+       "id": "Not received",
+       "time": "09:30",
+       "status": "unknown",
+       "detail": "No receiving advice for ASN-10391"
+      }
+     ],
+     "checks": [
+      {
+       "name": "Remittance arithmetic",
+       "expected": "Invoice = net settlement + adjustments",
+       "observed": "$25,000 = $24,250 + $450 + $300",
+       "status": "pass"
+      },
+      {
+       "name": "Invoice correlation",
+       "expected": "Remittance references an identified invoice",
+       "observed": "INV-10230 matched",
+       "status": "pass"
+      },
+      {
+       "name": "Review-packet completeness",
+       "expected": "214 delivery event and 861 receiving advice",
+       "observed": "Neither document on file",
+       "status": "fail"
+      },
+      {
+       "name": "Deduction validity",
+       "expected": "Applicable policy compared with the 214 and 861",
+       "observed": "Cannot determine from the available documents",
+       "status": "unknown"
+      }
+     ],
+     "lines": null,
+     "deductions": [
+      {
+       "code": "ASN-TIME",
+       "label": "Notice timing",
+       "amount": 450,
+       "evidence": "214 delivery event and the notice-timing rule",
+       "status": "unknown"
+      },
+      {
+       "code": "QTY-SHORT",
+       "label": "Quantity shortage",
+       "amount": 300,
+       "evidence": "861 received quantities by line",
+       "status": "unknown"
+      }
+     ]
+    }
+   ],
+   "rules": [
+    {
+     "name": "Ship notice within 1 hour of shipment",
+     "agent": "Lex, Timing and SLA agent",
+     "module": "Performance Monitor",
+     "document": "Ship notice (856)",
+     "processes": "Order to cash",
+     "conformancePct": 97.1,
+     "findings30d": 31,
+     "lastRun": "1 minute ago",
+     "status": "Active"
+    },
+    {
+     "name": "Acknowledgment within 24 hours",
+     "agent": "Lex, Timing and SLA agent",
+     "module": "Performance Monitor",
+     "document": "Order acknowledgment (855)",
+     "processes": "Order to cash",
+     "conformancePct": 96.5,
+     "findings30d": 44,
+     "lastRun": "3 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Invoice matches order price",
+     "agent": "Nora, Conformance agent",
+     "module": "Performance Monitor",
+     "document": "Invoice (810)",
+     "processes": "Order to cash",
+     "conformancePct": 96.6,
+     "findings30d": 38,
+     "lastRun": "2 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Required fields by partner guide",
+     "agent": "Nora, Conformance agent",
+     "module": "Performance Monitor",
+     "document": "All outbound documents",
+     "processes": "All processes",
+     "conformancePct": 99.4,
+     "findings30d": 6,
+     "lastRun": "5 minutes ago",
+     "status": "Over budget"
+    },
+    {
+     "name": "Cost change applied to open orders",
+     "agent": "Liz, Process agent",
+     "module": "Performance Monitor",
+     "document": "Price catalog (832)",
+     "processes": "Order to cash",
+     "conformancePct": 94.1,
+     "findings30d": 17,
+     "lastRun": "8 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Ship notice before invoice",
+     "agent": "Liz, Process agent",
+     "module": "Performance Monitor",
+     "document": "Ship notice (856), Invoice (810)",
+     "processes": "Order to cash",
+     "conformancePct": 99.3,
+     "findings30d": 4,
+     "lastRun": "7 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Remittance matches open invoices",
+     "agent": "Reese, Reconciliation agent",
+     "module": "Performance Monitor",
+     "document": "Remittance advice (820)",
+     "processes": "Order to cash, Deductions",
+     "conformancePct": 97.9,
+     "findings30d": 5,
+     "lastRun": "19 minutes ago",
+     "status": "Paused"
+    },
+    {
+     "name": "Order volume against projection",
+     "agent": "Ivy, Volume agent",
+     "module": "Integration Monitor",
+     "document": "Purchase order (850)",
+     "processes": "Order to cash",
+     "conformancePct": 93.2,
+     "findings30d": 11,
+     "lastRun": "1 minute ago",
+     "status": "Active"
+    },
+    {
+     "name": "Remittance advice on schedule",
+     "agent": "Ivy, Volume agent",
+     "module": "Integration Monitor",
+     "document": "Remittance advice (820)",
+     "processes": "Order to cash",
+     "conformancePct": 98.7,
+     "findings30d": 3,
+     "lastRun": "11 minutes ago",
+     "status": "Active"
+    },
+    {
+     "name": "Functional acknowledgments on time",
+     "agent": "Ivy, Volume agent",
+     "module": "Integration Monitor",
+     "document": "Functional acknowledgment (997)",
+     "processes": "Order to cash, Deductions",
+     "conformancePct": 96,
+     "findings30d": 8,
+     "lastRun": "2 minutes ago",
+     "status": "Active"
+    }
+   ],
+   "retailPolicies": [
+    {
+     "id": "rt-rule-ack",
+     "name": "Drop ship acknowledgment deadline",
+     "agent": "Lex",
+     "scope": "Drop ship policy ACK-120 for marketplace orders",
+     "condition": "Start from confirmed order receipt and seek a correlated business acknowledgment within the configured window.",
+     "threshold": 120,
+     "unit": "minutes after receipt",
+     "evidence": "Order receipt timestamp, order/partner correlation, 855 or equivalent business response and service calendar"
+    },
+    {
+     "id": "rt-rule-order-change",
+     "name": "Release matches accepted order revision",
+     "agent": "Reese",
+     "scope": "Fulfillment rule REV-01",
+     "condition": "Compare released warehouse quantities with the latest accepted revision using order, line, item and normalized unit references.",
+     "threshold": 0,
+     "unit": "quantity tolerance",
+     "evidence": "850, accepted 860/865 revision, 940 release and unit/item reference data"
+    },
+    {
+     "id": "rt-rule-sscc",
+     "name": "Distinct carton identifiers in the ASN",
+     "agent": "Nora",
+     "scope": "Receiving guide PACK-08",
+     "condition": "Require an SSCC value on each applicable carton and check uniqueness within the shipment notice.",
+     "threshold": 0,
+     "unit": "duplicate occurrences",
+     "evidence": "856 carton hierarchy and SSCC values, assigned partner packing guide and any 824 response"
+    },
+    {
+     "id": "rt-rule-routing",
+     "name": "Shipment before routing instructions",
+     "agent": "Liz",
+     "scope": "Collect-freight program COLLECT-03",
+     "condition": "For this program, compare the 3PL's 945 ship time and the 856 with the retailer's 754.",
+     "threshold": 0,
+     "unit": "minutes shipped before instructions",
+     "evidence": "753 request, 754 instructions, 945 shipping advice and program assignment"
+    },
+    {
+     "id": "rt-rule-price",
+     "name": "Invoice matches accepted order price",
+     "agent": "Nora",
+     "scope": "Pricing agreement PRICE-06",
+     "condition": "Compare invoice unit prices with the latest accepted order on the same item, unit and currency basis.",
+     "threshold": 0,
+     "unit": "USD per-unit price tolerance",
+     "evidence": "Accepted order, business acknowledgment, invoice lines, revision history and item/unit references"
+    },
+    {
+     "id": "rt-rule-deduction",
+     "name": "Deduction evidence and review window",
+     "agent": "Reese",
+     "scope": "Settlement terms REM-10",
+     "condition": "Reconcile adjustments to the invoice and require the evidence assigned to each reason code before concluding validity.",
+     "threshold": 30,
+     "unit": "calendar days in this account's review window",
+     "evidence": "820 adjustments, 810 invoice, 856 and 997, 214 delivery event, 861 receiving advice, reason mappings and settlement terms"
+    }
+   ],
+   "projections": [
+    {
+     "watchlist": "Harbor Grocers orders",
+     "status": "Order volume drop",
+     "alerts": 5,
+     "direction": "Inbound",
+     "document": "Purchase order (850)",
+     "standard": "X12",
+     "partner": "Harbor Grocers",
+     "finding": "f2"
+    },
+    {
+     "watchlist": "Brightway Marketplace acknowledgments",
+     "status": "Volume drop",
+     "alerts": 3,
+     "direction": "Inbound",
+     "document": "Functional acknowledgment (997)",
+     "standard": "X12",
+     "partner": "Brightway Marketplace",
+     "finding": "f10"
+    },
+    {
+     "watchlist": "Harbor Grocers remittances",
+     "status": "Document missing",
+     "alerts": 1,
+     "direction": "Inbound",
+     "document": "Remittance advice (820)",
+     "standard": "X12",
+     "partner": "Harbor Grocers",
+     "finding": "f7"
+    },
+    {
+     "watchlist": "Northfield Stores invoices",
+     "status": "Within projection",
+     "alerts": 0,
+     "direction": "Outbound",
+     "document": "Invoice (810)",
+     "standard": "X12",
+     "partner": "Northfield Stores",
+     "finding": null
+    },
+    {
+     "watchlist": "Westline Home orders",
+     "status": "Within projection",
+     "alerts": 0,
+     "direction": "Inbound",
+     "document": "Purchase order (850)",
+     "standard": "X12",
+     "partner": "Westline Home",
+     "finding": null
+    },
+    {
+     "watchlist": "Failed transactions, all partners",
+     "status": "Failed transactions above threshold",
+     "alerts": 2,
+     "direction": "Both",
+     "document": "All document types",
+     "standard": "X12",
+     "partner": "All partners",
+     "finding": null
+    }
+   ],
+   "dailyDigest": {
+    "date": "2026-10-23",
+    "documents": 4612,
+    "documentsChangePct": 4,
+    "failedTransactions": 37,
+    "partnersWithFailures": 9,
+    "partnersOnboarding": 1,
+    "onboardingPartner": "Coastal Drug",
+    "anomaliesDetected": 3,
+    "topPartners": [
+     {
+      "partner": "Northfield Stores",
+      "documents": 473,
+      "errors": 4,
+      "topError": "Signature verification failed"
+     },
+     {
+      "partner": "Harbor Grocers",
+      "documents": 393,
+      "errors": 3,
+      "topError": "Signature verification failed"
+     },
+     {
+      "partner": "Westline Home",
+      "documents": 347,
+      "errors": 4,
+      "topError": "Invalid interchange receiver ID"
+     },
+     {
+      "partner": "Brightway Marketplace",
+      "documents": 247,
+      "errors": 2,
+      "topError": "Duplicate control number"
+     },
+     {
+      "partner": "Eastbank Market",
+      "documents": 103,
+      "errors": 5,
+      "topError": "Missing required segment"
+     }
+    ],
+    "documentMix": [
+     {
+      "period": "Yesterday",
+      "dates": "Friday, October 23, 2026",
+      "top": [
+       {
+        "document": "997 Functional acknowledgment",
+        "count": 1384
+       },
+       {
+        "document": "850 Purchase order",
+        "count": 1180
+       },
+       {
+        "document": "856 Ship notice",
+        "count": 922
+       }
+      ],
+      "other": 1126
+     },
+     {
+      "period": "Last month",
+      "dates": "Tuesday, September 1 to Wednesday, September 30, 2026",
+      "top": [
+       {
+        "document": "997 Functional acknowledgment",
+        "count": 41460
+       },
+       {
+        "document": "850 Purchase order",
+        "count": 30400
+       },
+       {
+        "document": "856 Ship notice",
+        "count": 27640
+       }
+      ],
+      "other": 38700
+     }
+    ]
+   },
+   "networkActivity": {
+    "documentsThisWeek": 27400,
+    "weekChangePct": 11,
+    "openAnomalies": 3,
+    "failedToday": 74,
+    "failedSince": "05:52",
+    "activePartners": 163,
+    "connectedPartners": 208
+   },
+   "kpis": [
+    {
+     "category": "Order and acknowledgment",
+     "documents": "850 PO · 855 PO acknowledgment",
+     "avgScore": 90,
+     "measures": [
+      {
+       "name": "PO acknowledgment rate",
+       "basis": "855 PO acknowledgment",
+       "value": "96.5%",
+       "target": "≥ 98%",
+       "score": 88,
+       "weightPct": 5,
+       "offTarget": true
+      },
+      {
+       "name": "PO acknowledgment cycle time",
+       "basis": "850 PO to 855 PO acknowledgment",
+       "value": "5.5 hrs",
+       "target": "≤ 4 hrs",
+       "score": 73,
+       "weightPct": 4,
+       "offTarget": true
+      },
+      {
+       "name": "Order accuracy",
+       "basis": "850 PO and 855 PO acknowledgment",
+       "value": "98.2%",
+       "target": "≥ 99%",
+       "score": 92,
+       "weightPct": 5,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Shipping",
+     "documents": "856 Ship notice",
+     "avgScore": 97,
+     "measures": [
+      {
+       "name": "Ship notice timeliness",
+       "basis": "856 before arrival",
+       "value": "97.1%",
+       "target": "≥ 98%",
+       "score": 86,
+       "weightPct": 6,
+       "offTarget": true
+      },
+      {
+       "name": "Ship notice accuracy",
+       "basis": "856 against 861 receipt",
+       "value": "98.8%",
+       "target": "≥ 99%",
+       "score": 89,
+       "weightPct": 5,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Invoicing",
+     "documents": "810 Invoice · 820 Remittance",
+     "avgScore": 92,
+     "measures": [
+      {
+       "name": "Invoice accuracy rate",
+       "basis": "810 against 850 and 856",
+       "value": "96.6%",
+       "target": "≥ 98%",
+       "score": 92,
+       "weightPct": 6,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Partner compliance and EDI health",
+     "documents": "997 Functional acknowledgments",
+     "avgScore": 82,
+     "measures": [
+      {
+       "name": "First-pass acceptance",
+       "basis": "997 and 824",
+       "value": "97.4%",
+       "target": "≥ 98%",
+       "score": 87,
+       "weightPct": 5,
+       "offTarget": true
+      },
+      {
+       "name": "Transaction rejection rate",
+       "basis": "824 rejections",
+       "value": "1.8%",
+       "target": "≤ 1%",
+       "score": 70,
+       "weightPct": 4,
+       "offTarget": true
+      }
+     ]
+    },
+    {
+     "category": "Retail KPIs",
+     "documents": "OTIF · fill rate · deductions",
+     "avgScore": 79,
+     "measures": [
+      {
+       "name": "On-time in-full (OTIF)",
+       "basis": "856, 214 and 861 where sent",
+       "value": "91.5%",
+       "target": "≥ 95%",
+       "score": 96,
+       "weightPct": 8,
+       "offTarget": true
+      },
+      {
+       "name": "Acknowledged fill rate",
+       "basis": "855 against 850",
+       "value": "95.5%",
+       "target": "≥ 98%",
+       "score": 97,
+       "weightPct": 5,
+       "offTarget": true
+      },
+      {
+       "name": "Backorder rate",
+       "basis": "855 PO acknowledgment",
+       "value": "3.5%",
+       "target": "≤ 2%",
+       "score": 57,
+       "weightPct": 4,
+       "offTarget": true
+      },
+      {
+       "name": "Chargeback and deduction rate",
+       "basis": "812 against 810",
+       "value": "2.1%",
+       "target": "≤ 1.5%",
+       "score": 64,
+       "weightPct": 5,
+       "offTarget": true
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

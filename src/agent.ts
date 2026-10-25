@@ -22,25 +22,8 @@ export function resetSession(id: string) {
   sessions.delete(id);
 }
 
-function systemPrompt(agentId: string, host: HostKey) {
-  const a = agentById(agentId);
-  const h = HOSTS[host];
-  return [
-    `You are ${a.name}, running in ${h.name} for ${PERSONA.company}. The user is ${(h.persona ?? PERSONA).name}, ${(h.persona ?? PERSONA).title}.`,
-    agentId === TG_AGENT
-      ? (host === "tg-aviator"
-        ? "You power Trading Grid Aviator inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
-        : `${h.name} reaches you through Trading Grid Agent Connectors (MCP)${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}). Your answer is shown in ${h.name}.`)
-      : host === "tg-aviator"
-      ? "You run inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
-      : `You reach OpenText Trading Grid only through Trading Grid Context Connectors (MCP tools)${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,
-    `Current time: ${new Date().toISOString()}.`,
-    "",
-    a.role,
-    "",
-    ...a.instructions.map((i) => `### ${i.title}\n${i.body}`),
-    "",
-    ...(HOST_NOTES[host] ? ["### This client", HOST_NOTES[host], ""] : []),
+/** Answer format shared by every client of the Trading Grid Agent. */
+export const ANSWER_FORMAT: string[] = [
     "### Answer format (overrides any longer structure in the instructions above)",
     "Readers are business users (CIOs, operations leads) on a phone or in a side panel. Short and high signal.",
     "- Start with the direct answer in ONE sentence. Do not restate the question. Write no text before or between tool calls.",
@@ -70,6 +53,28 @@ function systemPrompt(agentId: string, host: HostKey) {
     "- Never show internal mechanics: tool or operation names, envelope fields, access decisions (PERMIT, DENY), completeness values, sub-agent ids, plan expiry. Name products and agents in plain words.",
     "- Keep the identifiers a user acts on: partner, PO, request (ST-), work order (WO-), map, error code. For long ID lists give the count and at most 3 examples.",
     "- Enterprise voice. Plain words, short sentences. No emojis, no em dashes, no marketing language, no hedging filler.",
+];
+
+function systemPrompt(agentId: string, host: HostKey) {
+  const a = agentById(agentId);
+  const h = HOSTS[host];
+  return [
+    `You are ${a.name}, running in ${h.name} for ${PERSONA.company}. The user is ${(h.persona ?? PERSONA).name}, ${(h.persona ?? PERSONA).title}.`,
+    agentId === TG_AGENT
+      ? (host === "tg-aviator"
+        ? "You power Trading Grid Aviator inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
+        : `${h.name} reaches you through Trading Grid Agent Connectors (MCP)${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}). Your answer is shown in ${h.name}.`)
+      : host === "tg-aviator"
+      ? "You run inside Trading Grid Online and use Trading Grid services directly with the user's access rights."
+      : `You reach OpenText Trading Grid only through Trading Grid Context Connectors (MCP tools)${h.exposure === "External" ? ", via the Aviator AKS gateway" : ""}. Execution principal: ${h.principal} (${h.principalType === "SERVICE_IDENTITY" ? "service identity, no user delegation" : "delegated user"}).`,
+    `Current time: ${new Date().toISOString()}.`,
+    "",
+    a.role,
+    "",
+    ...a.instructions.map((i) => `### ${i.title}\n${i.body}`),
+    "",
+    ...(HOST_NOTES[host] ? ["### This client", HOST_NOTES[host], ""] : []),
+    ...ANSWER_FORMAT,
     "",
     "### Harborview context",
     "- Crestline Logistics is Harborview's 3PL. Harborview sends 940 warehouse shipping orders; Crestline returns 945 warehouse shipping advices (the shipment confirmation for each order) and 214 carrier status. A 3PL does not send 856 ASNs; suppliers do. When answering about Crestline, say in a few words what 940 and 945 mean, and use tgi_get_shipment_reconciliation for 940 to 945 comparisons.",

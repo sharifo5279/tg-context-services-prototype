@@ -14,6 +14,7 @@ import { catalog, invoke, audit, TOOLS } from "./tools/index.js";
 import { HOSTS, GRANT, PERSONA, plans, decidePlan, clientStatus, scopeFilter, HostKey } from "./runtime.js";
 import { AGENTS, USE_CASES } from "./agents.js";
 import { handleMcp, hostForToken, tokenFor, resetGateway } from "./mcp.js";
+import { ccRouter } from "./cc/routes.js";
 import { txById, renderPayload, transactions, STATUS_TEXT, onWorldDay, worldStats } from "./data/insights.js";
 import { refreshLifecycle } from "./data/cms.js";
 import { findExamples } from "./data/examples.js";
@@ -60,6 +61,9 @@ async function mcpRoute(req: any, res: any, token: string | null, connector: "ag
 app.all("/mcp", (req, res) => mcpRoute(req, res, String(req.headers.authorization || "").replace(/^Bearer\s+/i, "") || null));
 app.all("/mcp/k/:token", (req, res) => mcpRoute(req, res, req.params.token, "agents"));
 app.all("/mcp/c/:token", (req, res) => mcpRoute(req, res, req.params.token, "context"));
+
+// ---- Command Center client (separate tenant: Northfield Stores and Nuvori Beauty) -----------------------
+app.use("/cc", ccRouter);
 
 // ---- Login ------------------------------------------------------------------------------------------
 app.post("/api/login", (req, res) => {

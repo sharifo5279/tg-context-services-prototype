@@ -23,6 +23,15 @@ A working prototype of Trading Grid exposed as governed MCP tools for customer a
 - **Console:** agent definition and run views with a live tool trace, a tool catalog with per-tool testing, approvals, MCP credentials and an audit log.
 - **Remote MCP endpoint:** `POST /mcp` with `Authorization: Bearer <token>`, or `POST /mcp/k/<token>` for clients that cannot send custom headers.
 
+## Command Center client
+
+A second tenant serves the Aviator panel in OpenText Command Center: Northfield Stores (retailer) and Nuvori Beauty (CPG supplier), isolated from the Harborview world.
+
+- Endpoint: `POST /cc/mcp` (Streamable HTTP, stateless), Trading Grid Agent plus 12 read-only tools over the tenant data. `GET /cc/health` reports readiness.
+- Browser calls only from `CC_ALLOWED_ORIGINS` (default `https://process-genome.onrender.com` and localhost:8765), one client token per perspective derived from `CC_CLIENT_SECRET`.
+- Gateway limit: `CC_AGENT_CALLS_PER_MINUTE` (20) and `CC_AGENT_CALLS_PER_DAY` (400) per tenant.
+- Tenant data: `src/cc/tenant.json`, exported from the Command Center prototype with `node tools/command-center/export-tenant.cjs` in process-genome.
+
 ## Run locally
 
 ```
