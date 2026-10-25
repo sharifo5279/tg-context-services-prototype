@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-25T22:35:41.918Z",
+ "generatedAt": "2026-10-25T22:43:59.491Z",
  "source": "Command Center prototype (process-genome)",
  "perspectives": {
   "retailer": {
@@ -1030,54 +1030,54 @@
      ],
      "sampleTransactions": [
       {
-       "isa13": "100869958",
-       "st02": "0001",
+       "isa13": null,
+       "st02": null,
        "reference": "ASN-91174",
        "time": "09:20",
        "document": "856",
        "direction": "In",
        "check": "Rule and prediction",
-       "status": "Observed"
+       "status": "Not received"
       },
       {
-       "isa13": "100872185",
-       "st02": "0002",
+       "isa13": null,
+       "st02": null,
        "reference": "ASN-91305",
        "time": "08:52",
        "document": "856",
        "direction": "In",
        "check": "Rule and prediction",
-       "status": "Observed"
+       "status": "Not received"
       },
       {
-       "isa13": "100874412",
-       "st02": "0003",
+       "isa13": null,
+       "st02": null,
        "reference": "ASN-91436",
        "time": "08:33",
        "document": "856",
        "direction": "In",
        "check": "Rule and prediction",
-       "status": "Observed"
+       "status": "Not received"
       },
       {
-       "isa13": "100876639",
-       "st02": "0004",
+       "isa13": null,
+       "st02": null,
        "reference": "ASN-91567",
        "time": "08:05",
        "document": "856",
        "direction": "In",
        "check": "Rule and prediction",
-       "status": "Observed"
+       "status": "Not received"
       },
       {
-       "isa13": "100878866",
-       "st02": "0005",
+       "isa13": null,
+       "st02": null,
        "reference": "ASN-91698",
        "time": "07:46",
        "document": "856",
        "direction": "In",
        "check": "Rule and prediction",
-       "status": "Observed"
+       "status": "Not received"
       }
      ]
     },
@@ -1574,7 +1574,7 @@
        "document": "997",
        "direction": "In",
        "check": "Anomaly",
-       "status": "Not sent"
+       "status": "Not received"
       },
       {
        "isa13": null,
@@ -1584,7 +1584,7 @@
        "document": "997",
        "direction": "In",
        "check": "Anomaly",
-       "status": "Not sent"
+       "status": "Not received"
       },
       {
        "isa13": null,
@@ -1594,7 +1594,7 @@
        "document": "997",
        "direction": "In",
        "check": "Anomaly",
-       "status": "Not sent"
+       "status": "Not received"
       },
       {
        "isa13": null,
@@ -1604,7 +1604,7 @@
        "document": "997",
        "direction": "In",
        "check": "Anomaly",
-       "status": "Not sent"
+       "status": "Not received"
       },
       {
        "isa13": null,
@@ -1614,7 +1614,7 @@
        "document": "997",
        "direction": "In",
        "check": "Anomaly",
-       "status": "Not sent"
+       "status": "Not received"
       }
      ]
     }
@@ -4010,7 +4010,7 @@
        "document": "820",
        "direction": "In",
        "check": "Missing document",
-       "status": "Not sent"
+       "status": "Not received"
       }
      ]
     },
