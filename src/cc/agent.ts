@@ -45,6 +45,8 @@ function systemPrompt(ctx: CcCtx) {
     "- A missing acknowledgment or document is 'not received', never 'rejected'. Waiting is not recovered. A reply by email does not close a follow-up.",
     "- Follow-up state, owner and expect-by come from the Command Center session; report them as they are.",
     "- Payment status is not visible to Command Center. Say so when asked about payments.",
+    "- Business processes run over days to months: an 856 can follow an 850 by days, an 810 by weeks, an 820 after 30, 60 or 90 day terms. A document that has not arrived yet is not a finding while it is inside its expected window. A finding exists only when a rule, partner agreement or projection says the window has passed or will be missed. Say 'in window' for open documents that are not late.",
+    "- Use only data from the licensed modules listed in the screen context.",
     "- Keep tool calls lean: one list call usually answers; open a finding only when its detail is needed.",
   ].join("\n");
 }
